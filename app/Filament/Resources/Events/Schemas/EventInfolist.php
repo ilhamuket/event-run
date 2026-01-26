@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Events\Schemas;
 
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
@@ -19,6 +20,9 @@ class EventInfolist
                     ->columnSpanFull(),
                 TextEntry::make('poster')
                     ->placeholder('-'),
+                ImageEntry::make('banner_image')
+                ->disk('public')
+                    ->placeholder('-'),
                 TextEntry::make('start_time')
                     ->dateTime(),
                 TextEntry::make('location_name')
@@ -32,6 +36,8 @@ class EventInfolist
                 TextEntry::make('instagram_url')
                     ->placeholder('-'),
                 TextEntry::make('strava_route_url')
+                    ->placeholder('-'),
+                TextEntry::make('youtube_url')
                     ->placeholder('-'),
                 TextEntry::make('contact_phone')
                     ->placeholder('-'),

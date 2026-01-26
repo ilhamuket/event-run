@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Events\Tables;
+namespace App\Filament\Resources\EventHeroImages\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -11,41 +11,24 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class EventsTable
+class EventHeroImagesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('slug')
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('poster')
-                    ->searchable(),
-                ImageColumn::make('banner_image')
-                 ->disk('public')
-                    ->visibility('public'),
-                TextColumn::make('start_time')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('location_name')
-                    ->searchable(),
-                TextColumn::make('latitude')
+                TextColumn::make('event_id')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('longitude')
+                ImageColumn::make('image_path')
+                    ->disk('public')
+                    ->visibility('public')
+                    ->square()
+                    ->height(60),
+                TextColumn::make('order')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('instagram_url')
-                    ->searchable(),
-                TextColumn::make('strava_route_url')
-                    ->searchable(),
-                TextColumn::make('youtube_url')
-                    ->searchable(),
-                TextColumn::make('contact_phone')
-                    ->searchable(),
-                IconColumn::make('is_published')
+                IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()

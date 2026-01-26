@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Events\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -21,6 +22,14 @@ class EventForm
                 Textarea::make('description')
                     ->columnSpanFull(),
                 TextInput::make('poster'),
+                FileUpload::make('banner_image')
+                     ->image()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->imagePreviewHeight('150')
+                    ->openable()
+                    ->downloadable()
+                    ->required(),
                 DateTimePicker::make('start_time')
                     ->required(),
                 TextInput::make('location_name'),
@@ -31,6 +40,8 @@ class EventForm
                 TextInput::make('instagram_url')
                     ->url(),
                 TextInput::make('strava_route_url')
+                    ->url(),
+                TextInput::make('youtube_url')
                     ->url(),
                 TextInput::make('contact_phone')
                     ->tel(),

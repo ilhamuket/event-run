@@ -9,7 +9,19 @@ class EventController extends Controller
 {
     public function home()
     {
-        $event = Event::where('is_published', true)->firstOrFail();
+         $event = Event::with([
+            'heroImages' => function($query) {
+                $query->where('is_active', true)->orderBy('order');
+            },
+            'categories' => function($query) {
+                $query->where('is_active', true)->orderBy('order');
+            },
+            'racepackItems' => function($query) {
+                $query->where('is_active', true)->orderBy('order');
+            }
+        ])
+        ->where('is_published', true)
+        ->firstOrFail();
 
         return view('event.home', compact('event'));
     }
