@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('bib')->nullable()->unique();
             $table->string('name');
             $table->enum('gender', ['M', 'F']);
-            $table->string('category')->nullable();
             $table->string('city')->nullable();
 
             $table->time('elapsed_time')->nullable();

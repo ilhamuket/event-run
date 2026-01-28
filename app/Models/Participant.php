@@ -25,7 +25,7 @@ class Participant extends Model
         'country',
         'province',
         'regency',
-        'category',
+        'event_category_id',
         'city',
         'jersey_size',
         'community',
@@ -158,7 +158,12 @@ class Participant extends Model
      */
     public function scopeInCategory($query, string $category)
     {
-        return $query->where('category', $category);
+        return $query->where('event_category_id', $category);
+    }
+
+    public function category(): BelongsTo
+    {
+    return $this->belongsTo(EventCategory::class, 'event_category_id');
     }
 
     /**
