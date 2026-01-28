@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ config('app.name', 'Event') }}</title>
+
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/images/favicon/favicon.ico') }}">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {{-- Tailwind --}}
@@ -18,13 +21,17 @@
 
     {{-- HEADER --}}
     <header class="sticky top-0 z-50 bg-white">
-        <div class="flex items-center justify-between max-w-6xl px-4 py-4 mx-auto">
-            <a href="/" class="text-lg font-bold">
-                {{ config('app.name', 'Event') }}
+        <div class="flex items-center justify-between max-w-6xl px-4 py-5 mx-auto">
+            <a href="/" class="flex items-center gap-2">
+                <img
+                    src="{{ asset('assets/images/logo/logo.png') }}"
+                    alt="{{ config('app.name', 'Event') }} Logo"
+                    class="w-auto h-10 md:h-12"
+                >
             </a>
 
             {{-- Desktop Menu --}}
-            <nav class="hidden gap-6 text-sm md:flex">
+            <nav class="items-center hidden gap-8 text-base font-medium md:flex">
                 <a href="/" class="transition hover:text-blue-600">Beranda</a>
                 <a href="#about" class="transition hover:text-blue-600">Tentang</a>
                 <a href="#categories" class="transition hover:text-blue-600">Kategori</a>
