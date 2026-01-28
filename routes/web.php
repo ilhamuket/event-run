@@ -5,7 +5,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
 use App\Models\Event;
 
-Route::get('/', [EventController::class, 'home']);
+Route::get('/', [EventController::class, 'home'])->name('home');
 
 
 Route::get('/events/{event:slug}/results',
