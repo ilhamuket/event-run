@@ -32,12 +32,16 @@ class EventController extends Controller
     public function participants(Event $event, Request $request)
     {
         $query = $event->participants()
+            ->with('category')
             ->orderBy('bib');
 
         if ($request->q) {
             $query->where(function ($q) use ($request) {
                 $q->where('bib', 'like', "%{$request->q}%")
-                  ->orWhere('name', 'like', "%{$request->q}%");
+                ->orWhere('name', 'like', "%{$request->q}%")
+                ->orWhere('bib_name', 'like', "%{$request->q}%")
+                ->orWhere('email', 'like', "%{$request->q}%")
+                ->orWhere('community', 'like', "%{$request->q}%");
             });
         }
 
