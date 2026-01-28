@@ -54,7 +54,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-
     }
 
     .hero-content {
@@ -129,7 +128,7 @@
         transform: scale(1.2);
     }
 
-    /* Countdown Styles */
+    /* Countdown Styles - More Professional */
     .countdown-item {
         text-align: center;
     }
@@ -139,20 +138,21 @@
         backdrop-filter: blur(10px);
         border-radius: 1rem;
         padding: 1.5rem 1rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         margin-bottom: 0.75rem;
         transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .countdown-box:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     }
 
     .countdown-number {
         font-size: 2.5rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -161,17 +161,17 @@
     }
 
     .countdown-label {
-        color: white;
+        color: #6b7280;
         font-size: 0.875rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
 
-    /* Action Card Styles */
+    /* Action Card Styles - More Refined */
     .action-card {
         background: white;
-        border: 2px solid #f3f4f6;
+        border: 1px solid #e5e7eb;
         border-radius: 1rem;
         padding: 1.5rem 1rem;
         text-align: center;
@@ -183,9 +183,9 @@
     }
 
     .action-card:hover {
-        border-color: #3b82f6;
+        border-color: #1f2937;
         transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
     .action-icon {
@@ -201,8 +201,8 @@
     }
 
     .action-card:hover .action-icon {
-        transform: scale(1.1) rotate(5deg);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
     }
 
     .action-title {
@@ -274,7 +274,7 @@
     }
 
     .racepack-dot.active {
-        background: #3b82f6;
+        background: #1f2937;
         width: 32px;
         border-radius: 6px;
     }
@@ -288,7 +288,7 @@
     .category-tab {
         padding: 12px 20px;
         background: white;
-        border: 2px solid #e5e7eb;
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -297,16 +297,16 @@
     }
 
     .category-tab:hover {
-        border-color: #3b82f6;
+        border-color: #1f2937;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .category-tab.active {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        border-color: #2563eb;
+        background: #1f2937;
+        border-color: #1f2937;
         color: white;
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 4px 16px rgba(31, 41, 55, 0.2);
     }
 
     .category-tab.active .w-8 {
@@ -336,8 +336,16 @@
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .hero-slider {
-            height: 100vh;
-            min-height: 500px;
+            height: auto;
+            min-height: unset;
+            max-height: unset;
+            aspect-ratio: 16 / 9;
+        }
+
+        .slide-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .hero-nav-btn {
@@ -398,5 +406,82 @@
 
     .prose p:last-child {
         margin-bottom: 0;
+    }
+
+    /* NEW: About Section Grid Layout */
+    .about-grid {
+        display: grid;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    @media (min-width: 1024px) {
+        .about-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+    }
+
+    .about-image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .about-image-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+
+    .about-image-container:hover img {
+        transform: scale(1.02);
+    }
+
+    .about-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .about-text {
+        font-size: 1rem;
+        line-height: 1.75;
+        color: #4b5563;
+    }
+
+    /* Benefits List */
+    .benefits-list {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 2rem;
+    }
+
+    .benefit-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: #374151;
+        transition: all 0.2s ease;
+    }
+
+    .benefit-item:hover {
+        border-color: #1f2937;
+        transform: translateX(4px);
+    }
+
+    .benefit-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        color: #1f2937;
+        flex-shrink: 0;
     }
 </style>

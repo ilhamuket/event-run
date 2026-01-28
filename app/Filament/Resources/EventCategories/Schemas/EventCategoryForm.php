@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EventCategories\Schemas;
 
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -14,9 +15,9 @@ class EventCategoryForm
     {
         return $schema
             ->components([
-                TextInput::make('event_id')
-                    ->required()
-                    ->numeric(),
+                Select::make('event_id')
+                    ->relationship('event', 'name')
+                    ->required(),
                 TextInput::make('name')
                     ->required(),
                 TextInput::make('slug')
@@ -29,7 +30,7 @@ class EventCategoryForm
                 TextInput::make('terrain'),
                 TextInput::make('cut_off_time'),
                 FileUpload::make('course_map_image')
-                   ->image()
+                     ->image()
                     ->disk('public')
                     ->visibility('public')
                     ->imagePreviewHeight('150')
@@ -38,6 +39,11 @@ class EventCategoryForm
                     ->required(),
                 Textarea::make('description')
                     ->columnSpanFull(),
+                TextInput::make('price')
+                    ->required()
+                    ->numeric()
+                    ->default(0.0)
+                    ->prefix('$'),
                 TextInput::make('color_from')
                     ->required()
                     ->default('blue-400'),

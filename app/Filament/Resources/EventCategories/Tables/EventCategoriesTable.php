@@ -17,9 +17,8 @@ class EventCategoriesTable
     {
         return $table
             ->columns([
-                TextColumn::make('event_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('event.name')
+                    ->searchable(),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('slug')
@@ -37,6 +36,9 @@ class EventCategoriesTable
                 ImageColumn::make('course_map_image')
                     ->disk('public')
                     ->visibility('public'),
+                TextColumn::make('price')
+                    ->money()
+                    ->sortable(),
                 TextColumn::make('color_from')
                     ->searchable(),
                 TextColumn::make('color_to')

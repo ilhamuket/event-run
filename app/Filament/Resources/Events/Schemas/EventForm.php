@@ -23,13 +23,14 @@ class EventForm
                     ->columnSpanFull(),
                 TextInput::make('poster'),
                 FileUpload::make('banner_image')
-                     ->image()
+                    ->image()
                     ->disk('public')
                     ->visibility('public')
                     ->imagePreviewHeight('150')
                     ->openable()
                     ->downloadable()
                     ->required(),
+                TextInput::make('race_guide'),
                 DateTimePicker::make('start_time')
                     ->required(),
                 TextInput::make('location_name'),

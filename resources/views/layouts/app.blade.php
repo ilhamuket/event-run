@@ -14,23 +14,23 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="text-gray-900 bg-gray-50">
 
     {{-- HEADER --}}
-    <header class="bg-white border-b sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+    <header class="sticky top-0 z-50 bg-white">
+        <div class="flex items-center justify-between max-w-6xl px-4 py-4 mx-auto">
             <a href="/" class="text-lg font-bold">
                 {{ config('app.name', 'Event') }}
             </a>
 
             {{-- Desktop Menu --}}
-            <nav class="hidden md:flex gap-6 text-sm">
-                <a href="/" class="hover:text-blue-600 transition">Beranda</a>
-                <a href="#about" class="hover:text-blue-600 transition">Tentang</a>
-                <a href="#categories" class="hover:text-blue-600 transition">Kategori</a>
-                <a href="#schedule" class="hover:text-blue-600 transition">Jadwal</a>
-                <a href="#register" class="hover:text-blue-600 transition">Daftar</a>
-                <a href="#contact" class="hover:text-blue-600 transition">Kontak</a>
+            <nav class="hidden gap-6 text-sm md:flex">
+                <a href="/" class="transition hover:text-blue-600">Beranda</a>
+                <a href="#about" class="transition hover:text-blue-600">Tentang</a>
+                <a href="#categories" class="transition hover:text-blue-600">Kategori</a>
+                <a href="#schedule" class="transition hover:text-blue-600">Jadwal</a>
+                <a href="#register" class="transition hover:text-blue-600">Daftar</a>
+                <a href="#contact" class="transition hover:text-blue-600">Kontak</a>
             </nav>
 
             {{-- Mobile Menu Button --}}
@@ -42,14 +42,14 @@
         </div>
 
         {{-- Mobile Menu --}}
-        <div id="mobileMenu" class="hidden md:hidden border-t">
+        <div id="mobileMenu" class="hidden border-t md:hidden">
             <nav class="px-4 py-2 space-y-1">
-                <a href="/" class="block py-2 hover:text-blue-600 transition">Beranda</a>
-                <a href="#about" class="block py-2 hover:text-blue-600 transition">Tentang</a>
-                <a href="#categories" class="block py-2 hover:text-blue-600 transition">Kategori</a>
-                <a href="#schedule" class="block py-2 hover:text-blue-600 transition">Jadwal</a>
-                <a href="#register" class="block py-2 hover:text-blue-600 transition">Daftar</a>
-                <a href="#contact" class="block py-2 hover:text-blue-600 transition">Kontak</a>
+                <a href="/" class="block py-2 transition hover:text-blue-600">Beranda</a>
+                <a href="#about" class="block py-2 transition hover:text-blue-600">Tentang</a>
+                <a href="#categories" class="block py-2 transition hover:text-blue-600">Kategori</a>
+                <a href="#schedule" class="block py-2 transition hover:text-blue-600">Jadwal</a>
+                <a href="#register" class="block py-2 transition hover:text-blue-600">Daftar</a>
+                <a href="#contact" class="block py-2 transition hover:text-blue-600">Kontak</a>
             </nav>
         </div>
     </header>
@@ -60,8 +60,8 @@
     </main>
 
     {{-- FOOTER --}}
-    <footer class="mt-20 border-t bg-white">
-        <div class="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
+    <footer class="mt-20 bg-white border-t">
+        <div class="max-w-6xl px-4 py-6 mx-auto text-sm text-center text-gray-500">
             © {{ date('Y') }} {{ config('app.name', 'Event') }}. All rights reserved.
         </div>
     </footer>

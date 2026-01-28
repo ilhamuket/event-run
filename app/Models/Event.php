@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
@@ -15,6 +16,7 @@ class Event extends Model
         'description',
         'poster',
         'banner_image',
+        'race_guide',
         'start_time',
         'location_name',
         'latitude',
@@ -23,63 +25,164 @@ class Event extends Model
         'strava_route_url',
         'youtube_url',
         'contact_phone',
-        'is_published'
+        'is_published',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
-        'is_published' => 'boolean',
         'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7'
+        'longitude' => 'decimal:7',
+        'is_published' => 'boolean',
     ];
 
     /**
-     * Hero slider images
+     * Get all categories for this event.
      */
-    public function heroImages()
+    public function categories(): HasMany
     {
-        return $this->hasMany(EventHeroImage::class)->where('is_active', true)->orderBy('order');
+        return $this->hasMany(EventCategory::class)->orderBy('order');
     }
 
     /**
-     * Event categories (5K, 10K, 21K, etc)
+     * Get all hero images for this event.
      */
-    public function categories()
+    public function heroImages(): HasMany
     {
-        return $this->hasMany(EventCategory::class)->where('is_active', true)->orderBy('order');
+        return $this->hasMany(EventHeroImage::class)->orderBy('order');
     }
 
     /**
-     * Race pack items
+     * Get all active hero images for this event.
      */
-    public function racepackItems()
+    public function activeHeroImages(): HasMany
     {
-        return $this->hasMany(EventRacepackItem::class)->where('is_active', true)->orderBy('order');
+        return $this->heroImages()->where('is_active', true);
     }
 
     /**
-     * Existing relationships (if any)
+     * Get all racepack items for this event.
      */
-    public function participants()
+    public function racepackItems(): HasMany
+    {
+        return $this->hasMany(EventRacepackItem::class)->orderBy('order');
+    }
+
+    /**
+     * Get all active racepack items for this event.
+     */
+    public function activeRacepackItems(): HasMany
+    {
+        return $this->racepackItems()->where('is_active', true);
+    }
+
+    /**
+     * Get all participants for this event.
+     */
+    public function participants(): HasMany
     {
         return $this->hasMany(Participant::class);
     }
 
     /**
-     * Scopes
+     * Get all contacts for this event. (NEW)
+     */
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(EventContact::class)->orderBy('order');
+    }
+
+    /**
+     * Get all active contacts for this event. (NEW)
+     */
+    public function activeContacts(): HasMany
+    {
+        return $this->contacts()->where('is_active', true);
+    }
+
+    /**
+     * Get WhatsApp contacts for this event. (NEW)
+     */
+    public function whatsappContacts(): HasMany
+    {
+        return $this->contacts()->where('type', 'whatsapp')->where('is_active', true);
+    }
+
+    /**
+     * Get email contacts for this event. (NEW)
+     */
+    public function emailContacts(): HasMany
+    {
+        return $this->contacts()->where('type', 'email')->where('is_active', true);
+    }
+    /**
+     * Get all active operating hours for this event. (NEW)
+     */
+    public function activeOperatingHours(): HasMany
+    {
+        return $this->operatingHours()->where('is_active', true);
+    }
+
+    /**
+     * Get all RFID raw logs for this event. (NEW)
+     */
+    public function rfidRawLogs(): HasMany
+    {
+        return $this->hasMany(RfidRawLog::class);
+    }
+
+    /**
+     * Scope untuk filter hanya event published
      */
     public function scopePublished($query)
     {
         return $query->where('is_published', true);
     }
 
+    /**
+     * Scope untuk filter event upcoming
+     */
     public function scopeUpcoming($query)
     {
         return $query->where('start_time', '>', now());
     }
 
+    /**
+     * Scope untuk filter event past
+     */
     public function scopePast($query)
     {
         return $query->where('start_time', '<=', now());
+    }
+
+    /**
+     * Check if event is upcoming
+     */
+    public function isUpcoming(): bool
+    {
+        return $this->start_time->isFuture();
+    }
+
+    /**
+     * Check if event is past
+     */
+    public function isPast(): bool
+    {
+        return $this->start_time->isPast();
+    }
+
+    /**
+     * Check if event has race guide (NEW)
+     */
+    public function hasRaceGuide(): bool
+    {
+        return !empty($this->race_guide);
+    }
+
+    /**
+     * Get race guide URL (NEW)
+     */
+    public function getRaceGuideUrlAttribute(): ?string
+    {
+        return $this->race_guide ? asset('storage/' . $this->race_guide) : null;
     }
 }

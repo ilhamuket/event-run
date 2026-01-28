@@ -26,6 +26,8 @@ class EventsTable
                 ImageColumn::make('banner_image')
                  ->disk('public')
                     ->visibility('public'),
+                TextColumn::make('race_guide')
+                    ->searchable(),
                 TextColumn::make('start_time')
                     ->dateTime()
                     ->sortable(),

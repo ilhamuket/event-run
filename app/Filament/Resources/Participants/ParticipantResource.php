@@ -12,13 +12,9 @@ use App\Filament\Resources\Participants\Tables\ParticipantsTable;
 use App\Models\Participant;
 use BackedEnum;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
-use Filament\Tables;
 
 class ParticipantResource extends Resource
 {
@@ -30,47 +26,7 @@ class ParticipantResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
-            Select::make('event_id')
-            ->relationship('event', 'name')
-            ->required(),
-
-
-            TextInput::make('bib')
-            ->required()
-            ->unique(ignoreRecord: true),
-
-
-            TextInput::make('name')
-            ->required(),
-
-
-            Select::make('gender')
-            ->options([
-            'M' => 'Male',
-            'F' => 'Female',
-            ])
-            ->required(),
-
-
-            TextInput::make('category'),
-
-
-            TextInput::make('city'),
-
-
-            // 🔽 race fields (optional, diisi pas race)
-            TimePicker::make('elapsed_time')
-            ->seconds(false),
-
-
-            TextInput::make('general_position')
-            ->numeric(),
-
-
-            TextInput::make('category_position')
-            ->numeric(),
-        ]);
+        return ParticipantForm::configure($schema);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -80,21 +36,7 @@ class ParticipantResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->defaultSort('elapsed_time')
-            ->columns([
-            Tables\Columns\TextColumn::make('bib')->sortable(),
-            Tables\Columns\TextColumn::make('name')->searchable(),
-            Tables\Columns\TextColumn::make('gender'),
-            Tables\Columns\TextColumn::make('elapsed_time')->sortable(),
-            Tables\Columns\TextColumn::make('general_position')->sortable(),
-            Tables\Columns\TextColumn::make('category_position')->sortable(),
-            Tables\Columns\TextColumn::make('city'),
-            ])
-            ->filters([
-            Tables\Filters\SelectFilter::make('event')
-            ->relationship('event', 'name'),
-        ]);
+        return ParticipantsTable::configure($table);
     }
 
     public static function getRelations(): array

@@ -21,7 +21,9 @@ class EventInfolist
                 TextEntry::make('poster')
                     ->placeholder('-'),
                 ImageEntry::make('banner_image')
-                ->disk('public')
+                    ->disk('public')
+                    ->placeholder('-'),
+                TextEntry::make('race_guide')
                     ->placeholder('-'),
                 TextEntry::make('start_time')
                     ->dateTime(),

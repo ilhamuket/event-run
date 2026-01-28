@@ -13,8 +13,8 @@ class EventCategoryInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('event_id')
-                    ->numeric(),
+                TextEntry::make('event.name')
+                    ->label('Event'),
                 TextEntry::make('name'),
                 TextEntry::make('slug'),
                 TextEntry::make('distance'),
@@ -26,11 +26,13 @@ class EventCategoryInfolist
                 TextEntry::make('cut_off_time')
                     ->placeholder('-'),
                 ImageEntry::make('course_map_image')
-                ->disk('public')
+                    ->disk('public')
                     ->placeholder('-'),
                 TextEntry::make('description')
                     ->placeholder('-')
                     ->columnSpanFull(),
+                TextEntry::make('price')
+                    ->money(),
                 TextEntry::make('color_from'),
                 TextEntry::make('color_to'),
                 TextEntry::make('order')
