@@ -66,8 +66,8 @@
             </div>
         @else
 
-        {{-- Table --}}
-        <div class="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
+        {{-- DESKTOP TABLE --}}
+        <div class="hidden overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl md:block">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead class="border-b bg-gray-50">
@@ -147,6 +147,62 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        {{-- MOBILE CARDS --}}
+        <div class="space-y-4 md:hidden">
+        @foreach($results as $index => $p)
+            <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
+
+                {{-- Header --}}
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-gray-900 rounded-lg">
+                            {{ $p->bib }}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900">
+                                {{ $p->display_name }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ $p->gender === 'M' ? 'Pria' : 'Wanita' }}
+                                · {{ $p->age ?? '-' }} th
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Rank --}}
+                    <div class="flex items-center justify-center w-10 h-10 font-bold rounded-lg
+                        {{ $p->general_position <= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700' }}">
+                        {{ $p->general_position ?? ($results->firstItem() + $index) }}
+                    </div>
+                </div>
+
+                {{-- Info --}}
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <div class="text-xs text-gray-500">Kategori</div>
+                        <div class="font-medium text-gray-900">
+                            {{ $p->category?->name ?? '-' }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs text-gray-500">Cat Rank</div>
+                        <span class="inline-block px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
+                            #{{ $p->category_position ?? '-' }}
+                        </span>
+                    </div>
+
+                    <div class="col-span-2">
+                        <div class="text-xs text-gray-500">Waktu Finish</div>
+                        <div class="text-lg font-bold text-gray-900">
+                            {{ $p->formatted_elapsed_time }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
         </div>
 
         {{-- Pagination --}}
