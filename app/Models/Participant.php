@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Transaction;
 
 class Participant extends Model
 {
@@ -237,4 +238,37 @@ class Participant extends Model
 
         return implode(', ', $parts);
     }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function latestTransaction(): HasOne
+    {
+        return $this->hasOne(Transaction::class)->latestOfMany();
+    }
+
+    public function paidTransaction(): HasOne
+    {
+        return $this->hasOne(Transaction::class)->where('status', 'PAID');
+    }
+
+    // Add helper method:
+    public function hasPaid(): bool
+    {
+        return $this->transactions()->where('status', 'PAID')->exists();
+    }
+
+    // Add scopes:
+    public function scopePaid($query)
+    {
+        return $query->whereHas('transactions', fn($q) => $q->where('status', 'PAID'));
+    }
+
+    public function scopeUnpaid($query)
+    {
+        return $query->whereDoesntHave('transactions', fn($q) => $q->where('status', 'PAID'));
+    }
+
 }

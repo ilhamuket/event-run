@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a2e22d173f452fce14f3eef17f5adcb7",
+    "content-hash": "d9092ed75291b6e9f6bb276107bde97c",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -2018,6 +2018,73 @@
                 }
             ],
             "time": "2025-08-22T14:27:06+00:00"
+        },
+        {
+            "name": "ilhamuket/tripay",
+            "version": "v1.0.9",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ilhamuket/tripay.git",
+                "reference": "f82f75c292ebd97ead94be7ece585d75ca97d7bb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ilhamuket/tripay/zipball/f82f75c292ebd97ead94be7ece585d75ca97d7bb",
+                "reference": "f82f75c292ebd97ead94be7ece585d75ca97d7bb",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.0",
+                "illuminate/support": "^10.0|^11.0|^12.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^8.0|^9.0|^10.0",
+                "phpunit/phpunit": "^10.0|^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Tripay": "Ilhamuket\\Tripay\\Facades\\Tripay"
+                    },
+                    "providers": [
+                        "Ilhamuket\\Tripay\\TripayServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Ilhamuket\\Tripay\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ilham Uket",
+                    "email": "ilhamgallagher633@gmail.com"
+                }
+            ],
+            "description": "Tripay Payment Gateway SDK for Laravel 10, 11, 12 and PHP 8.2+",
+            "homepage": "https://github.com/ilhamuket/tripay",
+            "keywords": [
+                "e-wallet",
+                "indonesia",
+                "laravel",
+                "payment",
+                "payment-gateway",
+                "qris",
+                "tripay",
+                "virtual-account"
+            ],
+            "support": {
+                "issues": "https://github.com/ilhamuket/tripay/issues",
+                "source": "https://github.com/ilhamuket/tripay/tree/v1.0.9"
+            },
+            "time": "2026-02-02T18:09:22+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",
