@@ -15,14 +15,21 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class RfidCheckpointResource extends Resource
 {
     protected static ?string $model = RfidCheckpoint::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFlag;
 
-    protected static ?string $recordTitleAttribute = 'RfidCheckpoint';
+    protected static string|UnitEnum|null $navigationGroup = 'RFID Timing';
+
+    protected static ?string $navigationLabel = 'Checkpoints';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'checkpoint_name';
 
     public static function form(Schema $schema): Schema
     {

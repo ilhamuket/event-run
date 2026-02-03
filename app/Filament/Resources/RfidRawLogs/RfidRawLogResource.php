@@ -2,11 +2,8 @@
 
 namespace App\Filament\Resources\RfidRawLogs;
 
-use App\Filament\Resources\RfidRawLogs\Pages\CreateRfidRawLog;
-use App\Filament\Resources\RfidRawLogs\Pages\EditRfidRawLog;
 use App\Filament\Resources\RfidRawLogs\Pages\ListRfidRawLogs;
 use App\Filament\Resources\RfidRawLogs\Pages\ViewRfidRawLog;
-use App\Filament\Resources\RfidRawLogs\Schemas\RfidRawLogForm;
 use App\Filament\Resources\RfidRawLogs\Schemas\RfidRawLogInfolist;
 use App\Filament\Resources\RfidRawLogs\Tables\RfidRawLogsTable;
 use App\Models\RfidRawLog;
@@ -15,19 +12,21 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class RfidRawLogResource extends Resource
 {
     protected static ?string $model = RfidRawLog::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $recordTitleAttribute = 'RfidRawLog';
+    protected static string|UnitEnum|null $navigationGroup = 'RFID Timing';
 
-    public static function form(Schema $schema): Schema
-    {
-        return RfidRawLogForm::configure($schema);
-    }
+    protected static ?string $navigationLabel = 'Raw Logs';
+
+    protected static ?int $navigationSort = 4;
+
+    protected static ?string $recordTitleAttribute = 'rfid_tag';
 
     public static function infolist(Schema $schema): Schema
     {
@@ -50,9 +49,23 @@ class RfidRawLogResource extends Resource
     {
         return [
             'index' => ListRfidRawLogs::route('/'),
-            'create' => CreateRfidRawLog::route('/create'),
             'view' => ViewRfidRawLog::route('/{record}'),
-            'edit' => EditRfidRawLog::route('/{record}/edit'),
         ];
+    }
+
+    // Make this resource read-only
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
     }
 }

@@ -15,14 +15,22 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class ParticipantRfidMappingResource extends Resource
 {
     protected static ?string $model = ParticipantRfidMapping::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
-    protected static ?string $recordTitleAttribute = 'ParticipantRfidMapping';
+    protected static string|UnitEnum|null $navigationGroup = 'RFID Timing';
+
+
+    protected static ?string $navigationLabel = 'RFID Assignments';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $recordTitleAttribute = 'rfid_tag';
 
     public static function form(Schema $schema): Schema
     {

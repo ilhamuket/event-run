@@ -1,0 +1,6 @@
+# RFID Scanner Requirements
+# Install with: pip install -r requirements.txt
+
+requests>=2.28.0
+python-dotenv>=1.0.0
+urllib3>=2.0.0
