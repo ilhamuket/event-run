@@ -9,6 +9,7 @@ Route::get('/', [EventController::class, 'home'])->name('home');
 
 Route::get('/events/{event:slug}/results', [EventController::class, 'results'])->name('event.results');
 Route::get('/events/{event:slug}/participants', [EventController::class, 'participants'])->name('event.participants');
+Route::get('/event/{event:slug}/live', [EventController::class, 'live'])->name('event.live');
 
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {

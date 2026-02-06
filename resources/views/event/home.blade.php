@@ -271,7 +271,18 @@
                         <p class="action-desc">Hasil & ranking lomba</p>
                     </a>
 
-                    @if($event->strava_route_url)
+
+                    <a href="{{ route('event.live', $event->slug) }}" class="action-card group">
+                        <div class="action-icon bg-gradient-to-br from-blue-500 to-cyan-500">
+                            <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <h4 class="action-title">Live Preview</h4>
+                        <p class="action-desc">Lihat live tracking</p>
+                    </a>
+
+                    {{-- @if($event->strava_route_url)
                     <a href="{{ $event->strava_route_url }}" target="_blank" class="action-card group">
                         <div class="action-icon bg-gradient-to-br from-orange-500 to-red-500">
                             <svg class="w-6 h-6 md:w-7 md:h-7" fill="currentColor" viewBox="0 0 24 24">
@@ -281,7 +292,7 @@
                         <h4 class="action-title">Rute Strava</h4>
                         <p class="action-desc">Pelajari jalur lomba</p>
                     </a>
-                    @endif
+                    @endif --}}
 
                     @if($event->instagram_url)
                     <a href="{{ $event->instagram_url }}" target="_blank" class="action-card group">
