@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\RegistrationReceived;
 use App\Models\Event;
 use App\Models\Participant;
 use App\Models\Transaction;
@@ -9,6 +10,8 @@ use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PaymentConfirmed;
 
 class RegistrationController extends Controller
 {
@@ -43,7 +46,7 @@ class RegistrationController extends Controller
     {
         $event = Event::where('slug', $slug)->firstOrFail();
 
-       $validated = $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'bib_name' => 'required|string|max:12',
             'email' => 'required|email|max:255',
@@ -59,7 +62,6 @@ class RegistrationController extends Controller
             'agreement' => 'accepted',
         ]);
 
-
         try {
             $transaction = DB::transaction(function () use ($validated, $event) {
                 // Generate BIB number
@@ -74,9 +76,11 @@ class RegistrationController extends Controller
                     'event_category_id' => $validated['event_category_id'],
                     'bib' => $bib,
                     'name' => $validated['name'],
+                    'bib_name' => $validated['bib_name'],
                     'email' => $validated['email'],
                     'phone' => $validated['phone'],
                     'gender' => $validated['gender'],
+                    'age' => $validated['age'],
                     'jersey_size' => $validated['jersey_size'],
                     'city' => $validated['city'] ?? null,
                     'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
@@ -90,6 +94,10 @@ class RegistrationController extends Controller
 
                 return $transaction;
             });
+
+            // Send registration email (queued)
+            $participant = $transaction->participant->load(['event', 'category']);
+            Mail::to($participant->email)->send(new RegistrationReceived($participant, $transaction));
 
             // Redirect to payment page
             return redirect()->route('event.payment.show', [
@@ -145,6 +153,10 @@ class RegistrationController extends Controller
 
                     // Update participant status
                     $transaction->participant->update(['status' => 'confirmed']);
+
+                    // Send payment confirmed email
+                    $participant = $transaction->participant->load(['event', 'category']);
+                    Mail::to($participant->email)->send(new PaymentConfirmed($participant, $transaction));
                 }
             } catch (\Exception $e) {
                 Log::error('Check status error: ' . $e->getMessage());

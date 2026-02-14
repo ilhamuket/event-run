@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PaymentConfirmed;
 use App\Models\Transaction;
 use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
 
 class TripayCallbackController extends Controller
@@ -129,8 +131,20 @@ class TripayCallbackController extends Controller
             'participant_id' => $transaction->participant_id,
         ]);
 
-        // TODO: Send email notification
-        // TODO: Send WhatsApp notification
+        // Send payment confirmed email
+        try {
+            $participant = $transaction->participant->load(['event', 'category']);
+            Mail::to($participant->email)->send(new PaymentConfirmed($participant, $transaction));
+
+            Log::info('Payment confirmed email sent', [
+                'participant_id' => $participant->id,
+                'email' => $participant->email,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment confirmed email: ' . $e->getMessage(), [
+                'participant_id' => $transaction->participant_id,
+            ]);
+        }
     }
 
     /**
