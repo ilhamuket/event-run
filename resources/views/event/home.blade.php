@@ -50,9 +50,9 @@
 <section id="about" class="py-16 bg-white md:py-20">
     <div class="max-w-6xl px-4 mx-auto">
         <div class="mb-12 text-center">
-            <span class="text-sm font-bold tracking-wider text-gray-600 uppercase">Tentang Event</span>
-            <h2 class="mt-3 mb-6 text-3xl font-bold text-gray-900 md:text-4xl">Informasi Lengkap</h2>
-            <div class="w-20 h-1 mx-auto bg-gray-900 rounded-full"></div>
+            <span class="text-sm font-bold tracking-wider text-red-800 uppercase">Tentang Event</span>
+            <h2 class="mt-3 mb-6 text-3xl font-bold text-red-900 md:text-4xl">Informasi Lengkap</h2>
+            <div class="w-20 h-1 mx-auto bg-red-800 rounded-full"></div>
         </div>
 
         {{-- Banner & Description Grid --}}
@@ -68,7 +68,7 @@
             {{-- Right: Description --}}
             <div class="about-content">
                 <div>
-                    <span class="inline-flex items-center gap-2 px-4 py-1.5 mb-4 text-xs font-semibold text-gray-700 bg-gray-100 rounded-full uppercase tracking-wide">
+                    <span class="inline-flex items-center gap-2 px-4 py-1.5 mb-4 text-xs font-semibold text-red-800 bg-red-50 rounded-full uppercase tracking-wide">
                         {{ $event->name }}
                     </span>
 
@@ -106,7 +106,7 @@
         @endphp
 
         @if($embedUrl)
-        <div class="overflow-hidden shadow-xl bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl">
+        <div class="overflow-hidden shadow-xl bg-gradient-to-br from-red-900 to-red-800 rounded-2xl">
             <div class="p-6 md:p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="flex items-center justify-center w-12 h-12 bg-red-600 rounded-xl">
@@ -115,7 +115,7 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="text-sm font-medium text-gray-400">Tonton Highlight Event</p>
+                        <p class="text-sm font-medium text-red-200">Tonton Highlight Event</p>
                         <h3 class="text-xl font-bold text-white md:text-2xl">Video Dokumentasi</h3>
                     </div>
                 </div>
@@ -138,21 +138,21 @@
 
 {{-- CATEGORIES SECTION --}}
 @if($event->categories->count() > 0)
-<section id="categories" class="py-16 md:py-20 bg-gray-50">
+<section id="categories" class="py-16 md:py-20 bg-red-50">
     <div class="max-w-6xl px-4 mx-auto">
         <div class="mb-12 text-center md:mb-16">
-            <span class="text-sm font-bold tracking-wider text-gray-600 uppercase">Pilihan Lomba</span>
-            <h2 class="mt-3 mb-6 text-3xl font-bold text-gray-900 md:text-4xl">Kategori Event</h2>
-            <div class="w-20 h-1 mx-auto bg-gray-900 rounded-full"></div>
+            <span class="text-sm font-bold tracking-wider text-red-800 uppercase">Pilihan Lomba</span>
+            <h2 class="mt-3 mb-6 text-3xl font-bold text-red-900 md:text-4xl">Kategori Event</h2>
+            <div class="w-20 h-1 mx-auto bg-red-800 rounded-full"></div>
         </div>
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @foreach($event->categories as $category)
-            <div class="p-6 transition-all duration-300 bg-white border border-gray-200 group rounded-2xl md:p-8 hover:shadow-lg hover:-translate-y-1 hover:border-gray-900 {{ $loop->count == 3 && $loop->index == 2 ? 'sm:col-span-2 lg:col-span-1' : '' }}">
-                <div class="flex items-center justify-center w-16 h-16 mb-6 transition-transform bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl group-hover:scale-110">
+            <div class="p-6 transition-all duration-300 bg-white border border-gray-200 group rounded-2xl md:p-8 hover:shadow-lg hover:-translate-y-1 hover:border-red-800 {{ $loop->count == 3 && $loop->index == 2 ? 'sm:col-span-2 lg:col-span-1' : '' }}">
+                <div class="flex items-center justify-center w-16 h-16 mb-6 transition-transform bg-gradient-to-br from-red-700 to-red-900 rounded-xl group-hover:scale-110">
                     <span class="text-3xl font-bold text-white">{{ explode(' ', $category->distance)[0] }}</span>
                 </div>
-                <h3 class="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">{{ $category->name }}</h3>
+                <h3 class="mb-3 text-2xl font-bold text-red-900 md:text-3xl">{{ $category->name }}</h3>
                 <p class="mb-6 text-sm text-gray-600 md:text-base">{{ $category->description }}</p>
                 <div class="flex flex-col gap-2 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between md:text-sm">
                     <span>• Jarak: {{ $category->distance }}</span>
@@ -166,11 +166,11 @@
 @endif
 
 {{-- ACTION BUTTONS WITH COUNTDOWN --}}
-<section id="schedule" class="py-12 md:py-16 bg-gradient-to-b from-white to-gray-50">
+<section id="schedule" class="py-12 md:py-16 bg-gradient-to-b from-white to-red-50">
     <div class="max-w-6xl px-4 mx-auto">
         {{-- Countdown Timer --}}
         <div class="mb-8">
-            <div class="relative p-8 overflow-hidden shadow-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-2xl md:p-12">
+            <div class="relative p-8 overflow-hidden shadow-2xl bg-gradient-to-br from-red-700 via-red-800 to-red-900 rounded-2xl md:p-12">
                 <div class="absolute inset-0 opacity-10">
                     <div class="absolute top-0 right-0 w-64 h-64 -mt-32 -mr-32 bg-white rounded-full"></div>
                     <div class="absolute bottom-0 left-0 -mb-48 -ml-48 bg-white rounded-full w-96 h-96"></div>
@@ -185,7 +185,7 @@
                             EVENT DIMULAI DALAM
                         </div>
                         <h3 class="mb-2 text-2xl font-bold text-white md:text-3xl">Hitung Mundur Event</h3>
-                        <p class="text-gray-300">{{ \Carbon\Carbon::parse($event->start_time)->translatedFormat('l, d F Y - H:i') }} WIB</p>
+                        <p class="text-red-100">{{ \Carbon\Carbon::parse($event->start_time)->translatedFormat('l, d F Y - H:i') }} WIB</p>
                     </div>
 
                     <div class="grid max-w-4xl grid-cols-2 gap-4 mx-auto md:grid-cols-4">
@@ -223,24 +223,24 @@
             <div class="p-6 md:p-10">
                 <div class="grid items-center gap-8 mb-8 md:grid-cols-2">
                     <div class="text-center md:text-left">
-                        <h3 class="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">
+                        <h3 class="mb-3 text-2xl font-bold text-red-900 md:text-3xl">
                             Siap Untuk Berlari?
                         </h3>
                         <p class="text-base leading-relaxed text-gray-600 md:text-lg">
-                            Bergabunglah dengan <span class="font-bold text-gray-900">ribuan pelari</span> lainnya dalam event lari skala nasional ini!
+                            Bergabunglah dengan <span class="font-bold text-red-800">ribuan pelari</span> lainnya dalam event lari skala nasional ini!
                         </p>
                     </div>
 
                     <div class="flex flex-col justify-center gap-3 sm:flex-row md:justify-end">
                         <a href="#register"
-                           class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                           class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-700 transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>
                             Daftar Sekarang
                         </a>
                         <a href="#about"
-                           class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                           class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-800 rounded-xl font-bold hover:bg-red-100 transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
@@ -252,7 +252,7 @@
                 {{-- Action Grid --}}
                 <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <a href="{{ route('event.participants', $event->slug) }}" class="action-card group">
-                        <div class="action-icon bg-gradient-to-br from-gray-700 to-gray-900">
+                        <div class="action-icon bg-gradient-to-br from-red-700 to-red-900">
                             <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                             </svg>
@@ -309,30 +309,30 @@
             </div>
 
             {{-- Stats Bar --}}
-            <div class="px-6 py-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+            <div class="px-6 py-6 border-t border-red-100 bg-gradient-to-r from-red-50 to-red-100">
                 <div class="grid max-w-3xl grid-cols-3 gap-4 mx-auto">
                     <div class="text-center">
                         <div class="flex items-center justify-center gap-2 mb-1">
-                            <svg class="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 text-red-800" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <p class="text-xs font-semibold text-gray-600 md:text-sm">Sertifikat Digital</p>
+                            <p class="text-xs font-semibold text-red-800 md:text-sm">Sertifikat Digital</p>
                         </div>
                     </div>
-                    <div class="text-center border-gray-300 border-x">
+                    <div class="text-center border-red-200 border-x">
                         <div class="flex items-center justify-center gap-2 mb-1">
-                            <svg class="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 text-red-800" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <p class="text-xs font-semibold text-gray-600 md:text-sm">Race Pack</p>
+                            <p class="text-xs font-semibold text-red-800 md:text-sm">Race Pack</p>
                         </div>
                     </div>
                     <div class="text-center">
                         <div class="flex items-center justify-center gap-2 mb-1">
-                            <svg class="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 text-red-800" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <p class="text-xs font-semibold text-gray-600 md:text-sm">Medali Finisher</p>
+                            <p class="text-xs font-semibold text-red-800 md:text-sm">Medali Finisher</p>
                         </div>
                     </div>
                 </div>
@@ -343,13 +343,13 @@
 
 {{-- ROUTE SECTION --}}
 @if($event->strava_route_url)
-<section id="route" class="py-16 text-white md:py-20 bg-gradient-to-br from-gray-900 to-gray-800">
+<section id="route" class="py-16 text-white md:py-20 bg-gradient-to-br from-red-900 to-red-800">
     <div class="max-w-5xl px-4 mx-auto text-center">
-        <span class="text-sm font-bold tracking-wider text-gray-400 uppercase">Jalur Lomba</span>
+        <span class="text-sm font-bold tracking-wider text-red-300 uppercase">Jalur Lomba</span>
         <h2 class="mt-3 mb-6 text-3xl font-bold md:text-4xl">Peta Rute</h2>
-        <div class="w-20 h-1 mx-auto mb-8 rounded-full bg-gray-50"></div>
+        <div class="w-20 h-1 mx-auto mb-8 rounded-full bg-red-50"></div>
 
-        <p class="max-w-2xl mx-auto mb-8 text-lg text-gray-300 md:text-xl">
+        <p class="max-w-2xl mx-auto mb-8 text-lg text-red-100 md:text-xl">
             Pelajari rute lomba melalui Strava untuk persiapan yang lebih baik. Ketahui setiap tikungan, tanjakan, dan turunan!
         </p>
 
@@ -366,12 +366,12 @@
 
 {{-- RACE PACK SLIDER SECTION --}}
 @if($event->racepackItems->count() > 0)
-<section class="py-16 md:py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+<section class="py-16 md:py-20 bg-gradient-to-br from-red-50 to-red-100">
     <div class="max-w-6xl px-4 mx-auto">
         <div class="mb-12 text-center">
-            <span class="text-sm font-bold tracking-wider text-gray-600 uppercase">Hadiah Untuk Peserta</span>
-            <h2 class="mt-3 mb-6 text-3xl font-bold text-gray-900 md:text-4xl">Race Pack Eksklusif</h2>
-            <div class="w-20 h-1 mx-auto mb-4 bg-gray-900 rounded-full"></div>
+            <span class="text-sm font-bold tracking-wider text-red-800 uppercase">Hadiah Untuk Peserta</span>
+            <h2 class="mt-3 mb-6 text-3xl font-bold text-red-900 md:text-4xl">Race Pack Eksklusif</h2>
+            <div class="w-20 h-1 mx-auto mb-4 bg-red-800 rounded-full"></div>
             <p class="max-w-2xl mx-auto text-gray-600">
                 Setiap peserta akan mendapatkan race pack menarik yang berisi berbagai item eksklusif
             </p>
@@ -384,10 +384,10 @@
                     <div class="flex-shrink-0 w-full racepack-slide">
                         <div class="grid items-center gap-8 p-8 bg-white border border-gray-200 shadow-xl md:grid-cols-2 rounded-2xl md:p-12">
                             <div class="order-2 md:order-1">
-                                <div class="inline-block px-4 py-2 mb-4 text-sm font-bold text-gray-900 bg-gray-100 rounded-full">
+                                <div class="inline-block px-4 py-2 mb-4 text-sm font-bold text-red-800 rounded-full bg-red-50">
                                     {{ $item->item_number }}
                                 </div>
-                                <h3 class="mb-4 text-2xl font-bold text-gray-900 md:text-3xl">{{ $item->item_name }}</h3>
+                                <h3 class="mb-4 text-2xl font-bold text-red-900 md:text-3xl">{{ $item->item_name }}</h3>
                                 <p class="mb-6 leading-relaxed text-gray-600">
                                     {{ $item->description }}
                                 </p>
@@ -406,7 +406,7 @@
                             </div>
                             <div class="order-1 md:order-2">
                                 <div class="relative group">
-                                    <div class="absolute transition-opacity -inset-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl blur-xl opacity-30 group-hover:opacity-50"></div>
+                                    <div class="absolute transition-opacity -inset-4 bg-gradient-to-r from-red-200 to-red-300 rounded-2xl blur-xl opacity-30 group-hover:opacity-50"></div>
                                     <img src="{{ asset('storage/' . $item->image_path) }}"
                                          alt="{{ $item->item_name }}"
                                          class="relative object-cover w-full border border-gray-200 shadow-xl rounded-2xl aspect-square">
@@ -446,9 +446,9 @@
 <section id="course-map" class="py-16 bg-white md:py-20">
     <div class="max-w-6xl px-4 mx-auto">
         <div class="mb-12 text-center">
-            <span class="text-sm font-bold tracking-wider text-gray-600 uppercase">Peta Rute Lengkap</span>
-            <h2 class="mt-3 mb-6 text-3xl font-bold text-gray-900 md:text-4xl">Course Map</h2>
-            <div class="w-20 h-1 mx-auto mb-4 bg-gray-900 rounded-full"></div>
+            <span class="text-sm font-bold tracking-wider text-red-800 uppercase">Peta Rute Lengkap</span>
+            <h2 class="mt-3 mb-6 text-3xl font-bold text-red-900 md:text-4xl">Course Map</h2>
+            <div class="w-20 h-1 mx-auto mb-4 bg-red-800 rounded-full"></div>
             <p class="max-w-2xl mx-auto text-gray-600">
                 Pelajari rute lomba untuk setiap kategori. Ketahui medan, elevasi, dan titik-titik penting sepanjang jalur
             </p>
@@ -459,7 +459,7 @@
             @foreach($event->categories as $index => $category)
             <button class="category-tab {{ $index === 0 ? 'active' : '' }}" data-category="{{ $category->slug }}">
                 <div class="flex items-center gap-2">
-                    <div class="flex items-center justify-center w-8 h-8 bg-gray-900 rounded-lg">
+                    <div class="flex items-center justify-center w-8 h-8 bg-red-800 rounded-lg">
                         <span class="text-sm font-bold text-white">{{ explode(' ', $category->distance)[0] }}</span>
                     </div>
                     <span class="font-bold">{{ $category->name }}</span>
@@ -472,14 +472,14 @@
         <div class="course-map-content">
             @foreach($event->categories as $index => $category)
             <div class="map-category {{ $index === 0 ? 'active' : '' }}" data-category="{{ $category->slug }}">
-                <div class="p-6 border border-gray-200 bg-gray-50 rounded-2xl md:p-8">
+                <div class="p-6 border border-gray-200 bg-red-50 rounded-2xl md:p-8">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-xl">
+                        <div class="flex items-center justify-center w-12 h-12 bg-red-800 rounded-xl">
                             <span class="text-2xl font-bold text-white">{{ explode(' ', $category->distance)[0] }}</span>
                         </div>
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-900">{{ $category->name }} Course</h3>
-                            <p class="font-medium text-gray-700">Jarak: {{ $category->distance }}</p>
+                            <h3 class="text-2xl font-bold text-red-900">{{ $category->name }} Course</h3>
+                            <p class="font-medium text-red-700">Jarak: {{ $category->distance }}</p>
                         </div>
                     </div>
 
@@ -502,7 +502,7 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-medium text-gray-500">Elevasi</p>
-                                    <p class="text-lg font-bold text-gray-900">{{ $category->elevation }}</p>
+                                    <p class="text-lg font-bold text-red-900">{{ $category->elevation }}</p>
                                 </div>
                             </div>
                         </div>
@@ -511,14 +511,14 @@
                         @if($category->terrain)
                         <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
                             <div class="flex items-center gap-3 mb-2">
-                                <div class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
-                                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-lg">
+                                    <svg class="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
                                     </svg>
                                 </div>
                                 <div>
                                     <p class="text-xs font-medium text-gray-500">Medan</p>
-                                    <p class="text-lg font-bold text-gray-900">{{ $category->terrain }}</p>
+                                    <p class="text-lg font-bold text-red-900">{{ $category->terrain }}</p>
                                 </div>
                             </div>
                         </div>
@@ -534,7 +534,7 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-medium text-gray-500">Cut Off</p>
-                                    <p class="text-lg font-bold text-gray-900">{{ $category->cut_off_time }}</p>
+                                    <p class="text-lg font-bold text-red-900">{{ $category->cut_off_time }}</p>
                                 </div>
                             </div>
                         </div>
@@ -551,7 +551,7 @@
 {{-- REGISTRATION CTA --}}
 <section id="register" class="py-16 bg-white md:py-20">
     <div class="max-w-5xl px-4 mx-auto">
-        <div class="relative overflow-hidden shadow-xl bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl">
+        <div class="relative overflow-hidden shadow-xl bg-gradient-to-br from-red-800 to-red-900 rounded-2xl">
             <div class="absolute top-0 right-0 w-64 h-64 -mt-32 -mr-32 bg-white rounded-full opacity-10"></div>
             <div class="absolute bottom-0 left-0 -mb-48 -ml-48 bg-black rounded-full w-96 h-96 opacity-10"></div>
 
@@ -564,13 +564,13 @@
                     Daftarkan Dirimu Sekarang!
                 </h2>
 
-                <p class="max-w-2xl mx-auto mb-8 text-lg leading-relaxed text-gray-200 md:text-xl md:mb-10">
+                <p class="max-w-2xl mx-auto mb-8 text-lg leading-relaxed text-red-100 md:text-xl md:mb-10">
                     Jangan lewatkan kesempatan untuk menjadi bagian dari <strong>{{ $event->name }}</strong>. Slot terbatas!
                 </p>
 
                 <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <a href="{{ route('event.register', $event->slug) }}"
-                       class="w-full px-8 py-4 text-base font-bold tracking-wide text-gray-900 transition-all bg-white rounded-lg shadow-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
+                       class="w-full px-8 py-4 text-base font-bold tracking-wide text-red-900 transition-all bg-white rounded-lg shadow-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
                         DAFTAR SEKARANG
                     </a>
                     <a href="#about"
@@ -605,12 +605,12 @@
 </section>
 
 {{-- LOCATION SECTION --}}
-<section id="location" class="py-16 md:py-20 bg-gray-50">
+<section id="location" class="py-16 md:py-20 bg-red-50">
     <div class="max-w-6xl px-4 mx-auto">
         <div class="mb-12 text-center">
-            <span class="text-sm font-bold tracking-wider text-gray-600 uppercase">Temukan Kami</span>
-            <h2 class="mt-3 mb-6 text-3xl font-bold text-gray-900 md:text-4xl">Lokasi Event</h2>
-            <div class="w-20 h-1 mx-auto bg-gray-900 rounded-full"></div>
+            <span class="text-sm font-bold tracking-wider text-red-800 uppercase">Temukan Kami</span>
+            <h2 class="mt-3 mb-6 text-3xl font-bold text-red-900 md:text-4xl">Lokasi Event</h2>
+            <div class="w-20 h-1 mx-auto bg-red-800 rounded-full"></div>
         </div>
 
         <div class="overflow-hidden bg-white border border-gray-200 shadow-lg rounded-2xl">
@@ -624,16 +624,16 @@
                     allowfullscreen>
                 </iframe>
             </div>
-            <div class="p-6 md:p-8 bg-gray-50">
+            <div class="p-6 md:p-8 bg-red-50">
                 <div class="flex items-start gap-4">
-                    <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-gray-900 md:w-12 md:h-12 rounded-xl">
+                    <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-red-800 md:w-12 md:h-12 rounded-xl">
                         <svg class="w-5 h-5 text-white md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                     </div>
                     <div>
-                        <h3 class="mb-2 text-lg font-bold text-gray-900 md:text-xl">{{ $event->location_name }}</h3>
+                        <h3 class="mb-2 text-lg font-bold text-red-900 md:text-xl">{{ $event->location_name }}</h3>
                         <p class="text-sm text-gray-600 md:text-base">
                             Pastikan kamu tiba 30 menit sebelum waktu start untuk pengambilan race pack dan pemanasan.
                         </p>
@@ -648,13 +648,13 @@
     <div class="max-w-6xl px-4 mx-auto">
         {{-- Header --}}
         <div class="mb-12 text-center">
-            <span class="text-sm font-bold tracking-wider text-gray-600 uppercase">
+            <span class="text-sm font-bold tracking-wider text-red-800 uppercase">
                 Kontak
             </span>
-            <h2 class="mt-3 mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 class="mt-3 mb-6 text-3xl font-bold text-red-900 md:text-4xl">
                 Hubungi Panitia
             </h2>
-            <div class="w-20 h-1 mx-auto bg-gray-900 rounded-full"></div>
+            <div class="w-20 h-1 mx-auto bg-red-800 rounded-full"></div>
         </div>
 
         {{-- Content --}}
@@ -662,44 +662,44 @@
             {{-- WhatsApp --}}
             <a href="https://wa.me/0"
                target="_blank"
-               class="flex items-start gap-4 p-6 transition border border-gray-200 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-lg hover:border-gray-900">
+               class="flex items-start gap-4 p-6 transition border border-gray-200 bg-red-50 rounded-2xl hover:bg-white hover:shadow-lg hover:border-red-800">
                 <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-green-500 rounded-xl">
                     <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M20.52 3.48A11.78 11.78 0 0012.06 0C5.4 0 .02 5.38 0 12.02c0 2.12.56 4.2 1.62 6.03L0 24l6.13-1.6a12.01 12.01 0 005.93 1.51h.01c6.63 0 12.02-5.38 12.02-12.02a11.9 11.9 0 00-3.57-8.41z"/>
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">WhatsApp</h3>
+                    <h3 class="text-lg font-bold text-red-900">WhatsApp</h3>
                     <p class="text-sm text-gray-600">Admin Event</p>
-                    <p class="mt-1 font-medium text-gray-800">+62 -</p>
+                    <p class="mt-1 font-medium text-red-800">+62 -</p>
                 </div>
             </a>
 
             {{-- Instagram --}}
             <a href="https://www.instagram.com/scoutrun.id"
                target="_blank"
-               class="flex items-start gap-4 p-6 transition border border-gray-200 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-lg hover:border-gray-900">
+               class="flex items-start gap-4 p-6 transition border border-gray-200 bg-red-50 rounded-2xl hover:bg-white hover:shadow-lg hover:border-red-800">
                 <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-xl">
                     <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Instagram</h3>
+                    <h3 class="text-lg font-bold text-red-900">Instagram</h3>
                     <p class="text-sm text-gray-600">Follow untuk update</p>
-                    <p class="mt-1 font-medium text-gray-800">@scoutrun.id</p>
+                    <p class="mt-1 font-medium text-red-800">@scoutrun.id</p>
                 </div>
             </a>
 
             {{-- Office / Info --}}
-            <div class="flex items-start gap-4 p-6 border border-gray-200 bg-gray-50 rounded-2xl">
-                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-red-600 rounded-xl">
+            <div class="flex items-start gap-4 p-6 border border-gray-200 bg-red-50 rounded-2xl">
+                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-red-800 rounded-xl">
                     <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Informasi</h3>
+                    <h3 class="text-lg font-bold text-red-900">Informasi</h3>
                     <p class="mt-1 text-sm text-gray-600">
                         Jam operasional panitia:<br>
                         Senin – Jumat, 09.00 – 17.00 WIB

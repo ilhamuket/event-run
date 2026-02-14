@@ -152,7 +152,7 @@
     .countdown-number {
         font-size: 2.5rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -183,9 +183,9 @@
     }
 
     .action-card:hover {
-        border-color: #1f2937;
+        border-color: #991b1b;
         transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 20px rgba(153, 27, 27, 0.12);
     }
 
     .action-icon {
@@ -208,7 +208,7 @@
     .action-title {
         font-size: 0.875rem;
         font-weight: 700;
-        color: #1f2937;
+        color: #7f1d1d;
         line-height: 1.2;
     }
 
@@ -274,7 +274,7 @@
     }
 
     .racepack-dot.active {
-        background: #1f2937;
+        background: #991b1b;
         width: 32px;
         border-radius: 6px;
     }
@@ -297,16 +297,16 @@
     }
 
     .category-tab:hover {
-        border-color: #1f2937;
+        border-color: #991b1b;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(153, 27, 27, 0.12);
     }
 
     .category-tab.active {
-        background: #1f2937;
-        border-color: #1f2937;
+        background: #991b1b;
+        border-color: #991b1b;
         color: white;
-        box-shadow: 0 4px 16px rgba(31, 41, 55, 0.2);
+        box-shadow: 0 4px 16px rgba(153, 27, 27, 0.3);
     }
 
     .category-tab.active .w-8 {
@@ -474,14 +474,14 @@
     }
 
     .benefit-item:hover {
-        border-color: #1f2937;
+        border-color: #991b1b;
         transform: translateX(4px);
     }
 
     .benefit-icon {
         width: 1.25rem;
         height: 1.25rem;
-        color: #1f2937;
+        color: #991b1b;
         flex-shrink: 0;
     }
 </style>

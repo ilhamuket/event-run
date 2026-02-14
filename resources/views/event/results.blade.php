@@ -7,7 +7,7 @@
 
         {{-- Back --}}
         <a href="{{ route('home') }}#about"
-           class="inline-flex items-center gap-2 mb-10 text-sm font-medium text-gray-600 hover:text-gray-900">
+           class="inline-flex items-center gap-2 mb-10 text-sm font-medium text-gray-600 hover:text-red-800">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 19l-7-7 7-7"/>
@@ -36,12 +36,12 @@
                     name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari BIB atau nama peserta..."
-                    class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
                 >
 
                 <button
                     type="submit"
-                    class="px-6 py-3 text-sm font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800">
+                    class="px-6 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700">
                     Cari
                 </button>
 
@@ -87,7 +87,7 @@
                             {{-- GENERAL RANK --}}
                             <td class="px-6 py-4 text-center">
                                 <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl
-                                    {{ $p->general_position <= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700' }}
+                                    {{ $p->general_position <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700' }}
                                     font-bold">
                                     {{ $p->general_position ?? ($results->firstItem() + $index) }}
                                 </div>
@@ -96,7 +96,7 @@
                             {{-- PESERTA --}}
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-xl">
+                                    <div class="flex items-center justify-center w-12 h-12 bg-red-800 rounded-xl">
                                         <span class="text-sm font-bold text-white">
                                             {{ $p->bib }}
                                         </span>
@@ -127,7 +127,7 @@
 
                             {{-- CATEGORY RANK --}}
                             <td class="px-6 py-4 text-center">
-                                <span class="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
+                                <span class="px-3 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
                                     #{{ $p->category_position ?? '-' }}
                                 </span>
                             </td>
@@ -157,7 +157,7 @@
                 {{-- Header --}}
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
-                        <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-gray-900 rounded-lg">
+                        <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-800 rounded-lg">
                             {{ $p->bib }}
                         </div>
                         <div>
@@ -173,7 +173,7 @@
 
                     {{-- Rank --}}
                     <div class="flex items-center justify-center w-10 h-10 font-bold rounded-lg
-                        {{ $p->general_position <= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700' }}">
+                        {{ $p->general_position <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700' }}">
                         {{ $p->general_position ?? ($results->firstItem() + $index) }}
                     </div>
                 </div>
@@ -189,7 +189,7 @@
 
                     <div>
                         <div class="text-xs text-gray-500">Cat Rank</div>
-                        <span class="inline-block px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
+                        <span class="inline-block px-3 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
                             #{{ $p->category_position ?? '-' }}
                         </span>
                     </div>

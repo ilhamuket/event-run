@@ -7,7 +7,7 @@
 
         {{-- Back --}}
         <a href="{{ route('home') }}#about"
-           class="inline-flex items-center gap-2 mb-10 text-sm font-medium text-gray-600 hover:text-gray-900">
+           class="inline-flex items-center gap-2 mb-10 text-sm font-medium text-gray-600 hover:text-red-800">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 19l-7-7 7-7"/>
@@ -17,10 +17,10 @@
 
         {{-- Header --}}
         <div class="mb-12 text-center">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-4 text-xs font-semibold tracking-wider text-green-700 uppercase bg-green-100 rounded-full">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-4 text-xs font-semibold tracking-wider text-red-800 uppercase bg-red-100 rounded-full">
                 <span class="relative flex w-2 h-2">
-                    <span class="absolute inline-flex w-full h-full bg-green-500 rounded-full opacity-75 animate-ping"></span>
-                    <span class="relative inline-flex w-2 h-2 bg-green-600 rounded-full"></span>
+                    <span class="absolute inline-flex w-full h-full bg-red-500 rounded-full opacity-75 animate-ping"></span>
+                    <span class="relative inline-flex w-2 h-2 bg-red-700 rounded-full"></span>
                 </span>
                 Live Tracking
             </div>
@@ -43,11 +43,11 @@
             </div>
             <div class="p-5 bg-white border border-gray-200 shadow-sm rounded-2xl">
                 <div class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Sedang Berlari</div>
-                <div class="mt-1 text-2xl font-bold text-blue-600">{{ $summary['on_course'] }}</div>
+                <div class="mt-1 text-2xl font-bold text-red-700">{{ $summary['on_course'] }}</div>
             </div>
             <div class="p-5 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                <div class="text-xs font-semibold tracking-wide text-green-600 uppercase">Finish</div>
-                <div class="mt-1 text-2xl font-bold text-green-600">{{ $summary['finished'] }}</div>
+                <div class="text-xs font-semibold tracking-wide text-red-800 uppercase">Finish</div>
+                <div class="mt-1 text-2xl font-bold text-red-800">{{ $summary['finished'] }}</div>
             </div>
             <div class="p-5 bg-white border border-gray-200 shadow-sm rounded-2xl">
                 <div class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Total Start</div>
@@ -60,13 +60,13 @@
         <div class="flex flex-wrap gap-2 mb-8">
             <a href="{{ route('event.live', $event->slug) }}"
                class="px-4 py-2 text-sm font-medium rounded-lg transition
-                   {{ !$selectedCategory ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+                   {{ !$selectedCategory ? 'bg-red-800 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                 Semua Kategori
             </a>
             @foreach($categories as $cat)
                 <a href="{{ route('event.live', ['event' => $event->slug, 'category' => $cat->slug]) }}"
                    class="px-4 py-2 text-sm font-medium rounded-lg transition
-                       {{ $selectedCategory == $cat->slug ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+                       {{ $selectedCategory == $cat->slug ? 'bg-red-800 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                     {{ $cat->name }}
                 </a>
             @endforeach
@@ -84,11 +84,11 @@
                     name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari BIB atau nama peserta..."
-                    class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
                 >
                 <button
                     type="submit"
-                    class="px-6 py-3 text-sm font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800">
+                    class="px-6 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700">
                     Cari
                 </button>
                 @if(request('q'))
@@ -110,7 +110,7 @@
                 Halaman auto-refresh setiap 30 detik
             </div>
             <a href="{{ request()->fullUrl() }}"
-               class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+               class="px-4 py-2 text-xs font-semibold text-red-800 border border-red-300 rounded-lg hover:bg-red-50">
                 Refresh
             </a>
         </div>
@@ -132,8 +132,8 @@
         @if(isset($checkpointGroups['finish']) && $checkpointGroups['finish']['participants']->count())
         <div class="mb-8">
             <div class="flex items-center gap-3 mb-4">
-                <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-xl">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
+                    <svg class="w-5 h-5 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
@@ -160,13 +160,13 @@
                         <tr class="transition hover:bg-gray-50">
                             <td class="px-6 py-4 text-center">
                                 <div class="inline-flex items-center justify-center w-10 h-10 font-bold rounded-xl
-                                    {{ ($i + 1) <= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700' }}">
+                                    {{ ($i + 1) <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700' }}">
                                     {{ $item['participant']->general_position ?? ($i + 1) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-xl">
+                                    <div class="flex items-center justify-center w-12 h-12 bg-red-800 rounded-xl">
                                         <span class="text-sm font-bold text-white">{{ $item['participant']->bib }}</span>
                                     </div>
                                     <div>
@@ -183,7 +183,7 @@
                                 <div class="font-medium text-gray-900">{{ $item['participant']->category?->name ?? '-' }}</div>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <div class="text-lg font-bold text-green-600">
+                                <div class="text-lg font-bold text-red-800">
                                     {{ $item['validated_time']->formatted_elapsed_time ?? $item['participant']->formatted_elapsed_time ?? '-' }}
                                 </div>
                             </td>
@@ -202,7 +202,7 @@
                 <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-gray-900 rounded-lg">
+                            <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-800 rounded-lg">
                                 {{ $item['participant']->bib }}
                             </div>
                             <div>
@@ -214,7 +214,7 @@
                             </div>
                         </div>
                         <div class="flex items-center justify-center w-10 h-10 font-bold rounded-lg
-                            {{ ($i + 1) <= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700' }}">
+                            {{ ($i + 1) <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700' }}">
                             {{ $item['participant']->general_position ?? ($i + 1) }}
                         </div>
                     </div>
@@ -229,7 +229,7 @@
                         </div>
                         <div class="col-span-2">
                             <div class="text-xs text-gray-500">Elapsed Time</div>
-                            <div class="text-lg font-bold text-green-600">
+                            <div class="text-lg font-bold text-red-800">
                                 {{ $item['validated_time']->formatted_elapsed_time ?? $item['participant']->formatted_elapsed_time ?? '-' }}
                             </div>
                         </div>
@@ -250,8 +250,8 @@
             @if($group['participants']->count())
             <div class="mb-8">
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-xl">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
+                        <svg class="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
@@ -289,7 +289,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-4">
-                                        <div class="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-xl">
+                                        <div class="flex items-center justify-center w-12 h-12 bg-red-800 rounded-xl">
                                             <span class="text-sm font-bold text-white">{{ $item['participant']->bib }}</span>
                                         </div>
                                         <div>
@@ -306,7 +306,7 @@
                                     <div class="font-medium text-gray-900">{{ $item['participant']->category?->name ?? '-' }}</div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <div class="text-base font-bold text-blue-600">
+                                    <div class="text-base font-bold text-red-700">
                                         {{ $item['validated_time']->formatted_elapsed_time ?? '-' }}
                                     </div>
                                 </td>
@@ -325,7 +325,7 @@
                     <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center gap-3">
-                                <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-gray-900 rounded-lg">
+                                <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-800 rounded-lg">
                                     {{ $item['participant']->bib }}
                                 </div>
                                 <div>
@@ -334,7 +334,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-base font-bold text-blue-600">{{ $item['validated_time']->formatted_elapsed_time ?? '-' }}</div>
+                                <div class="text-base font-bold text-red-700">{{ $item['validated_time']->formatted_elapsed_time ?? '-' }}</div>
                                 <div class="text-xs text-gray-500">{{ $item['validated_time']->checkpoint_time?->format('H:i:s') ?? '-' }}</div>
                             </div>
                         </div>
@@ -351,8 +351,8 @@
         @if(isset($checkpointGroups['start']) && $checkpointGroups['start']['participants']->count())
         <div class="mb-8">
             <div class="flex items-center gap-3 mb-4">
-                <div class="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-xl">
-                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
+                    <svg class="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                 </div>
@@ -383,7 +383,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-xl">
+                                    <div class="flex items-center justify-center w-12 h-12 bg-red-800 rounded-xl">
                                         <span class="text-sm font-bold text-white">{{ $item['participant']->bib }}</span>
                                     </div>
                                     <div>
@@ -414,7 +414,7 @@
                 <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-gray-900 rounded-lg">
+                            <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-800 rounded-lg">
                                 {{ $item['participant']->bib }}
                             </div>
                             <div>

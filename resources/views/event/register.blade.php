@@ -2,11 +2,11 @@
 
 @section('content')
 
-<div class="min-h-screen py-14 bg-gray-50">
+<div class="min-h-screen py-14 bg-red-50">
     <div class="max-w-3xl px-4 mx-auto sm:px-6 lg:px-8">
 
         {{-- Back --}}
-        <a href="/" class="inline-flex items-center gap-2 mb-10 text-sm font-medium text-gray-600 hover:text-gray-900">
+        <a href="/" class="inline-flex items-center gap-2 mb-10 text-sm font-medium text-gray-600 hover:text-red-800">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -15,7 +15,7 @@
 
         {{-- Header --}}
         <div class="mb-12 text-center">
-            <h1 class="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
+            <h1 class="text-3xl font-bold tracking-tight text-red-900 md:text-4xl">
                 Pendaftaran Peserta
             </h1>
             <p class="mt-3 text-base text-gray-600">
@@ -34,8 +34,8 @@
         <div class="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
 
             {{-- Section Header --}}
-            <div class="px-8 py-6 border-b bg-gray-50">
-                <h2 class="text-lg font-semibold text-gray-900">Informasi Peserta</h2>
+            <div class="px-8 py-6 border-b bg-red-50">
+                <h2 class="text-lg font-semibold text-red-900">Informasi Peserta</h2>
                 <p class="mt-1 text-sm text-gray-600">Mohon isi data dengan benar dan sesuai identitas</p>
             </div>
 
@@ -57,7 +57,7 @@
                     name="event_category_id"
                     id="category-select"
                     required
-                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
                 >
                     <option value="">Pilih kategori</option>
                     @foreach ($categories as $category)
@@ -77,7 +77,7 @@
                 @enderror
 
                 {{-- Price Display --}}
-                <div id="price-display" class="hidden p-4 mt-4 border border-gray-200 rounded-lg bg-gray-50">
+                <div id="price-display" class="hidden p-4 mt-4 border border-red-200 rounded-lg bg-red-50">
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-gray-600">Biaya Pendaftaran</span>
@@ -87,10 +87,10 @@
                             <span class="text-gray-600">Biaya Admin (QRIS)</span>
                             <span id="fee-price" class="font-medium">Rp 0</span>
                         </div>
-                        <div class="pt-2 border-t border-gray-200">
+                        <div class="pt-2 border-t border-red-200">
                             <div class="flex justify-between">
-                                <span class="font-semibold text-gray-900">Total Pembayaran</span>
-                                <span id="total-price" class="font-bold text-gray-900">Rp 0</span>
+                                <span class="font-semibold text-red-900">Total Pembayaran</span>
+                                <span id="total-price" class="font-bold text-red-900">Rp 0</span>
                             </div>
                         </div>
                     </div>
@@ -108,7 +108,7 @@
                     value="{{ old('name') }}"
                     required
                     placeholder="Nama lengkap sesuai identitas"
-                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
                 >
                 @error('name')
                     <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -127,7 +127,7 @@
                     maxlength="12"
                     required
                     placeholder="Contoh: HARUN"
-                    class="w-full px-4 py-3 mt-2 text-sm uppercase border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    class="w-full px-4 py-3 mt-2 text-sm uppercase border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
                 >
                 <p class="mt-1 text-xs text-gray-500">Maksimal 12 karakter (huruf besar disarankan)</p>
                 @error('bib_name')
@@ -162,7 +162,7 @@
                         Email <span class="text-red-500">*</span>
                     </label>
                     <input type="email" name="email" value="{{ old('email') }}" required placeholder="Contoh: email@example.com"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('email')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -172,7 +172,7 @@
                         No. HP <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="phone" value="{{ old('phone') }}" required placeholder="Contoh: 081234567890"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('phone')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -186,7 +186,7 @@
                         Umur <span class="text-red-500">*</span>
                     </label>
                     <input type="number" name="age" value="{{ old('age') }}" min="5" max="100" required placeholder="Contoh: 25"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('age')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -196,7 +196,7 @@
                         Ukuran Jersey <span class="text-red-500">*</span>
                     </label>
                     <select name="jersey_size" required
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                         <option value="">Pilih</option>
                         <option {{ old('jersey_size') == 'S'   ? 'selected' : '' }}>S</option>
                         <option {{ old('jersey_size') == 'M'   ? 'selected' : '' }}>M</option>
@@ -215,7 +215,7 @@
                 <button
                     type="button"
                     id="size-chart-btn"
-                    class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800"
+                    class="inline-flex items-center gap-1.5 text-xs font-medium text-red-700 hover:text-red-900"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/>
@@ -241,7 +241,7 @@
                         Kota Asal <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="city" value="{{ old('city') }}" required placeholder="Contoh: Jakarta"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('city')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -249,7 +249,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Komunitas / Club Lari</label>
                     <input type="text" name="community" value="{{ old('community') }}" placeholder="Opsional"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                 </div>
             </div>
 
@@ -268,7 +268,7 @@
                     </label>
                     <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" required
                         placeholder="Nama lengkap"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('emergency_contact_name')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -279,7 +279,7 @@
                     </label>
                     <input type="text" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" required
                         placeholder="08xxxxxxxxxx"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('emergency_contact_phone')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -287,7 +287,7 @@
             </div>
 
             {{-- Terms --}}
-            <div class="p-5 border border-gray-200 rounded-xl bg-gray-50">
+            <div class="p-5 border border-red-200 rounded-xl bg-red-50">
                 <label class="flex gap-3 text-sm text-gray-700">
                     <input type="checkbox" name="agreement" class="mt-1" {{ old('agreement') ? 'checked' : '' }}>
                     Saya menyatakan data yang saya isi adalah benar dan bersedia mengikuti syarat & ketentuan event.
@@ -298,14 +298,14 @@
             </div>
 
             {{-- Payment Info --}}
-            <div class="p-5 border border-blue-200 rounded-xl bg-blue-50">
+            <div class="p-5 border border-red-200 rounded-xl bg-red-50">
                 <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-red-700 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <div>
-                        <p class="text-sm font-medium text-blue-900">Pembayaran via QRIS</p>
-                        <p class="mt-1 text-sm text-blue-700">
+                        <p class="text-sm font-medium text-red-900">Pembayaran via QRIS</p>
+                        <p class="mt-1 text-sm text-red-700">
                             Setelah mengisi formulir, Anda akan diarahkan ke halaman pembayaran QRIS.
                             Pembayaran harus diselesaikan dalam waktu 24 jam.
                         </p>
@@ -317,7 +317,7 @@
             <button
                 type="submit"
                 id="submit-btn"
-                class="w-full px-8 py-4 text-base font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-8 py-4 text-base font-semibold text-white bg-red-800 rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <span id="btn-text">Lanjut ke Pembayaran</span>
                 <span id="btn-loading" class="hidden">
