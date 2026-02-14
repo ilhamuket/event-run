@@ -6,13 +6,15 @@ use App\Mail\PaymentConfirmed;
 use App\Models\Transaction;
 use App\Services\TripayService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
 
 class TripayCallbackController extends Controller
 {
-    public function __construct(
+     public function __construct(
         protected TripayService $tripayService
     ) {}
 
@@ -21,128 +23,109 @@ class TripayCallbackController extends Controller
      */
     public function handle(Request $request)
     {
-        // Get callback signature from header
         $callbackSignature = $request->server('HTTP_X_CALLBACK_SIGNATURE');
         $json = $request->getContent();
 
-        // Validate signature using SDK
         if (!$this->tripayService->validateCallback($callbackSignature, $json)) {
-            Log::warning('Tripay callback: Invalid signature', [
-                'signature' => $callbackSignature,
-            ]);
-
-            return Response::json([
-                'success' => false,
-                'message' => 'Invalid signature',
-            ], 403);
+            Log::warning('Tripay callback: Invalid signature');
+            return Response::json(['success' => false, 'message' => 'Invalid signature'], 403);
         }
 
-        // Check callback event
         if ($request->server('HTTP_X_CALLBACK_EVENT') !== 'payment_status') {
-            return Response::json([
-                'success' => false,
-                'message' => 'Unrecognized callback event',
-            ]);
+            return Response::json(['success' => false, 'message' => 'Unrecognized callback event']);
         }
 
-        // Parse callback data using SDK
         try {
             $callback = $this->tripayService->parseCallback($json);
         } catch (\Exception $e) {
             Log::error('Tripay callback: Invalid JSON', ['error' => $e->getMessage()]);
-
-            return Response::json([
-                'success' => false,
-                'message' => 'Invalid callback data',
-            ]);
+            return Response::json(['success' => false, 'message' => 'Invalid callback data']);
         }
 
         $merchantRef = $callback->getMerchantRef();
         $tripayReference = $callback->getReference();
 
-        // Find transaction
-        $transaction = Transaction::where('merchant_ref', $merchantRef)
-            ->where('tripay_reference', $tripayReference)
-            ->first();
+        // Raw query - faster than Eloquent for callback processing
+        $tx = DB::selectOne(
+            "SELECT id, status, participant_id, event_id
+             FROM transactions
+             WHERE merchant_ref = ? AND tripay_reference = ?
+             LIMIT 1",
+            [$merchantRef, $tripayReference]
+        );
 
-        if (!$transaction) {
-            Log::warning('Tripay callback: Transaction not found', [
-                'merchant_ref' => $merchantRef,
-                'tripay_reference' => $tripayReference,
-            ]);
-
-            return Response::json([
-                'success' => false,
-                'message' => 'Transaction not found: ' . $merchantRef,
-            ]);
+        if (!$tx) {
+            Log::warning('Tripay callback: Transaction not found', compact('merchantRef', 'tripayReference'));
+            return Response::json(['success' => false, 'message' => 'Transaction not found']);
         }
 
         // Skip if already processed
-        if ($transaction->status !== Transaction::STATUS_UNPAID) {
-            Log::info('Tripay callback: Transaction already processed', [
-                'merchant_ref' => $merchantRef,
-                'status' => $transaction->status,
-            ]);
-
+        if ($tx->status !== 'UNPAID') {
             return Response::json(['success' => true]);
         }
 
-        // Process based on status
         if ($callback->isPaid()) {
-            $this->handlePaid($transaction, $callback);
+            $this->handlePaid($tx, $callback);
         } elseif ($callback->isExpired()) {
-            $this->handleExpired($transaction);
+            DB::update("UPDATE transactions SET status = 'EXPIRED', updated_at = NOW() WHERE id = ?", [$tx->id]);
+            Log::info('Tripay callback: Payment expired', ['merchant_ref' => $merchantRef]);
         } elseif ($callback->isFailed()) {
-            $this->handleFailed($transaction);
+            DB::update("UPDATE transactions SET status = 'FAILED', updated_at = NOW() WHERE id = ?", [$tx->id]);
+            Log::info('Tripay callback: Payment failed', ['merchant_ref' => $merchantRef]);
         } elseif ($callback->isRefund()) {
-            $this->handleRefund($transaction);
+            DB::update("UPDATE transactions SET status = 'REFUND', updated_at = NOW() WHERE id = ?", [$tx->id]);
+            DB::update("UPDATE participants SET status = 'refunded', updated_at = NOW() WHERE id = ?", [$tx->participant_id]);
+            Log::info('Tripay callback: Payment refunded', ['merchant_ref' => $merchantRef]);
         } else {
-            Log::warning('Tripay callback: Unknown status', [
-                'merchant_ref' => $merchantRef,
-                'status' => $callback->getStatus(),
-            ]);
-
-            return Response::json([
-                'success' => false,
-                'message' => 'Unknown payment status',
-            ]);
+            Log::warning('Tripay callback: Unknown status', ['status' => $callback->getStatus()]);
+            return Response::json(['success' => false, 'message' => 'Unknown payment status']);
         }
 
         return Response::json(['success' => true]);
     }
 
     /**
-     * Handle paid status
+     * Handle paid status - raw queries + queued email
      */
-    protected function handlePaid(Transaction $transaction, $callback): void
+    protected function handlePaid(object $tx, $callback): void
     {
-        $transaction->update([
-            'status' => Transaction::STATUS_PAID,
-            'paid_at' => $callback->getPaidAtDateTime() ?? now(),
-        ]);
+        $paidAt = $callback->getPaidAtDateTime() ?? now();
 
-        // Update participant status to confirmed
-        $transaction->participant->update([
-            'status' => 'confirmed',
-        ]);
+        // Raw update with WHERE status = UNPAID (idempotent)
+        $affected = DB::update(
+            "UPDATE transactions SET status = 'PAID', paid_at = ?, updated_at = NOW()
+             WHERE id = ? AND status = 'UNPAID'",
+            [$paidAt, $tx->id]
+        );
+
+        // Only proceed if we actually updated (prevents duplicate processing)
+        if ($affected === 0) {
+            return;
+        }
+
+        DB::update(
+            "UPDATE participants SET status = 'confirmed', updated_at = NOW() WHERE id = ?",
+            [$tx->participant_id]
+        );
 
         Log::info('Tripay callback: Payment successful', [
-            'merchant_ref' => $transaction->merchant_ref,
-            'participant_id' => $transaction->participant_id,
+            'transaction_id' => $tx->id,
+            'participant_id' => $tx->participant_id,
         ]);
 
-        // Send payment confirmed email
-        try {
-            $participant = $transaction->participant->load(['event', 'category']);
-            Mail::to($participant->email)->send(new PaymentConfirmed($participant, $transaction));
+        // Invalidate related caches
+        Cache::forget("results:{$tx->event_id}:" . md5(":1"));
 
-            Log::info('Payment confirmed email sent', [
-                'participant_id' => $participant->id,
-                'email' => $participant->email,
-            ]);
+        // Queue email (non-blocking, won't fail callback)
+        try {
+            $transaction = Transaction::with(['participant.event', 'participant.category'])->find($tx->id);
+            if ($transaction && $transaction->participant) {
+                Mail::to($transaction->participant->email)
+                    ->queue(new PaymentConfirmed($transaction->participant, $transaction));
+            }
         } catch (\Exception $e) {
-            Log::error('Failed to send payment confirmed email: ' . $e->getMessage(), [
-                'participant_id' => $transaction->participant_id,
+            Log::error('Failed to queue payment email: ' . $e->getMessage(), [
+                'participant_id' => $tx->participant_id,
             ]);
         }
     }
