@@ -125,7 +125,6 @@ class RegistrationController extends Controller
                         'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
                         'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? null,
                         'community' => $validated['community'] ?? null,
-                        'status' => 'pending',
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
