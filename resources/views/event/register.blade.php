@@ -341,7 +341,7 @@
         {{-- Info --}}
         <div class="p-6 mt-10 text-sm text-gray-600 bg-white border border-gray-200 rounded-xl">
             <ul class="space-y-1">
-                <li>• Nomor BIB akan diinformasikan setelah pembayaran berhasil</li>
+                <li>• Nomor BIB akan diinformasikan maksimal 10 hari sebelum event dimulai</li>
                 <li>• Race pack diambil sesuai jadwal panitia</li>
                 <li>• Sertifikat digital dikirim setelah event selesai</li>
                 <li>• Pembayaran via QRIS mendukung semua e-wallet dan mobile banking</li>
