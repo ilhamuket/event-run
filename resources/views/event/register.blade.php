@@ -361,30 +361,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── Price Display ──────────────────────────────────────────
-    var categorySelect = document.getElementById('category-select');
-    var priceDisplay   = document.getElementById('price-display');
-    var basePrice      = document.getElementById('base-price');
-    var feePrice       = document.getElementById('fee-price');
-    var totalPrice     = document.getElementById('total-price');
+    // var categorySelect = document.getElementById('category-select');
+    // var priceDisplay   = document.getElementById('price-display');
+    // var basePrice      = document.getElementById('base-price');
+    // var feePrice       = document.getElementById('fee-price');
+    // var totalPrice     = document.getElementById('total-price');
 
-    function formatRupiah(n) {
-        return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
-    }
+    // function formatRupiah(n) {
+    //     return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
+    // }
 
-    function updatePriceDisplay() {
-        var selected = categorySelect.options[categorySelect.selectedIndex];
-        if (selected.value) {
-            basePrice.textContent  = formatRupiah(parseInt(selected.dataset.price) || 0);
-            feePrice.textContent   = formatRupiah(parseInt(selected.dataset.fee)   || 0);
-            totalPrice.textContent = formatRupiah((parseInt(selected.dataset.price) || 0) + (parseInt(selected.dataset.fee) || 0));
-            priceDisplay.classList.remove('hidden');
-        } else {
-            priceDisplay.classList.add('hidden');
-        }
-    }
+    // function updatePriceDisplay() {
+    //     var selected = categorySelect.options[categorySelect.selectedIndex];
+    //     if (selected.value) {
+    //         basePrice.textContent  = formatRupiah(parseInt(selected.dataset.price) || 0);
+    //         feePrice.textContent   = formatRupiah(parseInt(selected.dataset.fee)   || 0);
+    //         totalPrice.textContent = formatRupiah((parseInt(selected.dataset.price) || 0) + (parseInt(selected.dataset.fee) || 0));
+    //         priceDisplay.classList.remove('hidden');
+    //     } else {
+    //         priceDisplay.classList.add('hidden');
+    //     }
+    // }
 
-    categorySelect.addEventListener('change', updatePriceDisplay);
-    updatePriceDisplay();
+    // categorySelect.addEventListener('change', updatePriceDisplay);
+    // updatePriceDisplay();
 
     // ── Submit Loading ─────────────────────────────────────────
     var form       = document.getElementById('registration-form');
