@@ -25,14 +25,7 @@
             </div>
 
             {{-- BIB Number --}}
-            <div class="px-6 py-8 text-center border-b border-gray-100">
-                <p class="mb-2 text-sm text-gray-500">Nomor BIB Anda</p>
-                <div class="inline-block px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl">
-                    <span class="text-4xl font-black tracking-wider text-white">
-                        {{ str_pad($transaction->participant->bib, 4, '0', STR_PAD_LEFT) }}
-                    </span>
-                </div>
-            </div>
+
 
             {{-- Participant Info --}}
             <div class="px-6 py-4">
