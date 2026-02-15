@@ -55,16 +55,16 @@
             </div>
         </div>
 
-        {{-- Category Filter --}}
+        {{-- Category Filter Pills --}}
         @if($categories->count() > 1)
-        <div class="flex flex-wrap gap-2 mb-8">
-            <a href="{{ route('event.live', $event->slug) }}"
+        <div class="flex flex-wrap gap-2 mb-6">
+            <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'gender' => request('gender'), 'q' => request('q')])) }}"
                class="px-4 py-2 text-sm font-medium rounded-lg transition
                    {{ !$selectedCategory ? 'bg-red-800 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                 Semua Kategori
             </a>
             @foreach($categories as $cat)
-                <a href="{{ route('event.live', ['event' => $event->slug, 'category' => $cat->slug]) }}"
+                <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'category' => $cat->slug, 'gender' => request('gender'), 'q' => request('q')])) }}"
                    class="px-4 py-2 text-sm font-medium rounded-lg transition
                        {{ $selectedCategory == $cat->slug ? 'bg-red-800 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                     {{ $cat->name }}
@@ -73,32 +73,69 @@
         </div>
         @endif
 
-        {{-- Search --}}
+        {{-- Search & Gender Filter --}}
         <div class="mb-10 overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
-            <form method="GET" class="flex flex-col gap-4 p-6 md:flex-row">
+            <form method="GET" class="p-6 space-y-4">
                 @if($selectedCategory)
                     <input type="hidden" name="category" value="{{ $selectedCategory }}">
                 @endif
-                <input
-                    type="text"
-                    name="q"
-                    value="{{ request('q') }}"
-                    placeholder="Cari BIB atau nama peserta..."
-                    class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
-                >
-                <button
-                    type="submit"
-                    class="px-6 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700">
-                    Cari
-                </button>
-                @if(request('q'))
-                    <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'category' => $selectedCategory])) }}"
-                       class="px-6 py-3 text-sm font-medium text-center text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                        Reset
-                    </a>
-                @endif
+
+                {{-- Search Row --}}
+                <div class="flex flex-col gap-4 md:flex-row">
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ request('q') }}"
+                        placeholder="Cari BIB atau nama peserta..."
+                        class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
+                    >
+
+                    {{-- Gender Filter Inline --}}
+                    <select name="gender"
+                            class="px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-800/10 focus:border-red-800 md:w-40">
+                        <option value="">Semua Gender</option>
+                        <option value="M" {{ request('gender') == 'M' ? 'selected' : '' }}>Pria</option>
+                        <option value="F" {{ request('gender') == 'F' ? 'selected' : '' }}>Wanita</option>
+                    </select>
+
+                    <button type="submit"
+                            class="px-6 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700">
+                        Cari
+                    </button>
+                    @if($activeFilters > 0)
+                        <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'category' => $selectedCategory])) }}"
+                           class="px-6 py-3 text-sm font-medium text-center text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                            Reset
+                        </a>
+                    @endif
+                </div>
             </form>
         </div>
+
+        {{-- Active Filter Tags --}}
+        @if($activeFilters > 0)
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+            <span class="text-xs font-semibold text-gray-500">Filter aktif:</span>
+            @if($selectedCategory)
+                <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-800 bg-red-100 rounded-full">
+                    Kategori: {{ $categories->firstWhere('slug', $selectedCategory)?->name ?? $selectedCategory }}
+                    <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'gender' => request('gender'), 'q' => request('q')])) }}" class="ml-1 hover:text-red-600">&times;</a>
+                </span>
+            @endif
+            @if(request('gender'))
+                <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-800 bg-red-100 rounded-full">
+                    Gender: {{ request('gender') == 'M' ? 'Pria' : 'Wanita' }}
+                    <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'category' => $selectedCategory, 'q' => request('q')])) }}" class="ml-1 hover:text-red-600">&times;</a>
+                </span>
+            @endif
+            @if(request('q'))
+                <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-800 bg-red-100 rounded-full">
+                    Cari: "{{ request('q') }}"
+                    <a href="{{ route('event.live', array_filter(['event' => $event->slug, 'category' => $selectedCategory, 'gender' => request('gender')])) }}" class="ml-1 hover:text-red-600">&times;</a>
+                </span>
+            @endif
+        </div>
+        @endif
 
         {{-- Auto Refresh Notice --}}
         <div class="flex items-center justify-between p-4 mb-8 bg-white border border-gray-200 shadow-sm rounded-xl">
