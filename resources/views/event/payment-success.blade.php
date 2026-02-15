@@ -152,7 +152,7 @@
         {{-- Footer --}}
         <div class="mt-8 text-sm text-center text-gray-500">
             <p>Butuh bantuan? Hubungi kami di</p>
-            <p class="font-medium text-gray-700">support@example.com</p>
+            <p class="font-medium text-gray-700">+62 85718486410</p>
         </div>
     </div>
 </div>
