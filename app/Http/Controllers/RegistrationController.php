@@ -234,10 +234,6 @@ class RegistrationController extends Controller
                         [$tx->id]
                     );
 
-                    DB::update(
-                        "UPDATE participants SET status = 'confirmed', updated_at = NOW() WHERE id = ?",
-                        [$tx->participant_id]
-                    );
 
                     // Invalidate related caches
                     Cache::forget("results:{$tx->event_id}:" . md5(":1"));

@@ -74,7 +74,6 @@ class TripayCallbackController extends Controller
             Log::info('Tripay callback: Payment failed', ['merchant_ref' => $merchantRef]);
         } elseif ($callback->isRefund()) {
             DB::update("UPDATE transactions SET status = 'REFUND', updated_at = NOW() WHERE id = ?", [$tx->id]);
-            DB::update("UPDATE participants SET status = 'refunded', updated_at = NOW() WHERE id = ?", [$tx->participant_id]);
             Log::info('Tripay callback: Payment refunded', ['merchant_ref' => $merchantRef]);
         } else {
             Log::warning('Tripay callback: Unknown status', ['status' => $callback->getStatus()]);
@@ -103,10 +102,6 @@ class TripayCallbackController extends Controller
             return;
         }
 
-        DB::update(
-            "UPDATE participants SET status = 'confirmed', updated_at = NOW() WHERE id = ?",
-            [$tx->participant_id]
-        );
 
         Log::info('Tripay callback: Payment successful', [
             'transaction_id' => $tx->id,
