@@ -3,11 +3,11 @@
 @section('title', 'Pembayaran Berhasil - ' . $event->name)
 
 @section('content')
-<div class="min-h-screen py-12 bg-gradient-to-br from-green-50 to-emerald-100">
+<div class="min-h-screen py-12" style="background: linear-gradient(135deg, #fef2f2 0%, #fce4e4 100%);">
     <div class="max-w-lg px-4 mx-auto">
         {{-- Success Icon --}}
         <div class="mb-8 text-center">
-            <div class="inline-flex items-center justify-center w-20 h-20 mb-4 bg-green-500 rounded-full">
+            <div class="inline-flex items-center justify-center w-20 h-20 mb-4 rounded-full" style="background: #991b1b;">
                 <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
@@ -17,10 +17,10 @@
         </div>
 
         {{-- E-Ticket Card --}}
-        <div class="overflow-hidden bg-white shadow-lg rounded-2xl">
+        <div class="overflow-hidden bg-white shadow-lg rounded-2xl" style="border: 1px solid #e5e7eb;">
             {{-- Event Header --}}
-            <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
-                <p class="text-sm text-indigo-200">{{ $event->date?->format('d M Y') }}</p>
+            <div class="px-6 py-4" style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);">
+                <p class="text-sm" style="color: rgba(255,255,255,0.7);">{{ $event->date?->format('d M Y') }}</p>
                 <h2 class="text-xl font-bold text-white">{{ $event->name }}</h2>
             </div>
 
@@ -66,17 +66,17 @@
             </div>
 
             {{-- Category Badge --}}
-            <div class="px-6 py-4 border-t border-gray-100">
+            <div class="px-6 py-4" style="border-top: 1px solid #e5e7eb;">
                 <div class="flex items-center justify-between">
                     <span class="text-gray-500">Kategori</span>
-                    <span class="px-4 py-2 font-semibold text-white rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500">
+                    <span class="px-4 py-2 font-semibold text-white rounded-lg" style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);">
                         {{ $transaction->eventCategory->name }}
                     </span>
                 </div>
             </div>
 
             {{-- Payment Info --}}
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div class="px-6 py-4 bg-gray-50" style="border-top: 1px solid #e5e7eb;">
                 <h3 class="mb-3 font-semibold text-gray-900">Detail Pembayaran</h3>
 
                 <div class="space-y-2 text-sm">
@@ -90,44 +90,44 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Status</span>
-                        <span class="font-medium text-green-600">✓ Lunas</span>
+                        <span class="font-medium" style="color: #991b1b;">✓ Lunas</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Tanggal Bayar</span>
                         <span class="text-gray-900">{{ $transaction->paid_at->format('d M Y, H:i') }}</span>
                     </div>
-                    <div class="flex justify-between pt-2 font-semibold border-t border-gray-200">
+                    <div class="flex justify-between pt-2 font-semibold" style="border-top: 1px solid #e5e7eb;">
                         <span class="text-gray-900">Total</span>
-                        <span class="text-indigo-600">{{ $transaction->formatted_total_amount }}</span>
+                        <span style="color: #991b1b;">{{ $transaction->formatted_total_amount }}</span>
                     </div>
                 </div>
             </div>
 
             {{-- Important Notes --}}
-            <div class="px-6 py-4 border-t border-gray-100">
+            <div class="px-6 py-4" style="border-top: 1px solid #e5e7eb;">
                 <h3 class="mb-3 font-semibold text-gray-900">Informasi Penting</h3>
 
                 <ul class="space-y-2 text-sm text-gray-600">
                     <li class="flex items-start">
-                        <svg class="flex-shrink-0 w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="flex-shrink-0 w-5 h-5 mr-2" style="color: #991b1b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>Email konfirmasi telah dikirim ke <strong>{{ $transaction->participant->email }}</strong></span>
                     </li>
                     <li class="flex items-start">
-                        <svg class="flex-shrink-0 w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="flex-shrink-0 w-5 h-5 mr-2" style="color: #991b1b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>Simpan screenshot halaman ini sebagai bukti pendaftaran</span>
                     </li>
                     <li class="flex items-start">
-                        <svg class="flex-shrink-0 w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="flex-shrink-0 w-5 h-5 mr-2" style="color: #991b1b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>Race pack dapat diambil sesuai jadwal yang akan diinformasikan</span>
                     </li>
                     <li class="flex items-start">
-                        <svg class="flex-shrink-0 w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="flex-shrink-0 w-5 h-5 mr-2" style="color: #991b1b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>Bawa KTP/identitas saat pengambilan race pack</span>
@@ -139,12 +139,16 @@
         {{-- Actions --}}
         <div class="mt-6 space-y-3">
             <button onclick="window.print()"
-                    class="block w-full px-4 py-3 font-medium text-center text-gray-700 transition bg-white border border-gray-300 hover:bg-gray-50 rounded-xl">
+                    class="block w-full px-4 py-3 font-medium text-center text-gray-700 transition bg-white hover:bg-gray-50 rounded-xl"
+                    style="border: 1px solid #e5e7eb;">
                 🖨️ Cetak E-Ticket
             </button>
 
             <a href="{{ route('home') }}"
-               class="block w-full px-4 py-3 font-medium text-center text-white transition bg-indigo-600 hover:bg-indigo-700 rounded-xl">
+               class="block w-full px-4 py-3 font-medium text-center text-white transition rounded-xl"
+               style="background: #991b1b;"
+               onmouseover="this.style.background='#7f1d1d'"
+               onmouseout="this.style.background='#991b1b'">
                 Kembali ke Halaman Event
             </a>
         </div>

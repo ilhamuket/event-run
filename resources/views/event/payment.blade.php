@@ -12,13 +12,13 @@
         </div>
 
         {{-- Payment Card --}}
-        <div class="overflow-hidden bg-white shadow-lg rounded-2xl">
+        <div class="overflow-hidden bg-white shadow-lg rounded-2xl" style="border: 1px solid #e5e7eb;">
             {{-- Status Badge --}}
-            <div class="px-6 py-4 border-b border-gray-100">
+            <div class="px-6 py-4" style="border-bottom: 1px solid #e5e7eb;">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-gray-500">Status Pembayaran</span>
                     @if($transaction->isPaid())
-                        <span class="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full">
+                        <span class="px-3 py-1 text-sm font-medium rounded-full" style="background: rgba(153, 27, 27, 0.1); color: #991b1b;">
                             ✓ Lunas
                         </span>
                     @elseif($transaction->isExpired())
@@ -26,7 +26,7 @@
                             Kadaluarsa
                         </span>
                     @else
-                        <span class="px-3 py-1 text-sm font-medium text-yellow-700 bg-yellow-100 rounded-full">
+                        <span class="px-3 py-1 text-sm font-medium rounded-full" style="background: rgba(153, 27, 27, 0.08); color: #991b1b;">
                             Menunggu Pembayaran
                         </span>
                     @endif
@@ -40,7 +40,7 @@
                         <p class="mb-4 text-sm text-gray-500">Scan QR code dengan aplikasi e-wallet</p>
 
                         {{-- QR Code Image --}}
-                        <div class="inline-block p-4 bg-white border-2 border-gray-200 rounded-xl">
+                        <div class="inline-block p-4 bg-white rounded-xl" style="border: 2px solid #e5e7eb;">
                             @if($transaction->qr_url)
                                 <img src="{{ $transaction->qr_url }}"
                                      alt="QRIS QR Code"
@@ -56,22 +56,22 @@
                         <div class="flex items-center justify-center mt-4 space-x-2">
                             <span class="text-xs text-gray-400">Didukung oleh:</span>
                             <div class="flex space-x-2">
-                                <span class="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded">GoPay</span>
-                                <span class="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded">OVO</span>
-                                <span class="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded">DANA</span>
-                                <span class="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded">ShopeePay</span>
+                                <span class="px-2 py-1 text-xs rounded" style="background: rgba(153, 27, 27, 0.06); color: #7f1d1d;">GoPay</span>
+                                <span class="px-2 py-1 text-xs rounded" style="background: rgba(153, 27, 27, 0.06); color: #7f1d1d;">OVO</span>
+                                <span class="px-2 py-1 text-xs rounded" style="background: rgba(153, 27, 27, 0.06); color: #7f1d1d;">DANA</span>
+                                <span class="px-2 py-1 text-xs rounded" style="background: rgba(153, 27, 27, 0.06); color: #7f1d1d;">ShopeePay</span>
                             </div>
                         </div>
                     </div>
 
                     {{-- Countdown Timer --}}
-                    <div class="p-4 mt-6 bg-red-50 rounded-xl">
+                    <div class="p-4 mt-6 rounded-xl" style="background: rgba(153, 27, 27, 0.05);">
                         <div class="text-center">
-                            <p class="text-sm text-red-600">Bayar sebelum:</p>
-                            <p id="countdown" class="mt-1 text-2xl font-bold text-red-700">
+                            <p class="text-sm" style="color: #991b1b;">Bayar sebelum:</p>
+                            <p id="countdown" class="mt-1 text-2xl font-bold" style="color: #7f1d1d;">
                                 --:--:--
                             </p>
-                            <p class="mt-1 text-xs text-red-500">
+                            <p class="mt-1 text-xs" style="color: #991b1b; opacity: 0.7;">
                                 {{ $transaction->expired_at->format('d M Y, H:i') }} WIB
                             </p>
                         </div>
@@ -80,7 +80,7 @@
             @endif
 
             {{-- Order Summary --}}
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div class="px-6 py-4 bg-gray-50" style="border-top: 1px solid #e5e7eb;">
                 <h3 class="mb-3 font-semibold text-gray-900">Ringkasan Pesanan</h3>
 
                 <div class="space-y-2 text-sm">
@@ -109,15 +109,15 @@
                         <span class="text-gray-500">Biaya Admin</span>
                         <span class="text-gray-900">{{ $transaction->formatted_fee }}</span>
                     </div>
-                    <div class="flex justify-between pt-2 text-base font-semibold border-t border-gray-200">
+                    <div class="flex justify-between pt-2 text-base font-semibold" style="border-top: 1px solid #e5e7eb;">
                         <span class="text-gray-900">Total Bayar</span>
-                        <span class="text-indigo-600">{{ $transaction->formatted_total_amount }}</span>
+                        <span style="color: #991b1b;">{{ $transaction->formatted_total_amount }}</span>
                     </div>
                 </div>
             </div>
 
             {{-- Instructions --}}
-            <div class="px-6 py-4 border-t border-gray-100">
+            <div class="px-6 py-4" style="border-top: 1px solid #e5e7eb;">
                 <h3 class="mb-3 font-semibold text-gray-900">Cara Pembayaran</h3>
                 <ol class="space-y-2 text-sm text-gray-600 list-decimal list-inside">
                     <li>Buka aplikasi e-wallet (GoPay, OVO, DANA, ShopeePay, dll)</li>
@@ -130,17 +130,23 @@
 
             {{-- Actions --}}
             @if($transaction->isPaid())
-                <div class="px-6 py-4 border-t border-gray-100">
+                <div class="px-6 py-4" style="border-top: 1px solid #e5e7eb;">
                     <a href="{{ route('event.payment.success', ['event' => $event->slug, 'ref' => $transaction->merchant_ref]) }}"
-                       class="block w-full px-4 py-3 font-medium text-center text-white transition bg-green-600 hover:bg-green-700 rounded-xl">
+                       class="block w-full px-4 py-3 font-medium text-center text-white transition rounded-xl"
+                       style="background: #991b1b;"
+                       onmouseover="this.style.background='#7f1d1d'"
+                       onmouseout="this.style.background='#991b1b'">
                         Lihat E-Ticket
                     </a>
                 </div>
             @elseif($transaction->checkout_url)
-                <div class="px-6 py-4 border-t border-gray-100">
+                <div class="px-6 py-4" style="border-top: 1px solid #e5e7eb;">
                     <a href="{{ $transaction->checkout_url }}"
                        target="_blank"
-                       class="block w-full px-4 py-3 font-medium text-center text-white transition bg-indigo-600 hover:bg-indigo-700 rounded-xl">
+                       class="block w-full px-4 py-3 font-medium text-center text-white transition rounded-xl"
+                       style="background: #991b1b;"
+                       onmouseover="this.style.background='#7f1d1d'"
+                       onmouseout="this.style.background='#991b1b'">
                         Buka Halaman Pembayaran Tripay
                     </a>
                 </div>
