@@ -660,7 +660,7 @@
         {{-- Content --}}
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {{-- WhatsApp --}}
-            <a href="https://wa.me/0"
+            <a href="https://wa.me/085718486410"
                target="_blank"
                class="flex items-start gap-4 p-6 transition border border-gray-200 bg-red-50 rounded-2xl hover:bg-white hover:shadow-lg hover:border-red-800">
                 <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-green-500 rounded-xl">
@@ -671,7 +671,7 @@
                 <div>
                     <h3 class="text-lg font-bold text-red-900">WhatsApp</h3>
                     <p class="text-sm text-gray-600">Admin Event</p>
-                    <p class="mt-1 font-medium text-red-800">+62 -</p>
+                    <p class="mt-1 font-medium text-red-800">+62 85718486410</p>
                 </div>
             </a>
 
