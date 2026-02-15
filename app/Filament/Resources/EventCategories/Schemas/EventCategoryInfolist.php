@@ -32,7 +32,7 @@ class EventCategoryInfolist
                     ->placeholder('-')
                     ->columnSpanFull(),
                 TextEntry::make('price')
-                    ->money(),
+                    ->money('IDR'),
                 TextEntry::make('color_from'),
                 TextEntry::make('color_to'),
                 TextEntry::make('order')

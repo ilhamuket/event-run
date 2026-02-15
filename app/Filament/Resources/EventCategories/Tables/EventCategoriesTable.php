@@ -37,7 +37,7 @@ class EventCategoriesTable
                     ->disk('public')
                     ->visibility('public'),
                 TextColumn::make('price')
-                    ->money()
+                    ->money('IDR')
                     ->sortable(),
                 TextColumn::make('color_from')
                     ->searchable(),
