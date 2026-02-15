@@ -172,7 +172,10 @@
                         No. HP <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="phone" value="{{ old('phone') }}" required placeholder="Contoh: 081234567890"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('phone')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -278,8 +281,11 @@
                         No. HP Darurat <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" required
-                        placeholder="08xxxxxxxxxx"
-                        class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
+                    placeholder="08xxxxxxxxxx"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                     @error('emergency_contact_phone')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
