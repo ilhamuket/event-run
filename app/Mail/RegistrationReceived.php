@@ -30,7 +30,7 @@ class RegistrationReceived extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.registration-received',
+            view: 'event.registration-received',
         );
     }
 

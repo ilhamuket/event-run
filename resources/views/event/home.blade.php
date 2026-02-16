@@ -2,6 +2,62 @@
 
 @section('content')
 
+{{-- REGISTRATION POPUP MODAL --}}
+<div id="registrationPopup" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div class="relative w-full max-w-md p-8 bg-white shadow-2xl rounded-2xl animate-popup">
+        <button onclick="closeRegistrationPopup()" class="absolute text-gray-400 top-4 right-4 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="text-center">
+            <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-8 h-8 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="mb-3 text-xl font-bold text-red-900">Hai Scout Runners! 👋</h3>
+            <p class="mb-6 leading-relaxed text-gray-600">
+                Pendaftaran belum tersedia, staytune di IG
+                <a href="https://www.instagram.com/scoutrun.id" target="_blank" class="font-bold text-red-800 hover:underline">@scoutrun.id</a>
+                ya untuk informasi selanjutnya 🏃‍♂️
+            </p>
+            <a href="https://www.instagram.com/scoutrun.id" target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white transition-all bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-xl hover:opacity-90">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                Follow @scoutrun.id
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes popupIn {
+        from { opacity: 0; transform: scale(0.9) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-popup {
+        animation: popupIn 0.3s ease-out;
+    }
+</style>
+
+<script>
+    function showRegistrationPopup() {
+        document.getElementById('registrationPopup').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeRegistrationPopup() {
+        document.getElementById('registrationPopup').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    // Close on backdrop click
+    document.getElementById('registrationPopup')?.addEventListener('click', function(e) {
+        if (e.target === this) closeRegistrationPopup();
+    });
+</script>
+
 {{-- HERO SECTION WITH FULL WIDTH SLIDER --}}
 <section class="relative overflow-hidden">
     {{-- Full Width Slider Container --}}
@@ -232,13 +288,13 @@
                     </div>
 
                     <div class="flex flex-col justify-center gap-3 sm:flex-row md:justify-end">
-                        <a href="#register"
+                        <button onclick="showRegistrationPopup()"
                            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-700 transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>
                             Daftar Sekarang
-                        </a>
+                        </button>
                         <a href="#about"
                            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-800 rounded-xl font-bold hover:bg-red-100 transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -557,7 +613,7 @@
 
             <div class="relative px-6 py-12 text-center text-white md:px-16 md:py-16">
                 <div class="inline-block px-4 py-2 mb-6 text-xs font-bold rounded-full bg-white/20 backdrop-blur-sm md:text-sm">
-                    🎉 PENDAFTARAN DIBUKA
+                    🏃 SEGERA HADIR
                 </div>
 
                 <h2 class="mb-6 text-3xl font-bold md:text-4xl">
@@ -569,10 +625,10 @@
                 </p>
 
                 <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <a href="{{ route('event.register', $event->slug) }}"
-                       class="w-full px-8 py-4 text-base font-bold tracking-wide text-red-900 transition-all bg-white rounded-lg shadow-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
+                    <button onclick="showRegistrationPopup()"
+                       class="w-full px-8 py-4 text-base font-bold tracking-wide text-red-900 transition-all bg-white rounded-lg shadow-lg cursor-pointer sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
                         DAFTAR SEKARANG
-                    </a>
+                    </button>
                     <a href="#about"
                        class="w-full px-8 py-4 text-base font-bold tracking-wide text-white transition-all bg-transparent border-2 border-white rounded-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-white/10">
                         PELAJARI DULU
