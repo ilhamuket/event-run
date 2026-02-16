@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+        'disable.registration' => \App\Http\Middleware\DisableRegistration::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'api/callback/tripay',
             'callback/tripay',

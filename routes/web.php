@@ -14,8 +14,11 @@ Route::get('/event/{event:slug}/live', [EventController::class, 'live'])->name('
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
     // Registration form
-    Route::get('/register', [RegistrationController::class, 'create'])->name('register');
-    Route::post('/register', [RegistrationController::class, 'store'])->name('register.store');
+   Route::middleware('disable.registration')->group(function () {
+        Route::get('/register', [RegistrationController::class, 'create'])->name('register');
+        Route::post('/register', [RegistrationController::class, 'store'])->name('register.store');
+    });
+
 
     // Payment routes
     Route::get('/payment/{ref}', [RegistrationController::class, 'showPayment'])->name('payment.show');
