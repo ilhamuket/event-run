@@ -66,6 +66,8 @@
                             data-price="{{ $category->price }}"
                             data-fee="{{ $category->fee }}"
                             data-total="{{ $category->total_price }}"
+                            data-min-age="{{ $category->min_age ?? 5 }}"
+                            data-max-age="{{ $category->max_age ?? 100 }}"
                             {{ old('event_category_id') == $category->id ? 'selected' : '' }}
                         >
                             {{ $category->name }} — {{ $category->distance }}
@@ -188,8 +190,10 @@
                     <label class="block text-sm font-medium text-gray-700">
                         Umur <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" name="age" value="{{ old('age') }}" min="5" max="100" required placeholder="Contoh: 25"
+                    <input type="number" name="age" id="age-input" value="{{ old('age') }}" min="5" max="100" required placeholder="Contoh: 25"
                         class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
+                    <p id="age-hint" class="hidden mt-1 text-xs text-gray-500"></p>
+                    <p id="age-error" class="hidden mt-1 text-xs text-red-500"></p>
                     @error('age')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -296,13 +300,18 @@
             <div class="p-5 border border-red-200 rounded-xl bg-red-50">
                 <label class="flex gap-3 text-sm text-gray-700">
                     <input type="checkbox" name="agreement" class="mt-1" {{ old('agreement') ? 'checked' : '' }}>
-                    Saya menyatakan data yang saya isi adalah benar dan bersedia mengikuti syarat & ketentuan event.
+                    <span>
+                        Saya menyatakan data yang saya isi adalah benar dan bersedia mengikuti
+                        syarat & ketentuan event. Saya juga telah membaca dan menyetujui
+                        <a href="{{ route('event.privacy-policy', $event->slug) }}" target="_blank" class="font-medium text-red-700 underline hover:text-red-900">
+                            Kebijakan Perlindungan Data Pribadi
+                        </a>.
+                    </span>
                 </label>
                 @error('agreement')
                     <p class="mt-2 text-xs text-red-500">{{ $message }}</p>
                 @enderror
             </div>
-
             {{-- Payment Info --}}
             <div class="p-5 border border-red-200 rounded-xl bg-red-50">
                 <div class="flex items-start gap-3">
@@ -365,6 +374,61 @@ document.addEventListener('DOMContentLoaded', function () {
         sizeImg.style.display       = isHidden ? 'block' : 'none';
         sizeChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
     });
+
+    // ── Age Range Validation ───────────────────────────────────
+    var categorySelect = document.getElementById('category-select');
+    var ageInput       = document.getElementById('age-input');
+    var ageHint        = document.getElementById('age-hint');
+    var ageError       = document.getElementById('age-error');
+
+    function updateAgeRange() {
+        var selected = categorySelect.options[categorySelect.selectedIndex];
+        if (!selected.value) {
+            ageInput.min = 5;
+            ageInput.max = 100;
+            ageHint.classList.add('hidden');
+            ageError.classList.add('hidden');
+            return;
+        }
+
+        var minAge = parseInt(selected.dataset.minAge) || 5;
+        var maxAge = parseInt(selected.dataset.maxAge) || 100;
+
+        ageInput.min = minAge;
+        ageInput.max = maxAge;
+
+        ageHint.textContent = 'Rentang umur untuk kategori ini: ' + minAge + ' – ' + maxAge + ' tahun';
+        ageHint.classList.remove('hidden');
+
+        validateAge();
+    }
+
+    function validateAge() {
+        var selected = categorySelect.options[categorySelect.selectedIndex];
+        if (!selected.value || !ageInput.value) {
+            ageError.classList.add('hidden');
+            return;
+        }
+
+        var age    = parseInt(ageInput.value);
+        var minAge = parseInt(selected.dataset.minAge) || 5;
+        var maxAge = parseInt(selected.dataset.maxAge) || 100;
+
+        if (age < minAge || age > maxAge) {
+            ageError.textContent = 'Umur harus antara ' + minAge + ' – ' + maxAge + ' tahun untuk kategori ini.';
+            ageError.classList.remove('hidden');
+            ageInput.setCustomValidity('Umur di luar rentang kategori');
+        } else {
+            ageError.classList.add('hidden');
+            ageInput.setCustomValidity('');
+        }
+    }
+
+    categorySelect.addEventListener('change', updateAgeRange);
+    ageInput.addEventListener('input', validateAge);
+
+    // Init on page load (for old() values)
+    updateAgeRange();
 
     // ── Price Display ──────────────────────────────────────────
     // var categorySelect = document.getElementById('category-select');

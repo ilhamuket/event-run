@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Models\EventCategory;
 
 class RegistrationController extends Controller
 {
@@ -75,6 +76,18 @@ class RegistrationController extends Controller
             'event_category_id' => 'required|exists:event_categories,id',
             'agreement' => 'accepted',
         ]);
+
+        $category = EventCategory::findOrFail($validated['event_category_id']);
+
+        if ($category->min_age && $category->max_age) {
+            if ($validated['age'] < $category->min_age || $validated['age'] > $category->max_age) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['age' => "Umur harus antara {$category->min_age} – {$category->max_age} tahun untuk kategori {$category->name}."]);
+            }
+        }
+
+
 
         // ── Duplicate check: same email + event already paid ──
         $existingPaid = DB::selectOne("

@@ -27,6 +27,8 @@ class EventCategory extends Model
         'color_to',
         'order',
         'is_active',
+        'min_age',
+        'max_age',
     ];
 
     protected $casts = [
