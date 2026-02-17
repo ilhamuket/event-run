@@ -162,56 +162,54 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
     // Countdown Timer
-    const expiredTime = {{ $transaction->expired_at->timestamp * 1000 }};
-    const countdownEl = document.getElementById('countdown');
+    var expiredTime = {{ $transaction->expired_at->timestamp * 1000 }};
+    var countdownEl = document.getElementById('countdown');
 
-    function updateCountdown() {
-        const now = new Date().getTime();
-        const distance = expiredTime - now;
+    if (countdownEl) {
+        function updateCountdown() {
+            var now = new Date().getTime();
+            var distance = expiredTime - now;
 
-        if (distance < 0) {
-            countdownEl.textContent = 'EXPIRED';
-            countdownEl.classList.add('text-gray-500');
-            clearInterval(countdownInterval);
-            location.reload();
-            return;
+            if (distance < 0) {
+                countdownEl.textContent = 'EXPIRED';
+                countdownEl.style.color = '#6b7280';
+                clearInterval(countdownInterval);
+                location.reload();
+                return;
+            }
+
+            var hours = Math.floor(distance / (1000 * 60 * 60));
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownEl.textContent =
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
         }
 
-        const hours = Math.floor(distance / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        countdownEl.textContent =
-            String(hours).padStart(2, '0') + ':' +
-            String(minutes).padStart(2, '0') + ':' +
-            String(seconds).padStart(2, '0');
+        updateCountdown();
+        var countdownInterval = setInterval(updateCountdown, 1000);
     }
-
-    updateCountdown();
-    const countdownInterval = setInterval(updateCountdown, 1000);
 
     // Poll payment status every 5 seconds
     @if($transaction->isUnpaid())
-    const statusUrl = '{{ route("event.payment.status", ["event" => $event->slug, "ref" => $transaction->merchant_ref]) }}';
+    var statusUrl = '{{ route("event.payment.status", ["event" => $event->slug, "ref" => $transaction->merchant_ref]) }}';
 
     function checkPaymentStatus() {
         fetch(statusUrl)
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.is_paid) {
-                    // Redirect to success page
                     window.location.href = '{{ route("event.payment.success", ["event" => $event->slug, "ref" => $transaction->merchant_ref]) }}';
                 }
             })
-            .catch(error => console.error('Error checking status:', error));
+            .catch(function(error) { console.error('Error checking status:', error); });
     }
 
-    // Check every 5 seconds
     setInterval(checkPaymentStatus, 5000);
     @endif
 </script>
-@endpush
 @endsection
