@@ -25,7 +25,8 @@ class Transaction extends Model
         'expired_at',
         'checkout_url',
         'tripay_response',
-        'note'
+        'note',
+        'discount_amount'
     ];
 
     protected $casts = [
@@ -142,5 +143,10 @@ class Transaction extends Model
     public static function generateMerchantRef(): string
     {
         return 'INV-' . date('YmdHis') . '-' . strtoupper(substr(uniqid(), -4));
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(EventCoupon::class, 'event_coupon_id');
     }
 }

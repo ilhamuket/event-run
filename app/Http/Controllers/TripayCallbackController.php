@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
+use App\Models\EventCoupon;
 
 class TripayCallbackController extends Controller
 {
@@ -68,9 +69,11 @@ class TripayCallbackController extends Controller
             $this->handlePaid($tx, $callback);
         } elseif ($callback->isExpired()) {
             DB::update("UPDATE transactions SET status = 'EXPIRED', updated_at = NOW() WHERE id = ?", [$tx->id]);
+            $this->releaseCouponIfUsed($tx->id);
             Log::info('Tripay callback: Payment expired', ['merchant_ref' => $merchantRef]);
         } elseif ($callback->isFailed()) {
             DB::update("UPDATE transactions SET status = 'FAILED', updated_at = NOW() WHERE id = ?", [$tx->id]);
+            $this->releaseCouponIfUsed($tx->id);
             Log::info('Tripay callback: Payment failed', ['merchant_ref' => $merchantRef]);
         } elseif ($callback->isRefund()) {
             DB::update("UPDATE transactions SET status = 'REFUND', updated_at = NOW() WHERE id = ?", [$tx->id]);
@@ -116,6 +119,8 @@ class TripayCallbackController extends Controller
                         WHERE id = ? AND status = 'UNPAID'",
                         [$tx->id]
                     );
+
+                    $this->releaseCouponIfUsed($tx->id);
 
                     Log::warning('Tripay callback: Payment rejected — quota full', [
                         'transaction_id' => $tx->id,
@@ -217,5 +222,21 @@ class TripayCallbackController extends Controller
         Log::info('Tripay callback: Payment refunded', [
             'merchant_ref' => $transaction->merchant_ref,
         ]);
+    }
+
+    /**
+     * Release coupon usage if transaction used a coupon
+     */
+    protected function releaseCouponIfUsed(int $transactionId): void
+    {
+        $couponId = DB::selectOne(
+            "SELECT event_coupon_id FROM transactions WHERE id = ? AND event_coupon_id IS NOT NULL",
+            [$transactionId]
+        );
+
+        if ($couponId && $couponId->event_coupon_id) {
+            $coupon = EventCoupon::find($couponId->event_coupon_id);
+            $coupon?->releaseUsage();
+        }
     }
 }

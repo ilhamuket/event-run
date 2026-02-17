@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\EventCoupon;
 use App\Models\Participant;
 use App\Models\Transaction;
-use Ilhamuket\Tripay\Facades\Tripay;
 use Ilhamuket\Tripay\Data\TransactionData;
-use Ilhamuket\Tripay\Data\OrderItem;
-use Ilhamuket\Tripay\PaymentMethod;
 use Ilhamuket\Tripay\Exceptions\TripayApiException;
+use Ilhamuket\Tripay\Facades\Tripay;
+use Ilhamuket\Tripay\PaymentMethod;
 use Illuminate\Support\Facades\Log;
 
 class TripayService
@@ -16,20 +16,23 @@ class TripayService
     /**
      * Create QRIS payment for participant
      */
-    public function createQrisPayment(Participant $participant): Transaction
+    public function createQrisPayment(Participant $participant, ?EventCoupon $coupon = null): Transaction
     {
         $event = $participant->event;
         $category = $participant->category;
 
-        // Calculate fee (QRIS: flat 750 + 0.7%)
-        $amount = $category->price;
-        $fee = $this->calculateFee($amount);
-        $totalAmount = $amount + $fee;
+        $amount = (int) $category->price;
+        $discountAmount = 0;
 
-        // Generate merchant ref
+        if ($coupon) {
+            $discountAmount = $coupon->calculateDiscount($amount);
+            $amount = $amount - $discountAmount;
+        }
+
+        $totalAmount = $amount;
+
         $merchantRef = Transaction::generateMerchantRef();
 
-        // Prepare transaction data using SDK
         $transactionData = new TransactionData();
         $transactionData
             ->setMethod(PaymentMethod::QRISC)
@@ -40,7 +43,8 @@ class TripayService
             ->setCustomerPhone($participant->phone)
             ->addOrderItem([
                 'sku' => 'EVT-' . $event->id . '-' . $category->id,
-                'name' => $event->name . ' - ' . $category->name,
+                'name' => $event->name . ' - ' . $category->name
+                    . ($coupon ? " (Diskon {$coupon->discount_percent}%)" : ''),
                 'price' => $totalAmount,
                 'quantity' => 1,
             ])
@@ -52,21 +56,21 @@ class TripayService
             ->setExpiryHours(config('tripay.expiry_hours', 24));
 
         try {
-            // Create transaction via SDK
             $response = Tripay::createTransaction($transactionData);
 
-            // Save to database
             $transaction = Transaction::create([
                 'participant_id' => $participant->id,
                 'event_id' => $event->id,
                 'event_category_id' => $category->id,
+                'event_coupon_id' => $coupon?->id,
                 'merchant_ref' => $merchantRef,
                 'tripay_reference' => $response->getReference(),
                 'payment_method' => $response->getPaymentMethod(),
                 'payment_name' => $response->getPaymentName(),
                 'amount' => $amount,
-                'fee' => $fee,
-                'total_amount' => $totalAmount,
+                'discount_amount' => $discountAmount,
+                'fee' => $response->getTotalFee(),
+                'total_amount' => $response->getAmount(),
                 'qr_string' => $response->getQrString(),
                 'qr_url' => $response->getQrUrl(),
                 'status' => Transaction::STATUS_UNPAID,

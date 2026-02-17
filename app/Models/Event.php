@@ -236,4 +236,14 @@ class Event extends Model
 
         return max(0, $this->max_participants - $this->paidParticipantsCount());
     }
+
+    public function coupons(): HasMany
+    {
+        return $this->hasMany(EventCoupon::class);
+    }
+
+    public function activeCoupons(): HasMany
+    {
+        return $this->coupons()->where('is_active', true);
+    }
 }

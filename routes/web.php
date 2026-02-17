@@ -18,6 +18,9 @@ Route::prefix('event/{event:slug}')->name('event.')->group(function () {
         Route::get('/register', [RegistrationController::class, 'create'])->name('register');
         Route::post('/register', [RegistrationController::class, 'store'])->name('register.store');
 
+        Route::post('/coupon/validate', [RegistrationController::class, 'validateCoupon'])->name('coupon.validate');
+
+
 
     Route::get('/privacy-policy', function () {
         return view('event.privacy-policy');

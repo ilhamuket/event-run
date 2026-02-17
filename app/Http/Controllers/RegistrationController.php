@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Models\EventCategory;
+use App\Models\EventCoupon;
 
 class RegistrationController extends Controller
 {
@@ -51,13 +52,11 @@ class RegistrationController extends Controller
     {
         $event = Event::where('slug', $slug)->firstOrFail();
 
-        // ── Rate limiting: max 3 attempts per IP per minute ──
+        // ── Rate limiting ──
         $rateLimitKey = 'register:' . $request->ip();
         if (RateLimiter::tooManyAttempts($rateLimitKey, 3)) {
             $seconds = RateLimiter::availableIn($rateLimitKey);
-            return back()
-                ->withInput()
-                ->with('error', "Terlalu banyak percobaan. Silakan coba lagi dalam {$seconds} detik.");
+            return back()->withInput()->with('error', "Terlalu banyak percobaan. Silakan coba lagi dalam {$seconds} detik.");
         }
         RateLimiter::hit($rateLimitKey, 60);
 
@@ -74,22 +73,20 @@ class RegistrationController extends Controller
             'emergency_contact_name' => 'required|string|max:255',
             'emergency_contact_phone' => 'required|string|max:20',
             'event_category_id' => 'required|exists:event_categories,id',
+            'coupon_code' => 'nullable|string|max:50',
             'agreement' => 'accepted',
         ]);
 
+        // ── Age validation ──
         $category = EventCategory::findOrFail($validated['event_category_id']);
-
         if ($category->min_age && $category->max_age) {
             if ($validated['age'] < $category->min_age || $validated['age'] > $category->max_age) {
-                return back()
-                    ->withInput()
+                return back()->withInput()
                     ->withErrors(['age' => "Umur harus antara {$category->min_age} – {$category->max_age} tahun untuk kategori {$category->name}."]);
             }
         }
 
-
-
-        // ── Duplicate check: same email + event already paid ──
+        // ── Duplicate check ──
         $existingPaid = DB::selectOne("
             SELECT p.id FROM participants p
             INNER JOIN transactions t ON t.participant_id = p.id AND t.status = 'PAID'
@@ -98,19 +95,16 @@ class RegistrationController extends Controller
         ", [$event->id, $validated['email']]);
 
         if ($existingPaid) {
-            return back()
-                ->withInput()
-                ->with('error', 'Email ini sudah terdaftar dan sudah membayar untuk event ini.');
+            return back()->withInput()->with('error', 'Email ini sudah terdaftar dan sudah membayar untuk event ini.');
         }
 
+        // ── Quota check ──
         if ($event->max_participants) {
             $quotaLock = "quota_lock_{$event->id}";
             $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 5) as acquired", [$quotaLock]);
-
             if (!$lockAcquired || !$lockAcquired->acquired) {
                 return back()->withInput()->with('error', 'Server sibuk, silakan coba lagi.');
             }
-
             try {
                 if ($event->isQuotaFull()) {
                     return back()->withInput()->with('error', 'Maaf, kuota peserta sudah penuh.');
@@ -120,26 +114,40 @@ class RegistrationController extends Controller
             }
         }
 
-        try {
-            $transaction = DB::transaction(function () use ($validated, $event) {
+        // ── Validate & claim coupon (with atomic check) ──
+        $coupon = null;
+        $couponCode = strtoupper(trim($validated['coupon_code'] ?? ''));
 
-                // ── BIB generation with MySQL advisory lock (prevents race condition) ──
+        if ($couponCode !== '') {
+            $coupon = EventCoupon::where('event_id', $event->id)
+                ->where('code', $couponCode)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$coupon) {
+                return back()->withInput()->withErrors(['coupon_code' => 'Kode kupon tidak ditemukan.']);
+            }
+
+            // Atomic claim — increment used_count only if still under max
+            if (!$coupon->claimUsage()) {
+                return back()->withInput()->withErrors(['coupon_code' => 'Kuota kupon ini sudah habis.']);
+            }
+        }
+
+        try {
+            $transaction = DB::transaction(function () use ($validated, $event, $coupon) {
+
+                // ── BIB generation with lock ──
                 $lockName = "bib_lock_{$event->id}";
                 $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 5) as acquired", [$lockName]);
-
                 if (!$lockAcquired || !$lockAcquired->acquired) {
                     throw new \RuntimeException('Server sibuk, silakan coba lagi.');
                 }
 
                 try {
-                    // Raw query for max BIB - faster than Eloquent
-                    $lastBib = DB::selectOne(
-                        "SELECT MAX(bib) as max_bib FROM participants WHERE event_id = ?",
-                        [$event->id]
-                    );
+                    $lastBib = DB::selectOne("SELECT MAX(bib) as max_bib FROM participants WHERE event_id = ?", [$event->id]);
                     $bib = $lastBib && $lastBib->max_bib ? $lastBib->max_bib + 1 : 1001;
 
-                    // Raw insert for speed
                     $participantId = DB::table('participants')->insertGetId([
                         'event_id' => $event->id,
                         'event_category_id' => $validated['event_category_id'],
@@ -159,18 +167,15 @@ class RegistrationController extends Controller
                         'updated_at' => now(),
                     ]);
                 } finally {
-                    // Always release the advisory lock
                     DB::select("SELECT RELEASE_LOCK(?)", [$lockName]);
                 }
 
-                // Load participant model for Tripay (needs relationships)
                 $participant = Participant::find($participantId);
 
-                // Create QRIS payment
-                return $this->tripayService->createQrisPayment($participant);
+                return $this->tripayService->createQrisPayment($participant, $coupon);
             });
 
-            // ── Send email OUTSIDE transaction (non-blocking) ──
+            // ── Send email ──
             try {
                 $participant = $transaction->participant->load(['event', 'category']);
                 Mail::to($participant->email)->queue(new RegistrationReceived($participant, $transaction));
@@ -179,7 +184,6 @@ class RegistrationController extends Controller
                     'participant_id' => $transaction->participant_id,
                     'error' => $e->getMessage(),
                 ]);
-                // Don't fail the registration if email fails
             }
 
             return redirect()->route('event.payment.show', [
@@ -188,19 +192,18 @@ class RegistrationController extends Controller
             ]);
 
         } catch (\RuntimeException $e) {
-            return back()
-                ->withInput()
-                ->with('error', $e->getMessage());
+            // Release coupon if registration failed
+            $coupon?->releaseUsage();
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (\Exception $e) {
+            // Release coupon if registration failed
+            $coupon?->releaseUsage();
             Log::error('Registration Error: ' . $e->getMessage(), [
                 'event_id' => $event->id,
                 'email' => $validated['email'] ?? null,
                 'stack' => $e->getTraceAsString(),
             ]);
-
-            return back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan saat memproses pendaftaran. Silakan coba lagi.');
+            return back()->withInput()->with('error', 'Terjadi kesalahan saat memproses pendaftaran. Silakan coba lagi.');
         }
     }
 
@@ -279,6 +282,12 @@ class RegistrationController extends Controller
                                     [$tx->id]
                                 );
 
+                                // Release coupon
+                                $couponId = DB::selectOne("SELECT event_coupon_id FROM transactions WHERE id = ?", [$tx->id]);
+                                if ($couponId && $couponId->event_coupon_id) {
+                                   EventCoupon::find($couponId->event_coupon_id)?->releaseUsage();
+                                }
+
                                 Log::warning('Payment rejected: quota full', [
                                     'transaction_id' => $tx->id,
                                     'event_id' => $tx->event_id,
@@ -352,5 +361,54 @@ class RegistrationController extends Controller
             ->firstOrFail();
 
         return view('event.payment-success', compact('event', 'transaction'));
+    }
+
+    /**
+     * Validate coupon code (AJAX)
+     */
+    public function validateCoupon(Request $request, string $slug)
+    {
+        $request->validate([
+            'code' => 'required|string|max:50',
+            'event_category_id' => 'required|exists:event_categories,id',
+        ]);
+
+        $event = Event::where('slug', $slug)->firstOrFail();
+
+        $coupon = EventCoupon::where('event_id', $event->id)
+            ->where('code', strtoupper(trim($request->code)))
+            ->where('is_active', true)
+            ->first();
+
+        if (!$coupon) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kode kupon tidak ditemukan.',
+            ]);
+        }
+
+        if (!$coupon->isAvailable()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kuota kupon ini sudah habis.',
+            ]);
+        }
+
+        $category = EventCategory::findOrFail($request->event_category_id);
+        $basePrice = (int) $category->price;
+        $discount = $coupon->calculateDiscount($basePrice);
+        $discountedPrice = $basePrice - $discount;
+        $calculation = $this->tripayService->calculateTotal($discountedPrice);
+
+        return response()->json([
+            'valid' => true,
+            'message' => "Diskon {$coupon->discount_percent}% berhasil diterapkan!",
+            'discount_percent' => $coupon->discount_percent,
+            'discount_amount' => $discount,
+            'original_price' => $basePrice,
+            'discounted_price' => $discountedPrice,
+            'fee' => $calculation['fee'],
+            'total' => $calculation['total'],
+        ]);
     }
 }

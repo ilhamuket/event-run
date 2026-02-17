@@ -122,8 +122,28 @@
                 <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
                         <span class="text-gray-500">Harga Tiket</span>
-                        <span class="text-gray-900">{{ $transaction->formatted_amount }}</span>
+                        @if($transaction->discount_amount > 0)
+                            <span class="text-gray-400 line-through">
+                                Rp {{ number_format($transaction->amount + $transaction->discount_amount, 0, ',', '.') }}
+                            </span>
+                        @else
+                            <span class="text-gray-900">{{ $transaction->formatted_amount }}</span>
+                        @endif
                     </div>
+                    @if($transaction->discount_amount > 0)
+                        <div class="flex justify-between">
+                            <span class="font-medium text-green-600">
+                                Diskon{{ $transaction->coupon ? " ({$transaction->coupon->discount_percent}%)" : '' }}
+                            </span>
+                            <span class="font-medium text-green-600">
+                                - Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Harga Setelah Diskon</span>
+                            <span class="text-gray-900">{{ $transaction->formatted_amount }}</span>
+                        </div>
+                    @endif
                     <div class="flex justify-between">
                         <span class="text-gray-500">Biaya Admin</span>
                         <span class="text-gray-900">{{ $transaction->formatted_fee }}</span>
