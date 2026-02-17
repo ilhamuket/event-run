@@ -78,86 +78,12 @@
                     <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                 @enderror
 
-                {{-- Price Display --}}
-                <div id="price-display" class="hidden p-4 mt-4 border border-red-200 rounded-lg bg-red-50">
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Biaya Pendaftaran</span>
-                            <span id="base-price" class="font-medium">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Biaya Admin (QRIS)</span>
-                            <span id="fee-price" class="font-medium">Rp 0</span>
-                        </div>
-                        <div class="pt-2 border-t border-red-200">
-                            <div class="flex justify-between">
-                                <span class="font-semibold text-red-900">Total Pembayaran</span>
-                                <span id="total-price" class="font-bold text-red-900">Rp 0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+
             </div>
 
 
-            {{-- Coupon Code --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Kode Kupon / Referral</label>
-                <div class="flex gap-3 mt-2">
-                    <input
-                        type="text"
-                        name="coupon_code"
-                        id="coupon-input"
-                        value="{{ old('coupon_code') }}"
-                        placeholder="Masukkan kode kupon (opsional)"
-                        maxlength="50"
-                        class="flex-1 px-4 py-3 text-sm uppercase border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
-                    >
-                    <button
-                        type="button"
-                        id="coupon-apply-btn"
-                        class="px-5 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Pakai
-                    </button>
-                </div>
-                <p id="coupon-success" class="hidden mt-2 text-xs font-medium text-green-600"></p>
-                <p id="coupon-error" class="hidden mt-2 text-xs text-red-500"></p>
-                @error('coupon_code')
-                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                @enderror
 
-                {{-- Discount Display --}}
-                <div id="discount-display" class="hidden p-4 mt-3 border border-green-200 rounded-lg bg-green-50">
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Harga Normal</span>
-                            <span id="original-price" class="font-medium text-gray-400 line-through">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-medium text-green-700">Diskon (<span id="discount-percent">0</span>%)</span>
-                            <span id="discount-amount" class="font-medium text-green-700">- Rp 0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Harga Setelah Diskon</span>
-                            <span id="discounted-price" class="font-medium">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Biaya Admin (QRIS)</span>
-                            <span id="discount-fee" class="font-medium">Rp 0</span>
-                        </div>
-                        <div class="pt-2 border-t border-green-200">
-                            <div class="flex justify-between">
-                                <span class="font-semibold text-green-900">Total Pembayaran</span>
-                                <span id="discount-total" class="font-bold text-green-900">Rp 0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" id="coupon-remove-btn" class="mt-3 text-xs font-medium text-red-600 underline hover:text-red-800">
-                        Hapus kupon
-                    </button>
-                </div>
-            </div>
 
             {{-- Nama --}}
             <div>
@@ -317,6 +243,41 @@
                     <label class="block text-sm font-medium text-gray-700">Komunitas / Club Lari</label>
                     <input type="text" name="community" value="{{ old('community') }}" placeholder="Opsional"
                         class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
+                </div>
+            </div>
+
+             {{-- Coupon Code --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Kode Kupon / Referral</label>
+                <div class="flex gap-3 mt-2">
+                    <input
+                        type="text"
+                        name="coupon_code"
+                        id="coupon-input"
+                        value="{{ old('coupon_code') }}"
+                        placeholder="Masukkan kode kupon (opsional)"
+                        maxlength="50"
+                        class="flex-1 px-4 py-3 text-sm uppercase border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
+                    >
+                    <button
+                        type="button"
+                        id="coupon-apply-btn"
+                        class="px-5 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Pakai
+                    </button>
+                </div>
+                <p id="coupon-success" class="hidden mt-2 text-xs font-medium text-green-600"></p>
+                <p id="coupon-error" class="hidden mt-2 text-xs text-red-500"></p>
+                @error('coupon_code')
+                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+
+                {{-- Discount Display --}}
+                <div id="discount-display" class="hidden mt-2">
+                    <button type="button" id="coupon-remove-btn" class="text-xs font-medium text-red-600 underline hover:text-red-800">
+                        Hapus kupon
+                    </button>
                 </div>
             </div>
 
@@ -559,12 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 couponSuccess.textContent = data.message;
                 couponSuccess.classList.remove('hidden');
 
-                document.getElementById('original-price').textContent = formatRupiah(data.original_price);
-                document.getElementById('discount-percent').textContent = data.discount_percent;
-                document.getElementById('discount-amount').textContent = '- ' + formatRupiah(data.discount_amount);
-                document.getElementById('discounted-price').textContent = formatRupiah(data.discounted_price);
-                document.getElementById('discount-fee').textContent = formatRupiah(data.fee);
-                document.getElementById('discount-total').textContent = formatRupiah(data.total);
+
                 discountDisplay.classList.remove('hidden');
             } else {
                 couponApplyBtn.disabled = false;

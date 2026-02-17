@@ -38,8 +38,22 @@
             </div>
 
             @if($transaction->isUnpaid() && $transaction->canBePaid())
+                {{-- Quota Full Message (hidden by default, shown by JS) --}}
+                <div id="quota-full-msg" class="p-6 text-center" style="display: none;">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="mb-2 text-lg font-bold text-red-900">Kuota Peserta Penuh</h3>
+                    <p class="text-sm text-gray-600">
+                        Maaf, kuota peserta sudah penuh saat Anda belum menyelesaikan pembayaran.
+                        Jika Anda sudah terlanjur membayar, silakan hubungi panitia untuk proses refund.
+                    </p>
+                </div>
+
                 {{-- QR Code Section --}}
-                <div class="p-6">
+                <div id="qr-section" class="p-6">
                     <div class="text-center">
                         <p class="mb-4 text-sm text-gray-500">Scan QR code dengan aplikasi e-wallet</p>
 
@@ -202,7 +216,12 @@
 </div>
 
 <script>
-    // Countdown Timer
+    // ── Shared variables (top scope) ──
+    var countdownInterval = null;
+    var pollInterval = null;
+    var quotaInterval = null;
+
+    // ── Countdown Timer ──
     var expiredTime = {{ $transaction->expired_at->timestamp * 1000 }};
     var countdownEl = document.getElementById('countdown');
 
@@ -214,7 +233,7 @@
             if (distance < 0) {
                 countdownEl.textContent = 'EXPIRED';
                 countdownEl.style.color = '#6b7280';
-                clearInterval(countdownInterval);
+                if (countdownInterval) clearInterval(countdownInterval);
                 location.reload();
                 return;
             }
@@ -230,10 +249,10 @@
         }
 
         updateCountdown();
-        var countdownInterval = setInterval(updateCountdown, 1000);
+        countdownInterval = setInterval(updateCountdown, 1000);
     }
 
-    // Poll payment status every 5 seconds
+    // ── Poll payment status setiap 5 detik ──
     @if($transaction->isUnpaid())
     var statusUrl = '{{ route("event.payment.status", ["event" => $event->slug, "ref" => $transaction->merchant_ref]) }}';
 
@@ -242,13 +261,52 @@
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.is_paid) {
+                    if (pollInterval) clearInterval(pollInterval);
+                    if (quotaInterval) clearInterval(quotaInterval);
                     window.location.href = '{{ route("event.payment.success", ["event" => $event->slug, "ref" => $transaction->merchant_ref]) }}';
+                } else if (data.status === 'FAILED' || data.status === 'EXPIRED') {
+                    if (pollInterval) clearInterval(pollInterval);
+                    if (quotaInterval) clearInterval(quotaInterval);
+                    location.reload();
                 }
             })
             .catch(function(error) { console.error('Error checking status:', error); });
     }
 
-    setInterval(checkPaymentStatus, 5000);
+    pollInterval = setInterval(checkPaymentStatus, 5000);
+    @endif
+
+    // ── Poll event quota setiap 10 detik ──
+    @if($transaction->isUnpaid() && $event->max_participants)
+    var quotaUrl = '{{ route("event.quota.status", $event->slug) }}';
+    var quotaBlocked = false;
+
+    function checkEventQuota() {
+        if (quotaBlocked) return;
+
+        fetch(quotaUrl)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.quota_full) {
+                    quotaBlocked = true;
+
+                    // Stop semua polling
+                    if (pollInterval) clearInterval(pollInterval);
+                    if (quotaInterval) clearInterval(quotaInterval);
+                    if (countdownInterval) clearInterval(countdownInterval);
+
+                    // Sembunyikan QR, tampilkan pesan kuota penuh
+                    var qrSection = document.getElementById('qr-section');
+                    var quotaFullMsg = document.getElementById('quota-full-msg');
+                    if (qrSection) qrSection.style.display = 'none';
+                    if (quotaFullMsg) quotaFullMsg.style.display = 'block';
+                }
+            })
+            .catch(function(e) { console.error('Quota check error:', e); });
+    }
+
+    quotaInterval = setInterval(checkEventQuota, 10000);
+    checkEventQuota();
     @endif
 </script>
 @endsection
