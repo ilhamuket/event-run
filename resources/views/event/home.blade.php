@@ -288,13 +288,33 @@
                     </div>
 
                     <div class="flex flex-col justify-center gap-3 sm:flex-row md:justify-end">
-                        <button onclick="showRegistrationPopup()"
-                           class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-700 transition-all hover:shadow-lg hover:-translate-y-0.5">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                            </svg>
-                            Daftar Sekarang
-                        </button>
+                       @if($event->canRegister())
+                            <a href="{{ route('event.register', $event->slug) }}"
+                            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-700 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Daftar Sekarang
+                                @if($event->remainingSlots() !== null)
+                                    <span class="px-2 py-0.5 text-xs bg-white/20 rounded-full">Sisa {{ $event->remainingSlots() }}</span>
+                                @endif
+                            </a>
+                        @elseif($event->isQuotaFull())
+                            <button disabled class="inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gray-400 opacity-75 cursor-not-allowed rounded-xl">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                </svg>
+                                Kuota Penuh
+                            </button>
+                        @else
+                            <button onclick="showRegistrationPopup()"
+                            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-700 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Daftar Sekarang
+                            </button>
+                        @endif
                         <a href="#about"
                            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-800 rounded-xl font-bold hover:bg-red-100 transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -625,10 +645,24 @@
                 </p>
 
                 <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <button onclick="showRegistrationPopup()"
-                       class="w-full px-8 py-4 text-base font-bold tracking-wide text-red-900 transition-all bg-white rounded-lg shadow-lg cursor-pointer sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
-                        DAFTAR SEKARANG
-                    </button>
+                    @if($event->canRegister())
+                        <a href="{{ route('event.register', $event->slug) }}"
+                        class="w-full px-8 py-4 text-base font-bold tracking-wide text-center text-red-900 transition-all bg-white rounded-lg shadow-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
+                            DAFTAR SEKARANG
+                            @if($event->remainingSlots() !== null)
+                                <span class="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded-full">Sisa {{ $event->remainingSlots() }}</span>
+                            @endif
+                        </a>
+                    @elseif($event->isQuotaFull())
+                        <button disabled class="w-full px-8 py-4 text-base font-bold tracking-wide text-gray-500 bg-gray-300 rounded-lg shadow-lg opacity-75 cursor-not-allowed sm:w-auto md:px-10 md:py-5 md:text-lg">
+                            KUOTA PENUH
+                        </button>
+                    @else
+                        <button onclick="showRegistrationPopup()"
+                        class="w-full px-8 py-4 text-base font-bold tracking-wide text-red-900 transition-all bg-white rounded-lg shadow-lg cursor-pointer sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
+                            DAFTAR SEKARANG
+                        </button>
+                    @endif
                     <a href="#about"
                        class="w-full px-8 py-4 text-base font-bold tracking-wide text-white transition-all bg-transparent border-2 border-white rounded-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-white/10">
                         PELAJARI DULU

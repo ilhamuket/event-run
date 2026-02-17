@@ -90,18 +90,65 @@ class TripayCallbackController extends Controller
     {
         $paidAt = $callback->getPaidAtDateTime() ?? now();
 
-        // Raw update with WHERE status = UNPAID (idempotent)
-        $affected = DB::update(
-            "UPDATE transactions SET status = 'PAID', paid_at = ?, updated_at = NOW()
-             WHERE id = ? AND status = 'UNPAID'",
-            [$paidAt, $tx->id]
-        );
+        $event = \App\Models\Event::find($tx->event_id);
 
-        // Only proceed if we actually updated (prevents duplicate processing)
-        if ($affected === 0) {
-            return;
+        // ── Strict quota check with advisory lock ──
+        if ($event && $event->max_participants) {
+            $quotaLock = "quota_lock_{$event->id}";
+            $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 10) as acquired", [$quotaLock]);
+
+            if (!$lockAcquired || !$lockAcquired->acquired) {
+                Log::error('Tripay callback: Failed to acquire quota lock', [
+                    'transaction_id' => $tx->id,
+                    'event_id' => $tx->event_id,
+                ]);
+                // Don't update anything — Tripay will retry callback
+                return;
+            }
+
+            try {
+                $paidCount = $event->paidParticipantsCount();
+
+                if ($paidCount >= $event->max_participants) {
+                    // Quota full — reject payment
+                    DB::update(
+                        "UPDATE transactions SET status = 'FAILED', note = 'Kuota penuh saat callback pembayaran diterima', updated_at = NOW()
+                        WHERE id = ? AND status = 'UNPAID'",
+                        [$tx->id]
+                    );
+
+                    Log::warning('Tripay callback: Payment rejected — quota full', [
+                        'transaction_id' => $tx->id,
+                        'event_id' => $tx->event_id,
+                        'paid_count' => $paidCount,
+                        'max' => $event->max_participants,
+                    ]);
+
+                    return;
+                }
+
+                // Quota OK — mark as PAID
+                $affected = DB::update(
+                    "UPDATE transactions SET status = 'PAID', paid_at = ?, updated_at = NOW()
+                    WHERE id = ? AND status = 'UNPAID'",
+                    [$paidAt, $tx->id]
+                );
+            } finally {
+                DB::select("SELECT RELEASE_LOCK(?)", [$quotaLock]);
+            }
+        } else {
+            // No quota limit — mark as PAID directly
+            $affected = DB::update(
+                "UPDATE transactions SET status = 'PAID', paid_at = ?, updated_at = NOW()
+                WHERE id = ? AND status = 'UNPAID'",
+                [$paidAt, $tx->id]
+            );
         }
 
+        // Only proceed if we actually updated
+        if (($affected ?? 0) === 0) {
+            return;
+        }
 
         Log::info('Tripay callback: Payment successful', [
             'transaction_id' => $tx->id,
@@ -111,7 +158,7 @@ class TripayCallbackController extends Controller
         // Invalidate related caches
         Cache::forget("results:{$tx->event_id}:" . md5(":1"));
 
-        // Queue email (non-blocking, won't fail callback)
+        // Queue email (non-blocking)
         try {
             $transaction = Transaction::with(['participant.event', 'participant.category'])->find($tx->id);
             if ($transaction && $transaction->participant) {

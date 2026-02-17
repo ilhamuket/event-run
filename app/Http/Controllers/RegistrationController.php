@@ -103,6 +103,23 @@ class RegistrationController extends Controller
                 ->with('error', 'Email ini sudah terdaftar dan sudah membayar untuk event ini.');
         }
 
+        if ($event->max_participants) {
+            $quotaLock = "quota_lock_{$event->id}";
+            $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 5) as acquired", [$quotaLock]);
+
+            if (!$lockAcquired || !$lockAcquired->acquired) {
+                return back()->withInput()->with('error', 'Server sibuk, silakan coba lagi.');
+            }
+
+            try {
+                if ($event->isQuotaFull()) {
+                    return back()->withInput()->with('error', 'Maaf, kuota peserta sudah penuh.');
+                }
+            } finally {
+                DB::select("SELECT RELEASE_LOCK(?)", [$quotaLock]);
+            }
+        }
+
         try {
             $transaction = DB::transaction(function () use ($validated, $event) {
 
@@ -240,21 +257,66 @@ class RegistrationController extends Controller
                 $status = $this->tripayService->checkStatus($tx->tripay_reference);
 
                 if ($status === 'PAID') {
-                    // Raw updates - faster
-                    DB::update(
-                        "UPDATE transactions SET status = 'PAID', paid_at = NOW(), updated_at = NOW()
-                         WHERE id = ? AND status = 'UNPAID'",
-                        [$tx->id]
-                    );
+                    // ── STRICT QUOTA CHECK before marking paid ──
+                    $event = Event::find($tx->event_id);
 
+                    if ($event && $event->max_participants) {
+                        $quotaLock = "quota_lock_{$event->id}";
+                        $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 5) as acquired", [$quotaLock]);
 
-                    // Invalidate related caches
+                        if (!$lockAcquired || !$lockAcquired->acquired) {
+                            return response()->json(['status' => 'UNPAID', 'is_paid' => false]);
+                        }
+
+                        try {
+                            $paidCount = $event->paidParticipantsCount();
+
+                            if ($paidCount >= $event->max_participants) {
+                                // Quota full — mark as FAILED, don't mark as PAID
+                                DB::update(
+                                    "UPDATE transactions SET status = 'FAILED', note = 'Kuota penuh saat pembayaran diterima', updated_at = NOW()
+                                    WHERE id = ? AND status = 'UNPAID'",
+                                    [$tx->id]
+                                );
+
+                                Log::warning('Payment rejected: quota full', [
+                                    'transaction_id' => $tx->id,
+                                    'event_id' => $tx->event_id,
+                                    'paid_count' => $paidCount,
+                                    'max' => $event->max_participants,
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'FAILED',
+                                    'is_paid' => false,
+                                    'message' => 'Kuota peserta sudah penuh. Pembayaran Anda akan direfund.',
+                                ]);
+                            }
+
+                            // Quota OK — mark as PAID
+                            DB::update(
+                                "UPDATE transactions SET status = 'PAID', paid_at = NOW(), updated_at = NOW()
+                                WHERE id = ? AND status = 'UNPAID'",
+                                [$tx->id]
+                            );
+                        } finally {
+                            DB::select("SELECT RELEASE_LOCK(?)", [$quotaLock]);
+                        }
+                    } else {
+                        // No quota limit — mark as PAID directly
+                        DB::update(
+                            "UPDATE transactions SET status = 'PAID', paid_at = NOW(), updated_at = NOW()
+                            WHERE id = ? AND status = 'UNPAID'",
+                            [$tx->id]
+                        );
+                    }
+
+                    // Invalidate cache & send email (keep existing code)
                     Cache::forget("results:{$tx->event_id}:" . md5(":1"));
 
-                    // Queue payment confirmed email
                     try {
                         $transaction = Transaction::with(['participant.event', 'participant.category'])->find($tx->id);
-                        if ($transaction && $transaction->participant) {
+                        if ($transaction && $transaction->status === 'PAID' && $transaction->participant) {
                             Mail::to($transaction->participant->email)
                                 ->queue(new PaymentConfirmed($transaction->participant, $transaction));
                         }
@@ -262,7 +324,11 @@ class RegistrationController extends Controller
                         Log::warning('Failed to queue payment email', ['error' => $e->getMessage()]);
                     }
 
-                    return response()->json(['status' => 'PAID', 'is_paid' => true]);
+                    $txFresh = DB::selectOne("SELECT status FROM transactions WHERE id = ?", [$tx->id]);
+                    return response()->json([
+                        'status' => $txFresh->status,
+                        'is_paid' => $txFresh->status === 'PAID',
+                    ]);
                 }
             } catch (\Exception $e) {
                 Log::error('Check status error: ' . $e->getMessage());

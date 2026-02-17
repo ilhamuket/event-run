@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Event extends Model
 {
@@ -26,6 +27,8 @@ class Event extends Model
         'youtube_url',
         'contact_phone',
         'is_published',
+        'is_registration_open',
+        'max_participants',
     ];
 
     protected $casts = [
@@ -33,6 +36,8 @@ class Event extends Model
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
         'is_published' => 'boolean',
+        'is_registration_open' => 'boolean',
+        'max_participants' => 'integer',
     ];
 
     /**
@@ -184,5 +189,51 @@ class Event extends Model
     public function getRaceGuideUrlAttribute(): ?string
     {
         return $this->race_guide ? asset('storage/' . $this->race_guide) : null;
+    }
+
+
+    /**
+     * Count paid participants (strict: only PAID transactions)
+     */
+    public function paidParticipantsCount(): int
+    {
+        return DB::selectOne("
+            SELECT COUNT(DISTINCT p.id) as total
+            FROM participants p
+            INNER JOIN transactions t ON t.participant_id = p.id AND t.status = 'PAID'
+            WHERE p.event_id = ?
+        ", [$this->id])->total;
+    }
+
+    /**
+     * Check if registration quota is full
+     */
+    public function isQuotaFull(): bool
+    {
+        if (is_null($this->max_participants)) {
+            return false; // unlimited
+        }
+
+        return $this->paidParticipantsCount() >= $this->max_participants;
+    }
+
+    /**
+     * Check if registration is currently allowed
+     */
+    public function canRegister(): bool
+    {
+        return $this->is_registration_open && !$this->isQuotaFull();
+    }
+
+    /**
+     * Get remaining slots
+     */
+    public function remainingSlots(): ?int
+    {
+        if (is_null($this->max_participants)) {
+            return null; // unlimited
+        }
+
+        return max(0, $this->max_participants - $this->paidParticipantsCount());
     }
 }

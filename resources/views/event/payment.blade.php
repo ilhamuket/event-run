@@ -25,6 +25,10 @@
                         <span class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full">
                             Kadaluarsa
                         </span>
+                    @elseif($transaction->status === 'FAILED')
+                        <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">
+                            Gagal — Kuota Penuh
+                        </span>
                     @else
                         <span class="px-3 py-1 text-sm font-medium rounded-full" style="background: rgba(153, 27, 27, 0.08); color: #991b1b;">
                             Menunggu Pembayaran
@@ -76,6 +80,21 @@
                             </p>
                         </div>
                     </div>
+                </div>
+            @endif
+
+            @if($transaction->status === 'FAILED')
+                <div class="p-6 text-center">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                    <h3 class="mb-2 text-lg font-bold text-red-900">Pendaftaran Gagal</h3>
+                    <p class="text-sm text-gray-600">
+                        Kuota peserta sudah penuh saat pembayaran Anda diterima.
+                        Jika Anda sudah membayar, silakan hubungi panitia untuk proses refund.
+                    </p>
                 </div>
             @endif
 

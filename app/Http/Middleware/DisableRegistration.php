@@ -2,20 +2,34 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Event;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class DisableRegistration
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
-        return abort(403, 'Pendaftaran belum dibuka.');
-    }
+        $slug = $request->route('slug') ?? $request->route('event');
 
+        if (!$slug) {
+            abort(403, 'Event tidak ditemukan.');
+        }
+
+        $event = Event::where('slug', $slug)->first();
+
+        if (!$event) {
+            abort(404, 'Event tidak ditemukan.');
+        }
+
+        if (!$event->is_registration_open) {
+            abort(403, 'Pendaftaran belum atau sudah ditutup.');
+        }
+
+        if ($event->isQuotaFull()) {
+            abort(403, 'Kuota peserta sudah penuh.');
+        }
+
+        return $next($request);
+    }
 }

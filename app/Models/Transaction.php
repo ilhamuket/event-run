@@ -25,6 +25,7 @@ class Transaction extends Model
         'expired_at',
         'checkout_url',
         'tripay_response',
+        'note'
     ];
 
     protected $casts = [
