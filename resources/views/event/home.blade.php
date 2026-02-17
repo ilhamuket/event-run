@@ -295,9 +295,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                 </svg>
                                 Daftar Sekarang
-                                @if($event->remainingSlots() !== null)
-                                    <span class="px-2 py-0.5 text-xs bg-white/20 rounded-full">Sisa {{ $event->remainingSlots() }}</span>
-                                @endif
                             </a>
                         @elseif($event->isQuotaFull())
                             <button disabled class="inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gray-400 opacity-75 cursor-not-allowed rounded-xl">
@@ -649,9 +646,6 @@
                         <a href="{{ route('event.register', $event->slug) }}"
                         class="w-full px-8 py-4 text-base font-bold tracking-wide text-center text-red-900 transition-all bg-white rounded-lg shadow-lg sm:w-auto md:px-10 md:py-5 md:text-lg hover:bg-gray-100">
                             DAFTAR SEKARANG
-                            @if($event->remainingSlots() !== null)
-                                <span class="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded-full">Sisa {{ $event->remainingSlots() }}</span>
-                            @endif
                         </a>
                     @elseif($event->isQuotaFull())
                         <button disabled class="w-full px-8 py-4 text-base font-bold tracking-wide text-gray-500 bg-gray-300 rounded-lg shadow-lg opacity-75 cursor-not-allowed sm:w-auto md:px-10 md:py-5 md:text-lg">
