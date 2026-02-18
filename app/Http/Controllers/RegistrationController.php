@@ -411,4 +411,32 @@ class RegistrationController extends Controller
             'total' => $calculation['total'],
         ]);
     }
+
+    /**
+     * Check event quota status (AJAX) — lightweight
+     */
+    public function checkQuotaStatus(string $slug)
+    {
+        $event = Event::where('slug', $slug)->first();
+
+        if (!$event) {
+            return response()->json(['quota_full' => false]);
+        }
+
+        if (is_null($event->max_participants)) {
+            return response()->json([
+                'quota_full' => false,
+                'remaining' => null,
+            ]);
+        }
+
+        $paidCount = $event->paidParticipantsCount();
+
+        return response()->json([
+            'quota_full' => $paidCount >= $event->max_participants,
+            'remaining' => max(0, $event->max_participants - $paidCount),
+            'paid_count' => $paidCount,
+            'max' => $event->max_participants,
+        ]);
+    }
 }
