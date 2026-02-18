@@ -29,7 +29,8 @@ class TripayService
             $amount = $amount - $discountAmount;
         }
 
-        $totalAmount = $amount;
+        $adminFee = 5000;
+        $totalAmount = $amount + $adminFee;
 
         $merchantRef = Transaction::generateMerchantRef();
 
@@ -67,7 +68,7 @@ class TripayService
                 'tripay_reference' => $response->getReference(),
                 'payment_method' => $response->getPaymentMethod(),
                 'payment_name' => $response->getPaymentName(),
-                'amount' => $amount,
+                'amount' => $totalAmount,
                 'discount_amount' => $discountAmount,
                 'fee' => $response->getTotalFee(),
                 'total_amount' => $response->getAmount() + $response->getTotalFee(),
