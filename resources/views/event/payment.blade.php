@@ -155,12 +155,12 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-500">Harga Setelah Diskon</span>
-                            <span class="text-gray-900">{{ $transaction->formatted_amount }}</span>
+                            <span admin_feeclass="text-gray-900">{{ $transaction->formatted_amount }}</span>
                         </div>
                     @endif
                     <div class="flex justify-between">
                         <span class="text-gray-500">Biaya Admin</span>
-                        <span class="text-gray-900">Rp {{ number_format($transaction->admin_fee + 5000, 0, ',', '.') }}</span>
+                        <span class="text-gray-900">Rp {{ number_format($transaction->admin_fee, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between pt-2 text-base font-semibold" style="border-top: 1px solid #e5e7eb;">
                         <span class="text-gray-900">Total Bayar</span>
