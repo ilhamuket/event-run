@@ -35,7 +35,7 @@ class TripayService
 
         $transactionData = new TransactionData();
         $transactionData
-            ->setMethod(PaymentMethod::QRISC)
+            ->setMethod(PaymentMethod::QRIS)
             ->setMerchantRef($merchantRef)
             ->setAmount($totalAmount)
             ->setCustomerName($participant->name)
