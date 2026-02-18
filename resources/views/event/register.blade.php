@@ -233,18 +233,18 @@
                     <select name="jersey_size" required
                         class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                         <option value="">Pilih</option>
-                        <option {{ old('jersey_size') == 'XS_anak'  ? 'selected' : '' }}>XS Anak</option>
-                        <option {{ old('jersey_size') == 'S_anak'   ? 'selected' : '' }}>S Anak</option>
-                        <option {{ old('jersey_size') == 'M_anak'   ? 'selected' : '' }}>M Anak</option>
-                        <option {{ old('jersey_size') == 'L_anak'   ? 'selected' : '' }}>L Anak</option>
-                        <option {{ old('jersey_size') == 'XL_anak'  ? 'selected' : '' }}>XL Anak</option>
-                        <option {{ old('jersey_size') == 'XS'  ? 'selected' : '' }}>XS</option>
-                        <option {{ old('jersey_size') == 'S'   ? 'selected' : '' }}>S </option>
-                        <option {{ old('jersey_size') == 'M'   ? 'selected' : '' }}>M </option>
-                        <option {{ old('jersey_size') == 'L'   ? 'selected' : '' }}>L</option>
-                        <option {{ old('jersey_size') == 'XL'  ? 'selected' : '' }}>XL</option>
-                        <option {{ old('jersey_size') == 'XXL' ? 'selected' : '' }}>XXL</option>
-                        <option {{ old('jersey_size') == 'XXXL' ? 'selected' : '' }}>XXXL</option>
+                        <option value="XS_anak" {{ old('jersey_size') == 'XS_anak' ? 'selected' : '' }}>XS Anak</option>
+                        <option value="S_anak"  {{ old('jersey_size') == 'S_anak'  ? 'selected' : '' }}>S Anak</option>
+                        <option value="M_anak"  {{ old('jersey_size') == 'M_anak'  ? 'selected' : '' }}>M Anak</option>
+                        <option value="L_anak"  {{ old('jersey_size') == 'L_anak'  ? 'selected' : '' }}>L Anak</option>
+                        <option value="XL_anak" {{ old('jersey_size') == 'XL_anak' ? 'selected' : '' }}>XL Anak</option>
+                        <option value="XS"      {{ old('jersey_size') == 'XS'      ? 'selected' : '' }}>XS</option>
+                        <option value="S"       {{ old('jersey_size') == 'S'        ? 'selected' : '' }}>S</option>
+                        <option value="M"       {{ old('jersey_size') == 'M'        ? 'selected' : '' }}>M</option>
+                        <option value="L"       {{ old('jersey_size') == 'L'        ? 'selected' : '' }}>L</option>
+                        <option value="XL"      {{ old('jersey_size') == 'XL'       ? 'selected' : '' }}>XL</option>
+                        <option value="XXL"     {{ old('jersey_size') == 'XXL'      ? 'selected' : '' }}>XXL</option>
+                        <option value="XXXL"    {{ old('jersey_size') == 'XXXL'     ? 'selected' : '' }}>XXXL</option>
                     </select>
                     @error('jersey_size')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
