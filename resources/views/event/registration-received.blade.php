@@ -108,7 +108,7 @@
                                             </tr>
                                             <tr>
                                                 <td style="padding: 6px 0; color: #6b7280; font-size: 13px;">Biaya Admin</td>
-                                                <td style="padding: 6px 0; color: #111827; font-size: 13px; font-weight: 600;">Rp {{ number_format($transaction->fee, 0, ',', '.') }}</td>
+                                                <td style="padding: 6px 0; color: #111827; font-size: 13px; font-weight: 600;">Rp {{ number_format($transaction->fee + 5000, 0, ',', '.') }}</td>
                                             </tr>
                                             <tr>
                                                 <td colspan="2" style="padding: 12px 0 0; border-top: 1px solid #e5e7eb;"></td>

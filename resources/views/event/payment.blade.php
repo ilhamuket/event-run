@@ -160,7 +160,7 @@
                     @endif
                     <div class="flex justify-between">
                         <span class="text-gray-500">Biaya Admin</span>
-                        <span class="text-gray-900">{{ $transaction->formatted_fee }}</span>
+                        <span class="text-gray-900">Rp {{ number_format($transaction->admin_fee + 5000, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between pt-2 text-base font-semibold" style="border-top: 1px solid #e5e7eb;">
                         <span class="text-gray-900">Total Bayar</span>
