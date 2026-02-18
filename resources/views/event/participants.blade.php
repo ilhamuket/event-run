@@ -318,8 +318,8 @@
                             <td class="px-6 py-4">{{ $p->community ?? '-' }}</td>
 
                             <td class="px-6 py-4 text-xs">
-                                <div>{{ $p->email ?? '-' }}</div>
-                                <div class="text-gray-400">{{ $p->phone ?? '-' }}</div>
+                                <div>{{  '-' }}</div>
+                                <div class="text-gray-400">{{ '-' }}</div>
                             </td>
 
                             <td class="px-6 py-4 text-center">
