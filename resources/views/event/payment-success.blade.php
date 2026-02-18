@@ -46,7 +46,7 @@
                     </div>
                     <div>
                         <p class="text-gray-500">Gender</p>
-                        <p class="font-medium text-gray-900">{{ $transaction->participant->gender === 'male' ? 'Laki-laki' : 'Perempuan' }}</p>
+                        <p class="font-medium text-gray-900">{{ $transaction->participant->gender === 'M' ? 'Laki-laki' : 'Perempuan' }}</p>
                     </div>
                     <div>
                         <p class="text-gray-500">Ukuran Jersey</p>
