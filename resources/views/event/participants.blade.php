@@ -324,9 +324,9 @@
 
                             <td class="px-6 py-4 text-center">
                                 @if($p->has_comorbid)
-                                    <span class="px-3 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">⚠ Ada</span>
+                                    <span class="px-3 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">✔ </span>
                                 @else
-                                    <span class="px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">✔ Aman</span>
+                                    <span class="px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">✔ </span>
                                 @endif
                             </td>
                         </tr>
