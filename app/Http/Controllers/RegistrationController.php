@@ -67,7 +67,7 @@ class RegistrationController extends Controller
             'phone' => 'required|string|max:20',
             'gender' => 'required|in:M,F',
             'age' => 'required|integer|min:5|max:100',
-            'jersey_size' => 'required|in:S,M,L,XL,XXL',
+            'jersey_size' => 'required|in:XS,S,M,L,XL,XXL,XXXL',
             'city' => 'required|string|max:100',
             'community' => 'nullable|string|max:255',
             'emergency_contact_name' => 'required|string|max:255',

@@ -141,7 +141,7 @@
                     placeholder="16 digit NIK"
                     class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
                 >
-                <p class="mt-1 text-xs text-gray-500">Masukkan 16 digit NIK sesuai KTP</p>
+                <p class="mt-1 text-xs text-gray-500">Masukkan 16 digit NIK sesuai KTP atau KK</p>
                 @error('nik')
                     <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                 @enderror
@@ -233,11 +233,13 @@
                     <select name="jersey_size" required
                         class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                         <option value="">Pilih</option>
+                        <option {{ old('jersey_size') == 'XS'  ? 'selected' : '' }}>XS</option>
                         <option {{ old('jersey_size') == 'S'   ? 'selected' : '' }}>S</option>
                         <option {{ old('jersey_size') == 'M'   ? 'selected' : '' }}>M</option>
                         <option {{ old('jersey_size') == 'L'   ? 'selected' : '' }}>L</option>
                         <option {{ old('jersey_size') == 'XL'  ? 'selected' : '' }}>XL</option>
                         <option {{ old('jersey_size') == 'XXL' ? 'selected' : '' }}>XXL</option>
+                        <option {{ old('jersey_size') == 'XXXL' ? 'selected' : '' }}>XXXL</option>
                     </select>
                     @error('jersey_size')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
