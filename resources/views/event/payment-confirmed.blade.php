@@ -54,25 +54,7 @@
                                 </tr>
                             </table>
 
-                            {{-- BIB Card --}}
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
-                                <tr>
-                                    <td align="center">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" style="background-color: #991b1b; border-radius: 16px; min-width: 200px;">
-                                            <tr>
-                                                <td style="padding: 24px 40px; text-align: center;">
-                                                    <p style="margin: 0 0 4px; color: #fecaca; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                                                        Nomor BIB Anda
-                                                    </p>
-                                                    <p style="margin: 0; color: #ffffff; font-size: 48px; font-weight: 800; letter-spacing: 2px;">
-                                                        {{ $participant->bib }}
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
+
 
                             {{-- Detail Box --}}
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #fef2f2; border-radius: 12px; margin-bottom: 24px;">

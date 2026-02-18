@@ -69,10 +69,6 @@
                                                 <td style="padding: 6px 0; color: #111827; font-size: 13px; font-weight: 600;">{{ $participant->bib_name ?? $participant->name }}</td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 6px 0; color: #6b7280; font-size: 13px;">Nomor BIB</td>
-                                                <td style="padding: 6px 0; color: #111827; font-size: 13px; font-weight: 600;">{{ $participant->bib }}</td>
-                                            </tr>
-                                            <tr>
                                                 <td style="padding: 6px 0; color: #6b7280; font-size: 13px;">Kategori</td>
                                                 <td style="padding: 6px 0; color: #111827; font-size: 13px; font-weight: 600;">{{ $participant->category?->name ?? '-' }}</td>
                                             </tr>

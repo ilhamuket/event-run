@@ -233,9 +233,14 @@
                     <select name="jersey_size" required
                         class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10">
                         <option value="">Pilih</option>
-                        <option {{ old('jersey_size') == 'XS'  ? 'selected' : '' }}>XS</option>
-                        <option {{ old('jersey_size') == 'S'   ? 'selected' : '' }}>S</option>
-                        <option {{ old('jersey_size') == 'M'   ? 'selected' : '' }}>M</option>
+                        <option {{ old('jersey_size') == 'XS'  ? 'selected' : '' }}>XS Anak</option>
+                        <option {{ old('jersey_size') == 'S'   ? 'selected' : '' }}>S Anak</option>
+                        <option {{ old('jersey_size') == 'M'   ? 'selected' : '' }}>M Anak</option>
+                        <option {{ old('jersey_size') == 'L'   ? 'selected' : '' }}>L Anak</option>
+                        <option {{ old('jersey_size') == 'XL'  ? 'selected' : '' }}>XL Anak</option>
+                        <option {{ old('jersey_size') == 'XS'  ? 'selected' : '' }}>XS </option>
+                        <option {{ old('jersey_size') == 'S'   ? 'selected' : '' }}>S </option>
+                        <option {{ old('jersey_size') == 'M'   ? 'selected' : '' }}>M </option>
                         <option {{ old('jersey_size') == 'L'   ? 'selected' : '' }}>L</option>
                         <option {{ old('jersey_size') == 'XL'  ? 'selected' : '' }}>XL</option>
                         <option {{ old('jersey_size') == 'XXL' ? 'selected' : '' }}>XXL</option>
