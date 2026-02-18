@@ -287,7 +287,7 @@
                         <tr class="hover:bg-red-50">
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center w-12 h-12 text-sm font-bold text-white bg-red-800 rounded-xl">
-                                    {{ $p->bib }}
+                                    {{ $loop->iteration + ($participants->currentPage() - 1) * $participants->perPage() }}
                                 </div>
                             </td>
 
