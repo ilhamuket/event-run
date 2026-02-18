@@ -37,6 +37,8 @@ class Participant extends Model
         'elapsed_time',
         'general_position',
         'category_position',
+        'nik',
+        'birth_date',
     ];
 
     protected $casts = [
@@ -45,6 +47,7 @@ class Participant extends Model
         'elapsed_time' => 'datetime:H:i:s',
         'general_position' => 'integer',
         'category_position' => 'integer',
+        'birth_date' => 'date',
     ];
 
     /**

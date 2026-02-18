@@ -75,6 +75,8 @@ class RegistrationController extends Controller
             'event_category_id' => 'required|exists:event_categories,id',
             'coupon_code' => 'nullable|string|max:50',
             'agreement' => 'accepted',
+            'nik' => 'required|string|size:16|regex:/^[0-9]+$/',
+            'birth_date' => 'required|date|before_or_equal:today',
         ]);
 
         // ── Age validation ──
@@ -163,6 +165,8 @@ class RegistrationController extends Controller
                         'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
                         'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? null,
                         'community' => $validated['community'] ?? null,
+                        'nik' => $validated['nik'],
+                        'birth_date' => $validated['birth_date'],
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);

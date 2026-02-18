@@ -123,6 +123,48 @@
                 @enderror
             </div>
 
+            {{-- NIK --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    NIK (Nomor Induk Kependudukan) <span class="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    name="nik"
+                    value="{{ old('nik') }}"
+                    required
+                    maxlength="16"
+                    minlength="16"
+                    inputmode="numeric"
+                    pattern="[0-9]{16}"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    placeholder="16 digit NIK"
+                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
+                >
+                <p class="mt-1 text-xs text-gray-500">Masukkan 16 digit NIK sesuai KTP</p>
+                @error('nik')
+                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Tanggal Lahir --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    Tanggal Lahir <span class="text-red-500">*</span>
+                </label>
+                <input
+                    type="date"
+                    name="birth_date"
+                    value="{{ old('birth_date') }}"
+                    required
+                    max="{{ now()->format('Y-m-d') }}"
+                    class="w-full px-4 py-3 mt-2 text-sm border border-gray-300 rounded-lg focus:border-red-800 focus:ring-2 focus:ring-red-800/10"
+                >
+                @error('birth_date')
+                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Gender --}}
             <div>
                 <label class="block mb-3 text-sm font-medium text-gray-700">
