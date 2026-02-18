@@ -216,7 +216,7 @@
                 <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
                     <div class="flex items-start gap-4">
                         <div class="flex items-center justify-center w-12 h-12 text-sm font-bold text-white bg-red-800 rounded-xl">
-                            {{ $p->bib }}
+                            {{ $loop->iteration + ($participants->currentPage() - 1) * $participants->perPage() }}
                         </div>
 
                         <div class="flex-1">
@@ -244,18 +244,18 @@
 
                                 @if($p->has_comorbid)
                                     <span class="px-2 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">
-                                        ⚠ Medis
+                                        ✔
                                     </span>
                                 @else
                                     <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
-                                        ✔ Aman
+                                        ✔
                                     </span>
                                 @endif
                             </div>
 
                             <div class="mt-3 text-xs text-gray-500">
-                                <div>{{ $p->email ?? '-' }}</div>
-                                <div>{{ $p->phone ?? '-' }}</div>
+                                <div>{{  '-' }}</div>
+                                <div>{{ '-' }}</div>
                                 <div>{{ $p->city ?? '-' }}</div>
                                 <div>{{ $p->community ?? '-' }}</div>
                             </div>
@@ -271,14 +271,14 @@
                 <table class="w-full text-sm">
                     <thead class="border-b bg-red-50">
                     <tr class="text-xs font-semibold text-red-800 uppercase">
-                        <th class="px-6 py-4">BIB</th>
+                        <th class="px-6 py-4">No</th>
                         <th class="px-6 py-4">Peserta</th>
                         <th class="px-6 py-4 text-center">Gender</th>
                         <th class="px-6 py-4">Kategori</th>
                         <th class="px-6 py-4">Kota</th>
                         <th class="px-6 py-4">Komunitas</th>
                         <th class="px-6 py-4">Kontak</th>
-                        <th class="px-6 py-4 text-center">Medis</th>
+                        <th class="px-6 py-4 text-center">Status</th>
                     </tr>
                     </thead>
 
