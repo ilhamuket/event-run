@@ -70,7 +70,7 @@ class TripayService
                 'amount' => $amount,
                 'discount_amount' => $discountAmount,
                 'fee' => $response->getTotalFee(),
-                'total_amount' => $response->getAmount(),
+                'total_amount' => $response->getAmount() + $response->getTotalFee(),
                 'qr_string' => $response->getQrString(),
                 'qr_url' => $response->getQrUrl(),
                 'status' => Transaction::STATUS_UNPAID,
