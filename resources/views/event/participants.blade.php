@@ -294,7 +294,7 @@
                             <td class="px-6 py-4">
                                 <div class="font-semibold text-red-900">{{ $p->name }}</div>
                                 <div class="text-xs text-gray-500">
-                                    {{ $p->bib_name ?? '-' }} · {{ $p->age ?? '-' }} th
+                                    {{ $p->bib_name ?? '-' }}
                                     @if($p->jersey_size)
                                         · Jersey: {{ $p->jersey_size }}
                                     @endif
