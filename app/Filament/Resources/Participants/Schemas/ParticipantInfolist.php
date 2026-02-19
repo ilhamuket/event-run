@@ -14,6 +14,8 @@ class ParticipantInfolist
             ->components([
                 TextEntry::make('event.name')
                     ->label('Event'),
+                TextEntry::make('category.name')
+                    ->label('Kategori'),
                 TextEntry::make('bib')
                     ->placeholder('-'),
                 TextEntry::make('bib_name')
@@ -37,8 +39,6 @@ class ParticipantInfolist
                     ->placeholder('-'),
                 TextEntry::make('regency')
                     ->placeholder('-'),
-                TextEntry::make('category')
-                    ->placeholder('-'),
                 TextEntry::make('city')
                     ->placeholder('-'),
                 TextEntry::make('jersey_size')
@@ -54,6 +54,37 @@ class ParticipantInfolist
                 TextEntry::make('comorbid_details')
                     ->placeholder('-')
                     ->columnSpanFull(),
+                TextEntry::make('latestTransaction.status')
+                    ->label('Status Bayar')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'PAID' => 'success',
+                        'UNPAID' => 'warning',
+                        'EXPIRED' => 'gray',
+                        'FAILED' => 'danger',
+                        'REFUND' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'PAID' => 'Lunas',
+                        'UNPAID' => 'Belum Bayar',
+                        'EXPIRED' => 'Kadaluarsa',
+                        'FAILED' => 'Gagal',
+                        'REFUND' => 'Refund',
+                        default => '-',
+                    }),
+                TextEntry::make('latestTransaction.merchant_ref')
+                    ->label('No. Invoice')
+                    ->placeholder('-'),
+                TextEntry::make('latestTransaction.total_amount')
+                    ->label('Total Bayar')
+                    ->numeric()
+                    ->prefix('Rp ')
+                    ->placeholder('-'),
+                TextEntry::make('latestTransaction.paid_at')
+                    ->label('Tanggal Bayar')
+                    ->dateTime()
+                    ->placeholder('-'),
                 TextEntry::make('elapsed_time')
                     ->time()
                     ->placeholder('-'),

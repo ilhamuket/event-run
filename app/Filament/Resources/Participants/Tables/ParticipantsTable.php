@@ -21,51 +21,85 @@ class ParticipantsTable
                 TextColumn::make('event.name')
                     ->searchable(),
                 TextColumn::make('bib')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('bib_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('category.name')
+                    ->label('Kategori')
+                    ->badge()
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('gender')
-                    ->badge(),
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => $state === 'M' ? 'L' : 'P')
+                    ->color(fn (string $state): string => $state === 'M' ? 'info' : 'danger'),
                 TextColumn::make('age')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('email')
                     ->label('Email address')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('phone')
-                    ->searchable(),
-                TextColumn::make('country')
-                    ->searchable(),
-                TextColumn::make('province')
-                    ->searchable(),
-                TextColumn::make('regency')
-                    ->searchable(),
-                TextColumn::make('category.name')
-                    ->label('Kategori')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('jersey_size')
                     ->searchable(),
                 TextColumn::make('city')
                     ->searchable(),
-                TextColumn::make('jersey_size')
-                    ->searchable(),
                 TextColumn::make('community')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('latestTransaction.status')
+                    ->label('Status Bayar')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'PAID' => 'success',
+                        'UNPAID' => 'warning',
+                        'EXPIRED' => 'gray',
+                        'FAILED' => 'danger',
+                        'REFUND' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'PAID' => 'Lunas',
+                        'UNPAID' => 'Belum Bayar',
+                        'EXPIRED' => 'Kadaluarsa',
+                        'FAILED' => 'Gagal',
+                        'REFUND' => 'Refund',
+                        default => '-',
+                    }),
+                TextColumn::make('latestTransaction.total_amount')
+                    ->label('Total Bayar')
+                    ->numeric()
+                    ->prefix('Rp ')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('emergency_contact_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('emergency_contact_phone')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('has_comorbid')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('elapsed_time')
                     ->time()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('general_position')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('category_position')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -75,6 +109,7 @@ class ParticipantsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('event')
                     ->relationship('event', 'name')
@@ -87,6 +122,24 @@ class ParticipantsTable
                     ->searchable()
                     ->preload()
                     ->label('Kategori'),
+
+                SelectFilter::make('payment_status')
+                    ->label('Status Bayar')
+                    ->options([
+                        'PAID' => 'Lunas',
+                        'UNPAID' => 'Belum Bayar',
+                        'EXPIRED' => 'Kadaluarsa',
+                        'FAILED' => 'Gagal',
+                        'REFUND' => 'Refund',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (blank($data['value'])) {
+                            return $query;
+                        }
+                        return $query->whereHas('latestTransaction', function ($q) use ($data) {
+                            $q->where('status', $data['value']);
+                        });
+                    }),
 
                 SelectFilter::make('gender')
                     ->options([

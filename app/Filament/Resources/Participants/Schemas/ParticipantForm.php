@@ -17,13 +17,21 @@ class ParticipantForm
             ->components([
                 Select::make('event_id')
                     ->relationship('event', 'name')
-                    ->required(),
+                    ->required()
+                    ->searchable()
+                    ->preload(),
+                Select::make('event_category_id')
+                    ->relationship('category', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->label('Kategori'),
                 TextInput::make('bib'),
                 TextInput::make('bib_name'),
                 TextInput::make('name')
                     ->required(),
                 Select::make('gender')
-                    ->options(['M' => 'M', 'F' => 'F'])
+                    ->options(['M' => 'Laki-laki', 'F' => 'Perempuan'])
                     ->required(),
                 TextInput::make('age')
                     ->numeric(),
@@ -39,7 +47,6 @@ class ParticipantForm
                     ->default('Indonesia'),
                 TextInput::make('province'),
                 TextInput::make('regency'),
-                TextInput::make('category'),
                 TextInput::make('city'),
                 TextInput::make('jersey_size'),
                 TextInput::make('community'),
