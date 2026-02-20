@@ -144,7 +144,7 @@
                             <span class="text-gray-900">{{ $transaction->formatted_amount }}</span>
                         @endif
                     </div>
-                    //tesbuild
+                    //tes
                     @if($transaction->discount_amount > 0)
                         <div class="flex justify-between">
                             <span class="font-medium text-green-600">
