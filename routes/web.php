@@ -15,6 +15,9 @@ Route::get('/event/{event:slug}/live', [EventController::class, 'live'])->name('
 // Artisan Runner (PIN protected)
 Route::get('/dev/artisan', [ArtisanRunnerController::class, 'index'])->name('artisan.runner');
 Route::post('/dev/artisan/run', [ArtisanRunnerController::class, 'run'])->name('artisan.runner.run');
+Route::post('/dev/artisan/status', [ArtisanRunnerController::class, 'status'])->name('artisan.runner.status');
+Route::post('/dev/artisan/start-worker', [ArtisanRunnerController::class, 'startWorker'])->name('artisan.runner.start-worker');
+Route::post('/dev/artisan/stop-worker', [ArtisanRunnerController::class, 'stopWorker'])->name('artisan.runner.stop-worker');
 
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
