@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TripayCallbackController;
 use App\Http\Controllers\RfidTimingController;
+use App\Http\Controllers\TripayCallbackController;
+use Illuminate\Support\Facades\Route;
+
 
 /*
 |--------------------------------------------------------------------------
