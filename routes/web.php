@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\ArtisanRunnerController;
+
 
 Route::get('/', [EventController::class, 'home'])->name('home');
 
@@ -10,6 +12,9 @@ Route::get('/', [EventController::class, 'home'])->name('home');
 Route::get('/events/{event:slug}/results', [EventController::class, 'results'])->name('event.results');
 Route::get('/events/{event:slug}/participants', [EventController::class, 'participants'])->name('event.participants');
 Route::get('/event/{event:slug}/live', [EventController::class, 'live'])->name('event.live');
+// Artisan Runner (PIN protected)
+Route::get('/dev/artisan', [ArtisanRunnerController::class, 'index'])->name('artisan.runner');
+Route::post('/dev/artisan/run', [ArtisanRunnerController::class, 'run'])->name('artisan.runner.run');
 
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
