@@ -13,6 +13,7 @@ return [
     // Default RFID data parsing settings
     'rfid_start' => env('RFID_START', 4),
     'rfid_length' => env('RFID_LENGTH', 24),
+    'device_key' => env('MIDDLEWARE_DEVICE_KEY', "inikeynya"),
 
     // Duplicate scan threshold (in seconds)
     // Scans within this window at the same checkpoint are considered duplicates
