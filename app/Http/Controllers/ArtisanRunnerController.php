@@ -19,6 +19,7 @@ class ArtisanRunnerController extends Controller
         'optimize:clear',
         'optimize',
         'queue:restart',
+        'queue:work --queue=rfid,default --tries=3',
     ];
 
     public function index()
@@ -97,7 +98,7 @@ class ArtisanRunnerController extends Controller
         $artisan = base_path('artisan');
         $log     = storage_path('logs/queue-worker.log');
 
-        exec("php {$artisan} queue:work --queue=rfid --tries=3 --sleep=3 >> {$log} 2>&1 &");
+        exec("php {$artisan} queue:work --queue=rfid,default --tries=3 --sleep=3 >> {$log} 2>&1 &");
 
         sleep(2);
 
