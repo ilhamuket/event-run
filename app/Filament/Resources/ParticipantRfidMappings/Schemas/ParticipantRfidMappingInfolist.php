@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\ParticipantRfidMappings\Schemas;
 
+use App\Models\ParticipantRfidMapping;
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
@@ -26,12 +28,13 @@ class ParticipantRfidMappingInfolist
                     ])
                     ->columns(2),
 
-                Section::make('RFID Assignment')
+                Section::make('RFID Assignment (Tag Ini)')
                     ->schema([
                         TextEntry::make('rfid_tag')
                             ->label('RFID Tag')
                             ->copyable()
-                            ->copyMessage('RFID tag copied'),
+                            ->copyMessage('RFID tag copied')
+                            ->fontFamily('mono'),
                         TextEntry::make('assigned_at')
                             ->label('Assigned At')
                             ->dateTime()
@@ -47,6 +50,31 @@ class ParticipantRfidMappingInfolist
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
+
+                Section::make('Semua Tag Aktif Participant Ini')
+                    ->description('Daftar seluruh RFID tag yang aktif untuk participant yang sama')
+                    ->schema([
+                        RepeatableEntry::make('participant.activeRfidMappings')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('rfid_tag')
+                                    ->label('Tag')
+                                    ->copyable()
+                                    ->fontFamily('mono'),
+                                TextEntry::make('assigned_at')
+                                    ->label('Assigned')
+                                    ->dateTime('d M Y H:i')
+                                    ->placeholder('-'),
+                                TextEntry::make('notes')
+                                    ->label('Notes')
+                                    ->placeholder('-'),
+                                IconEntry::make('is_active')
+                                    ->label('Active')
+                                    ->boolean(),
+                            ])
+                            ->columns(4)
+                            ->columnSpanFull(),
+                    ]),
 
                 Section::make('Timestamps')
                     ->schema([

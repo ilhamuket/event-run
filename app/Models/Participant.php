@@ -59,19 +59,64 @@ class Participant extends Model
     }
 
     /**
-     * Get RFID mapping for this participant. (NEW)
+     * Get ALL RFID mappings for this participant (active and inactive).
      */
-    public function rfidMapping(): HasOne
+    public function rfidMappings(): HasMany
     {
-        return $this->hasOne(ParticipantRfidMapping::class);
+        return $this->hasMany(ParticipantRfidMapping::class);
     }
 
     /**
-     * Get active RFID mapping for this participant. (NEW)
+     * Get only active RFID mappings.
+     */
+    public function activeRfidMappings(): HasMany
+    {
+        return $this->rfidMappings()->where('is_active', true);
+    }
+
+    /**
+     * @deprecated Gunakan rfidMappings() — ditinggalkan demi backward compat
+     */
+    public function rfidMapping(): HasOne
+    {
+        return $this->hasOne(ParticipantRfidMapping::class)->latestOfMany();
+    }
+
+    /**
+     * @deprecated Gunakan activeRfidMappings()
      */
     public function activeRfidMapping(): HasOne
     {
-        return $this->rfidMapping()->where('is_active', true);
+        return $this->hasOne(ParticipantRfidMapping::class)
+            ->where('is_active', true)
+            ->latestOfMany();
+    }
+
+    /**
+     * Semua RFID tag aktif participant ini (bisa lebih dari satu).
+     */
+    public function getRfidTagsAttribute(): array
+    {
+        return $this->activeRfidMappings->pluck('rfid_tag')->toArray();
+    }
+
+    /**
+     * Tag pertama yang aktif (untuk backward compat).
+     * Gunakan getRfidTagsAttribute() jika butuh semua tag.
+     */
+    public function getRfidTagAttribute(): ?string
+    {
+        return $this->activeRfidMappings->first()?->rfid_tag;
+    }
+
+    /**
+     * Cek apakah participant memiliki tag RFID tertentu (aktif).
+     */
+    public function hasRfidTag(string $tag): bool
+    {
+        return $this->activeRfidMappings()
+            ->where('rfid_tag', $tag)
+            ->exists();
     }
 
     /**
@@ -131,14 +176,6 @@ class Participant extends Model
     public function hasStarted(): bool
     {
         return $this->startTime() !== null;
-    }
-
-    /**
-     * Get participant's RFID tag. (NEW)
-     */
-    public function getRfidTagAttribute(): ?string
-    {
-        return $this->activeRfidMapping?->rfid_tag;
     }
 
     /**

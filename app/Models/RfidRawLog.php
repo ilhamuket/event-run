@@ -54,21 +54,6 @@ class RfidRawLog extends Model
     }
 
     /**
-     * Get the participant through RFID mapping.
-     */
-    public function participant()
-    {
-        return $this->hasOneThrough(
-            Participant::class,
-            ParticipantRfidMapping::class,
-            'rfid_tag', // Foreign key on participant_rfid_mappings
-            'id', // Foreign key on participants
-            'rfid_tag', // Local key on rfid_raw_logs
-            'participant_id' // Local key on participant_rfid_mappings
-        );
-    }
-
-    /**
      * Scope untuk filter hanya scan valid
      */
     public function scopeValid($query)
@@ -106,5 +91,23 @@ class RfidRawLog extends Model
     public function scopeOrderByScannedAt($query, $direction = 'asc')
     {
         return $query->orderBy('scanned_at', $direction);
+    }
+
+    /**
+     * Get the participant through RFID mapping.
+     * Menggunakan accessor karena join via rfid_tag (string) tidak didukung hasOneThrough.
+     */
+    public function getParticipantAttribute(): ?Participant
+    {
+        return ParticipantRfidMapping::findParticipantByRfid($this->rfid_tag);
+    }
+
+    /**
+     * Alternatively, eager-loadable via mapping:
+     */
+    public function rfidMapping(): HasOne
+    {
+        return $this->hasOne(ParticipantRfidMapping::class, 'rfid_tag', 'rfid_tag')
+            ->where('is_active', true);
     }
 }

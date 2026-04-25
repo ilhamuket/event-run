@@ -30,7 +30,13 @@ class ParticipantRfidMappingsTable
                 TextColumn::make('participant.name')
                     ->label('Participant')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->description(fn (ParticipantRfidMapping $record): string => sprintf(
+                        '%d tag aktif total',
+                        ParticipantRfidMapping::where('participant_id', $record->participant_id)
+                            ->where('is_active', true)
+                            ->count()
+                    )),
 
                 TextColumn::make('participant.event.name')
                     ->label('Event')
@@ -46,7 +52,8 @@ class ParticipantRfidMappingsTable
                     ->label('RFID Tag')
                     ->searchable()
                     ->copyable()
-                    ->copyMessage('RFID tag copied'),
+                    ->copyMessage('RFID tag copied')
+                    ->fontFamily('mono'),
 
                 TextColumn::make('assigned_at')
                     ->label('Assigned')
@@ -83,6 +90,7 @@ class ParticipantRfidMappingsTable
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->modalDescription('Tag ini akan dinonaktifkan. Participant masih bisa punya tag lain yang aktif.')
                     ->visible(fn (ParticipantRfidMapping $record) => $record->is_active)
                     ->action(fn (ParticipantRfidMapping $record) => $record->update(['is_active' => false])),
             ])
