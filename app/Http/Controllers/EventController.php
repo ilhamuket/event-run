@@ -285,208 +285,82 @@ class EventController extends Controller
         ));
     }
 
+    // ══════════════════════════════════════════════════════════
+    // LIVE RACE TRACKING
+    // ══════════════════════════════════════════════════════════
+
     /**
-     * LIVE RACE TRACKING - Heavily optimized with raw queries + short cache
+     * Initial full-page load
      */
     public function live(Event $event, Request $request)
     {
-        $selectedCategory = $request->category;
-        $search = $request->q;
-        $filterGender = $request->gender;
+        $data = $this->buildLiveData($event, $request);
+        return view('event.live-preview', $data);
+    }
 
-        // Categories - cached longer (rarely change)
+    /**
+     * AJAX polling endpoint — returns rendered partial HTML + summary JSON
+     */
+    public function livePartial(Event $event, Request $request)
+    {
+        $data = $this->buildLiveData($event, $request);
+
+        $html = view('event.live-content', $data)->render();
+
+        return response()->json([
+            'html'              => $html,
+            'summary'           => $data['summary'],
+            'totalParticipants' => $data['totalParticipants'],
+            'updatedAt'         => now()->format('H:i:s'),
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // SHARED DATA BUILDER
+    // ══════════════════════════════════════════════════════════
+
+    /**
+     * Build all data needed by both live() and livePartial().
+     */
+    protected function buildLiveData(Event $event, Request $request): array
+    {
+        $selectedCategory = $request->category;
+        $search           = $request->q;
+        $filterGender     = $request->gender;
+
+        // Categories — cached longer (rarely change mid-race)
         $categories = Cache::remember("live_cats:{$event->id}", 120, function () use ($event) {
             return $event->categories()->active()->ordered()->get();
         });
 
-        // Determine category filter
-        $categoryIds = $categories->pluck('id')->toArray();
+        $categoryIds      = $categories->pluck('id')->toArray();
         $filteredCategoryId = null;
+
         if ($selectedCategory) {
             $category = $categories->firstWhere('slug', $selectedCategory);
             if ($category) {
                 $filteredCategoryId = $category->id;
-                $categoryIds = [$category->id];
+                $categoryIds        = [$category->id];
             }
         }
 
-        // Short cache key based on filters (5s cache for live data)
+        if (empty($categoryIds)) {
+            return $this->emptyLiveData($event, $categories, $selectedCategory, $search, $filterGender);
+        }
+
+        // 5-second cache keyed by filters
         $cacheKey = "live:{$event->id}:" . md5("{$selectedCategory}:{$search}:{$filterGender}");
-        $cacheTtl = 5; // 5 seconds for live data
 
-        $data = Cache::remember($cacheKey, $cacheTtl, function () use ($event, $categoryIds, $filteredCategoryId, $search, $filterGender) {
-
-            // ── 1. Get all checkpoints in one query ──
-            $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
-            $checkpoints = DB::select("
-                SELECT id, event_category_id, checkpoint_type, checkpoint_name,
-                       checkpoint_order, distance_km
-                FROM rfid_checkpoints
-                WHERE event_category_id IN ({$placeholders})
-                  AND is_active = 1
-                ORDER BY checkpoint_order DESC
-            ", $categoryIds);
-
-            $checkpointMap = collect($checkpoints)->keyBy('id');
-
-            // ── 2. Get all paid participant IDs with basic info (single query) ──
-            $participantWhere = "p.event_id = ? AND EXISTS (
-                SELECT 1 FROM transactions t
-                WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
-            )";
-            $pBindings = [$event->id];
-
-            if ($filteredCategoryId) {
-                $participantWhere .= " AND p.event_category_id = ?";
-                $pBindings[] = $filteredCategoryId;
-            }
-
-            if ($search) {
-                $participantWhere .= " AND (p.bib LIKE ? OR p.name LIKE ? OR p.bib_name LIKE ?)";
-                $like = "%{$search}%";
-                array_push($pBindings, $like, $like, $like);
-            }
-
-            if ($filterGender && in_array($filterGender, ['M', 'F'])) {
-                $participantWhere .= " AND p.gender = ?";
-                $pBindings[] = $filterGender;
-            }
-
-            $participants = DB::select("
-                SELECT
-                    p.id, p.bib, p.bib_name, p.name, p.gender, p.age, p.city,
-                    p.elapsed_time, p.general_position, p.category_position,
-                    p.event_category_id,
-                    ec.name as category_name
-                FROM participants p
-                LEFT JOIN event_categories ec ON ec.id = p.event_category_id
-                WHERE {$participantWhere}
-                ORDER BY p.bib
-            ", $pBindings);
-
-            $participantMap = collect($participants)->keyBy('id');
-            $participantIds = $participantMap->keys()->toArray();
-
-            if (empty($participantIds)) {
-                return [
-                    'checkpointGroups' => [],
-                    'notStarted' => [],
-                    'totalParticipants' => 0,
-                ];
-            }
-
-            // ── 3. Get ALL validated times in ONE query (the big optimization) ──
-            $pidPlaceholders = implode(',', array_fill(0, count($participantIds), '?'));
-            $validatedTimes = DB::select("
-                SELECT
-                    vt.participant_id,
-                    vt.rfid_checkpoint_id,
-                    vt.checkpoint_time,
-                    vt.elapsed_time,
-                    vt.position_at_checkpoint,
-                    rc.checkpoint_type,
-                    rc.checkpoint_order
-                FROM rfid_validated_times vt
-                INNER JOIN rfid_checkpoints rc ON rc.id = vt.rfid_checkpoint_id
-                WHERE vt.participant_id IN ({$pidPlaceholders})
-                ORDER BY rc.checkpoint_order DESC
-            ", $participantIds);
-
-            // ── 4. Group validated times by participant, keep only the LATEST ──
-            $latestByParticipant = [];
-            foreach ($validatedTimes as $vt) {
-                $pid = $vt->participant_id;
-                if (!isset($latestByParticipant[$pid])) {
-                    $latestByParticipant[$pid] = $vt; // First = highest order (DESC)
-                }
-            }
-
-            // ── 5. Build checkpoint groups ──
-            $groups = [];
-            foreach ($checkpoints as $cp) {
-                $key = $cp->checkpoint_type === 'checkpoint' ? 'cp_' . $cp->id : $cp->checkpoint_type;
-                $groups[$key] = [
-                    'checkpoint' => $cp,
-                    'participants' => [],
-                ];
-            }
-
-            $notStarted = [];
-
-            foreach ($participantIds as $pid) {
-                $p = $participantMap[$pid];
-                $p->display_name = $p->bib_name ?: $p->name;
-                $p->category = (object) ['name' => $p->category_name];
-
-                if (!isset($latestByParticipant[$pid])) {
-                    $notStarted[] = $p;
-                    continue;
-                }
-
-                $latestVt = $latestByParticipant[$pid];
-                $cpId = $latestVt->rfid_checkpoint_id;
-
-                if (!$checkpointMap->has($cpId)) {
-                    $notStarted[] = $p;
-                    continue;
-                }
-
-                $cp = $checkpointMap[$cpId];
-                $key = $cp->checkpoint_type === 'checkpoint' ? 'cp_' . $cp->id : $cp->checkpoint_type;
-
-                // Format elapsed time
-                $latestVt->formatted_elapsed_time = $latestVt->elapsed_time
-                    ? \Carbon\Carbon::parse($latestVt->elapsed_time)->format('H:i:s')
-                    : null;
-                $latestVt->checkpoint_time = $latestVt->checkpoint_time
-                    ? \Carbon\Carbon::parse($latestVt->checkpoint_time)
-                    : null;
-
-                // Also format participant elapsed_time for finish fallback
-                $p->formatted_elapsed_time = $p->elapsed_time
-                    ? \Carbon\Carbon::parse($p->elapsed_time)->format('H:i:s')
-                    : null;
-
-                if (isset($groups[$key])) {
-                    $groups[$key]['participants'][] = [
-                        'participant' => $p,
-                        'validated_time' => $latestVt,
-                    ];
-                }
-            }
-
-            // ── 6. Sort participants within each group ──
-            foreach ($groups as $key => &$group) {
-                if ($key === 'finish') {
-                    usort($group['participants'], function ($a, $b) {
-                        $aTime = $a['validated_time']->elapsed_time ?? '99:99:99';
-                        $bTime = $b['validated_time']->elapsed_time ?? '99:99:99';
-                        return strcmp($aTime, $bTime);
-                    });
-                } else {
-                    usort($group['participants'], function ($a, $b) {
-                        $aTime = $a['validated_time']->checkpoint_time ?? now()->addYears(10);
-                        $bTime = $b['validated_time']->checkpoint_time ?? now()->addYears(10);
-                        return $aTime <=> $bTime;
-                    });
-                }
-            }
-            unset($group);
-
-            // Sort not started by BIB
-            usort($notStarted, fn($a, $b) => $a->bib <=> $b->bib);
-
-            return [
-                'checkpointGroups' => $groups,
-                'notStarted' => $notStarted,
-                'totalParticipants' => count($participants),
-            ];
+        $data = Cache::remember($cacheKey, 5, function () use (
+            $event, $categoryIds, $filteredCategoryId, $search, $filterGender
+        ) {
+            return $this->fetchLiveData($event, $categoryIds, $filteredCategoryId, $search, $filterGender);
         });
 
-        // Convert arrays back to collections for blade compatibility
+        // Convert plain arrays/stdClass back to collections for Blade
         $checkpointGroups = collect($data['checkpointGroups'])->map(function ($group) {
             $group['participants'] = collect($group['participants'])->map(function ($item) {
-                $item['participant'] = (object) $item['participant'];
+                $item['participant']    = (object) $item['participant'];
                 $item['validated_time'] = (object) $item['validated_time'];
                 return $item;
             });
@@ -494,36 +368,363 @@ class EventController extends Controller
             return $group;
         });
 
-        $notStarted = collect($data['notStarted'])->map(fn($p) => (object) $p);
+        $notStarted        = collect($data['notStarted'])->map(fn ($p) => (object) $p);
         $totalParticipants = $data['totalParticipants'];
 
-        // Summary stats
-        $finishedCount = $checkpointGroups->has('finish')
+        $finishedCount   = $checkpointGroups->has('finish')
             ? $checkpointGroups['finish']['participants']->count()
             : 0;
         $notStartedCount = $notStarted->count();
-        $startedCount = $totalParticipants - $notStartedCount;
-        $onCourseCount = $startedCount - $finishedCount;
+        $startedCount    = $totalParticipants - $notStartedCount;
+        $onCourseCount   = max(0, $startedCount - $finishedCount);
 
-        $summary = [
-            'not_started' => $notStartedCount,
-            'started' => $startedCount,
-            'on_course' => $onCourseCount,
-            'finished' => $finishedCount,
+        return [
+            'event'            => $event,
+            'categories'       => $categories,
+            'selectedCategory' => $selectedCategory,
+            'checkpointGroups' => $checkpointGroups,
+            'notStarted'       => $notStarted,
+            'totalParticipants'=> $totalParticipants,
+            'summary'          => [
+                'not_started' => $notStartedCount,
+                'started'     => $startedCount,
+                'on_course'   => $onCourseCount,
+                'finished'    => $finishedCount,
+            ],
+            'activeFilters' => collect([$selectedCategory, $filterGender, $search])->filter()->count(),
         ];
-
-        $activeFilters = collect([$selectedCategory, $filterGender, $search])
-            ->filter()->count();
-
-        return view('event.live-preview', compact(
-            'event',
-            'categories',
-            'selectedCategory',
-            'checkpointGroups',
-            'notStarted',
-            'totalParticipants',
-            'summary',
-            'activeFilters'
-        ));
     }
+
+    // ══════════════════════════════════════════════════════════
+    // HEAVY-LIFTING QUERY (only called on cache miss)
+    // ══════════════════════════════════════════════════════════
+
+    protected function fetchLiveData(
+        Event  $event,
+        array  $categoryIds,
+        ?int   $filteredCategoryId,
+        ?string $search,
+        ?string $filterGender
+    ): array {
+        // ── 1. Checkpoints ──────────────────────────────────
+        $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+        $checkpoints  = DB::select("
+            SELECT id, event_category_id, checkpoint_type, checkpoint_name,
+                   checkpoint_order, distance_km
+            FROM rfid_checkpoints
+            WHERE event_category_id IN ({$placeholders})
+              AND is_active = 1
+            ORDER BY checkpoint_order DESC
+        ", $categoryIds);
+
+        $checkpointMap = collect($checkpoints)->keyBy('id');
+
+        // ── 2. Participants ──────────────────────────────────
+        $participantWhere = "p.event_id = ? AND EXISTS (
+            SELECT 1 FROM transactions t
+            WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
+        )";
+        $pBindings = [$event->id];
+
+        if ($filteredCategoryId) {
+            $participantWhere .= " AND p.event_category_id = ?";
+            $pBindings[]       = $filteredCategoryId;
+        }
+
+        if ($search) {
+            $participantWhere .= " AND (p.bib LIKE ? OR p.name LIKE ? OR p.bib_name LIKE ?)";
+            $like = "%{$search}%";
+            array_push($pBindings, $like, $like, $like);
+        }
+
+        if ($filterGender && in_array($filterGender, ['M', 'F'])) {
+            $participantWhere .= " AND p.gender = ?";
+            $pBindings[]       = $filterGender;
+        }
+
+        $participants = DB::select("
+            SELECT
+                p.id, p.bib, p.bib_name, p.name, p.gender, p.age, p.city,
+                p.elapsed_time, p.general_position, p.category_position,
+                p.event_category_id,
+                ec.name as category_name
+            FROM participants p
+            LEFT JOIN event_categories ec ON ec.id = p.event_category_id
+            WHERE {$participantWhere}
+            ORDER BY p.bib
+        ", $pBindings);
+
+        $participantMap = collect($participants)->keyBy('id');
+        $participantIds = $participantMap->keys()->toArray();
+
+        if (empty($participantIds)) {
+            return [
+                'checkpointGroups'  => [],
+                'notStarted'        => [],
+                'totalParticipants' => 0,
+            ];
+        }
+
+        // ── 3. All validated times in one query ──────────────
+        $pidPlaceholders = implode(',', array_fill(0, count($participantIds), '?'));
+        $validatedTimes  = DB::select("
+            SELECT
+                vt.participant_id,
+                vt.rfid_checkpoint_id,
+                vt.checkpoint_time,
+                vt.elapsed_time,
+                vt.position_at_checkpoint,
+                rc.checkpoint_type,
+                rc.checkpoint_order
+            FROM rfid_validated_times vt
+            INNER JOIN rfid_checkpoints rc ON rc.id = vt.rfid_checkpoint_id
+            WHERE vt.participant_id IN ({$pidPlaceholders})
+            ORDER BY rc.checkpoint_order DESC
+        ", $participantIds);
+
+        // ── 4. Latest checkpoint per participant ─────────────
+        $latestByParticipant = [];
+        foreach ($validatedTimes as $vt) {
+            $pid = $vt->participant_id;
+            if (!isset($latestByParticipant[$pid])) {
+                $latestByParticipant[$pid] = $vt; // First = highest order (DESC)
+            }
+        }
+
+        // ── 5. Build groups ──────────────────────────────────
+        $groups = [];
+        foreach ($checkpoints as $cp) {
+            $key           = $cp->checkpoint_type === 'checkpoint' ? 'cp_' . $cp->id : $cp->checkpoint_type;
+            $groups[$key]  = ['checkpoint' => $cp, 'participants' => []];
+        }
+
+        $notStarted = [];
+
+        foreach ($participantIds as $pid) {
+            $p               = $participantMap[$pid];
+            $p->display_name = $p->bib_name ?: $p->name;
+            $p->category     = (object) ['name' => $p->category_name];
+
+            if (!isset($latestByParticipant[$pid])) {
+                $notStarted[] = $p;
+                continue;
+            }
+
+            $latestVt = $latestByParticipant[$pid];
+            $cpId     = $latestVt->rfid_checkpoint_id;
+
+            if (!$checkpointMap->has($cpId)) {
+                $notStarted[] = $p;
+                continue;
+            }
+
+            $cp  = $checkpointMap[$cpId];
+            $key = $cp->checkpoint_type === 'checkpoint' ? 'cp_' . $cp->id : $cp->checkpoint_type;
+
+            $latestVt->formatted_elapsed_time = $latestVt->elapsed_time
+                ? \Carbon\Carbon::parse($latestVt->elapsed_time)->format('H:i:s')
+                : null;
+            $latestVt->checkpoint_time = $latestVt->checkpoint_time
+                ? \Carbon\Carbon::parse($latestVt->checkpoint_time)
+                : null;
+
+            $p->formatted_elapsed_time = $p->elapsed_time
+                ? \Carbon\Carbon::parse($p->elapsed_time)->format('H:i:s')
+                : null;
+
+            if (isset($groups[$key])) {
+                $groups[$key]['participants'][] = [
+                    'participant'    => $p,
+                    'validated_time' => $latestVt,
+                ];
+            }
+        }
+
+        // ── 6. Sort each group ───────────────────────────────
+        foreach ($groups as $key => &$group) {
+            if ($key === 'finish') {
+                usort($group['participants'], function ($a, $b) {
+                    $aTime = $a['validated_time']->elapsed_time ?? '99:99:99';
+                    $bTime = $b['validated_time']->elapsed_time ?? '99:99:99';
+                    return strcmp($aTime, $bTime);
+                });
+            } else {
+                usort($group['participants'], function ($a, $b) {
+                    $aTime = $a['validated_time']->checkpoint_time ?? now()->addYears(10);
+                    $bTime = $b['validated_time']->checkpoint_time ?? now()->addYears(10);
+                    return $aTime <=> $bTime;
+                });
+            }
+        }
+        unset($group);
+
+        usort($notStarted, fn ($a, $b) => $a->bib <=> $b->bib);
+
+        return [
+            'checkpointGroups'  => $groups,
+            'notStarted'        => $notStarted,
+            'totalParticipants' => count($participants),
+        ];
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // HELPERS
+    // ══════════════════════════════════════════════════════════
+
+    protected function emptyLiveData(
+        Event  $event,
+               $categories,
+        ?string $selectedCategory,
+        ?string $search,
+        ?string $filterGender
+    ): array {
+        return [
+            'event'             => $event,
+            'categories'        => $categories,
+            'selectedCategory'  => $selectedCategory,
+            'checkpointGroups'  => collect(),
+            'notStarted'        => collect(),
+            'totalParticipants' => 0,
+            'summary'           => ['not_started' => 0, 'started' => 0, 'on_course' => 0, 'finished' => 0],
+            'activeFilters'     => collect([$selectedCategory, $filterGender, $search])->filter()->count(),
+        ];
+    }
+
+    /**
+     * Halaman TV Display — tampilan publik untuk layar besar.
+     *
+     * GET /event/{event}/tv
+     */
+    public function tvDisplay(Event $event, Request $request)
+    {
+        $totalParticipants = \App\Models\Participant::where('event_id', $event->id)
+            ->whereHas('transactions', fn($q) => $q->where('status', 'PAID'))
+            ->count();
+
+        return view('event.tv-display', compact('event', 'totalParticipants'));
+    }
+
+    /**
+     * Lookup peserta berdasarkan RFID tag — dipanggil dari TV display via AJAX.
+     * Cache 3 detik per tag supaya tidak DOS database kalau tag terbaca berulang.
+     *
+     * GET /event/{event}/tv/lookup?tag=E280691500004019XXXXXXXX
+     */
+    public function tvLookup(Event $event, Request $request): \Illuminate\Http\JsonResponse
+    {
+        $tag = strtoupper(trim($request->query('tag', '')));
+
+        if (strlen($tag) < 8) {
+            return response()->json(['success' => false, 'message' => 'Tag tidak valid'], 400);
+        }
+
+        $cacheKey = "tv_lookup:{$event->id}:{$tag}";
+
+        $result = Cache::remember($cacheKey, 3, function () use ($event, $tag) {
+
+            // Cari participant via mapping
+            $mapping = \App\Models\ParticipantRfidMapping::where('rfid_tag', $tag)
+                ->where('is_active', true)
+                ->with(['participant.category', 'participant.validatedTimes.checkpoint'])
+                ->first();
+
+            if (!$mapping) {
+                return null;
+            }
+
+            $p = $mapping->participant;
+            if (!$p || $p->event_id !== $event->id) {
+                return null;
+            }
+
+            // Ambil validated time terakhir (checkpoint dengan order tertinggi)
+            $latestTime = $p->validatedTimes
+                ->filter(fn($vt) => $vt->checkpoint && $vt->checkpoint->is_active)
+                ->sortByDesc(fn($vt) => $vt->checkpoint->checkpoint_order ?? 0)
+                ->first();
+
+            // Hitung total finisher untuk konteks posisi
+            $totalFinishers = \Illuminate\Support\Facades\DB::scalar(
+                'SELECT COUNT(*) FROM rfid_validated_times vt
+                JOIN rfid_checkpoints cp ON cp.id = vt.rfid_checkpoint_id
+                WHERE cp.event_category_id = ? AND cp.checkpoint_type = "finish" AND cp.is_active = 1',
+                [$p->event_category_id]
+            );
+
+            return [
+                'bib'                  => $p->bib,
+                'name'                 => $p->bib_name ?: $p->name,
+                'gender'               => $p->gender,
+                'age'                  => $p->age,
+                'city'                 => $p->city,
+                'category'             => $p->category?->name,
+                'elapsed_time'         => $p->elapsed_time
+                                            ? \Carbon\Carbon::parse($p->elapsed_time)->format('H:i:s')
+                                            : ($latestTime?->formatted_elapsed_time),
+                'general_position'     => $p->general_position,
+                'category_position'    => $p->category_position,
+                'total_finishers'      => (int) $totalFinishers,
+                'last_checkpoint_type' => $latestTime?->checkpoint?->checkpoint_type,
+                'last_checkpoint_name' => $latestTime?->checkpoint?->checkpoint_name,
+                'last_checkpoint_time' => $latestTime?->checkpoint_time?->format('H:i:s'),
+            ];
+        });
+
+        if (!$result) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tag tidak terdaftar atau bukan peserta event ini',
+            ]);
+        }
+
+        return response()->json([
+            'success'     => true,
+            'participant' => $result,
+        ]);
+    }
+
+    /**
+     * Stats ringkas untuk bottom bar TV display.
+     * Cache 10 detik — cukup fresh untuk live event.
+     *
+     * GET /event/{event}/tv/stats
+     */
+    public function tvStats(Event $event): \Illuminate\Http\JsonResponse
+    {
+        $stats = Cache::remember("tv_stats:{$event->id}", 10, function () use ($event) {
+
+            $total = \App\Models\Participant::where('event_id', $event->id)
+                ->whereHas('transactions', fn($q) => $q->where('status', 'PAID'))
+                ->count();
+
+            $finished = (int) \Illuminate\Support\Facades\DB::scalar(
+                'SELECT COUNT(DISTINCT vt.participant_id)
+                FROM rfid_validated_times vt
+                JOIN rfid_checkpoints cp ON cp.id = vt.rfid_checkpoint_id
+                JOIN participants p ON p.id = vt.participant_id
+                WHERE p.event_id = ? AND cp.checkpoint_type = "finish" AND cp.is_active = 1',
+                [$event->id]
+            );
+
+            $started = (int) \Illuminate\Support\Facades\DB::scalar(
+                'SELECT COUNT(DISTINCT vt.participant_id)
+                FROM rfid_validated_times vt
+                JOIN rfid_checkpoints cp ON cp.id = vt.rfid_checkpoint_id
+                JOIN participants p ON p.id = vt.participant_id
+                WHERE p.event_id = ? AND cp.checkpoint_type = "start" AND cp.is_active = 1',
+                [$event->id]
+            );
+
+            return [
+                'total'      => $total,
+                'started'    => $started,
+                'finished'   => $finished,
+                'on_course'  => max(0, $started - $finished),
+                'not_started'=> max(0, $total - $started),
+            ];
+        });
+
+        return response()->json(['success' => true, ...$stats]);
+    }
+
 }

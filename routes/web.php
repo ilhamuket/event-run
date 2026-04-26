@@ -11,7 +11,12 @@ Route::get('/', [EventController::class, 'home'])->name('home');
 
 Route::get('/events/{event:slug}/results', [EventController::class, 'results'])->name('event.results');
 Route::get('/events/{event:slug}/participants', [EventController::class, 'participants'])->name('event.participants');
-Route::get('/event/{event:slug}/live', [EventController::class, 'live'])->name('event.live');
+Route::get('/event/{event:slug}/live', [EventController::class, 'live'])
+    ->name('event.live');
+
+Route::get('/event/{event:slug}/live/partial', [EventController::class, 'livePartial'])
+    ->name('event.live.partial');
+
 // Artisan Runner (PIN protected)
 Route::get('/dev/artisan', [ArtisanRunnerController::class, 'index'])->name('artisan.runner');
 Route::post('/dev/artisan/run', [ArtisanRunnerController::class, 'run'])->name('artisan.runner.run');
@@ -21,6 +26,11 @@ Route::post('/dev/artisan/stop-worker', [ArtisanRunnerController::class, 'stopWo
 
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
+
+
+    Route::get('/tv',        [EventController::class, 'tvDisplay'])->name('event.tv');
+    Route::get('/tv/lookup', [EventController::class, 'tvLookup'])->name('event.tv.lookup');
+    Route::get('/tv/stats',  [EventController::class, 'tvStats'])->name('event.tv.stats');
     // Registration form
     Route::middleware('disable.registration')->group(function () {
         Route::get('/register', [RegistrationController::class, 'create'])->name('register');

@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -47,7 +48,6 @@ class ProcessRfidScan implements ShouldQueue
             }
 
             // ── 2. PARTICIPANT via RFID mapping ─────────────────────────────
-            // Satu query JOIN — tidak ada lazy load
             $participant = DB::selectOne(
                 'SELECT p.id, p.bib, p.event_category_id, p.event_id
                  FROM participant_rfid_mappings m
@@ -68,12 +68,19 @@ class ProcessRfidScan implements ShouldQueue
             );
 
             // ── 3. RESOLVE CHECKPOINT ───────────────────────────────────────
+            // FIX: Dihapus FOR UPDATE di sini.
+            //
+            // Sebelumnya ada FOR UPDATE pada SELECT checkpoint — ini salah kaprah.
+            // rfid_checkpoints adalah data statis (dibuat sebelum race, tidak
+            // diubah saat race berlangsung), jadi tidak ada yang bisa konflik.
+            // FOR UPDATE di sini hanya menyebabkan row-level lock yang berpotensi
+            // deadlock kalau 2 job masuk bersamaan untuk kategori yang sama,
+            // karena urutan acquire lock bisa berbeda-beda antar transaction.
             $checkpoint = DB::selectOne(
                 'SELECT id, checkpoint_name, checkpoint_type, checkpoint_order, event_category_id
                  FROM rfid_checkpoints
                  WHERE event_category_id = ? AND checkpoint_type = ? AND is_active = 1
-                 LIMIT 1
-                 FOR UPDATE',
+                 LIMIT 1',
                 [$participant->event_category_id, $this->checkpointType]
             );
             if (!$checkpoint) {
@@ -90,6 +97,8 @@ class ProcessRfidScan implements ShouldQueue
             );
 
             // ── 4. RAPID DUPLICATE ──────────────────────────────────────────
+            // Cek apakah tag yang sama sudah scan di checkpoint ini dalam 10 detik terakhir.
+            // Ini tangkap physical double-read dari reader sebelum debounce Go sempat filter.
             $duplicateThreshold = $scannedAt->copy()->subSeconds(10)->format('Y-m-d H:i:s');
             $recentScan = DB::selectOne(
                 'SELECT id FROM rfid_raw_logs
@@ -108,6 +117,15 @@ class ProcessRfidScan implements ShouldQueue
             }
 
             // ── 5. ALREADY VALIDATED ────────────────────────────────────────
+            // FIX: FOR UPDATE hanya di sini — bukan di checkpoint.
+            //
+            // Ini satu-satunya tempat yang membutuhkan lock karena:
+            // - Kita baca (apakah sudah ada?), lalu segera INSERT kalau belum ada.
+            // - Tanpa lock, dua job concurrent bisa sama-sama baca "belum ada",
+            //   lalu sama-sama INSERT → duplicate. FOR UPDATE di sini memastikan
+            //   job kedua menunggu job pertama selesai sebelum membaca.
+            // - Unique constraint di DB (participant_id, rfid_checkpoint_id) adalah
+            //   jaring pengaman terakhir yang sudah ditangani di langkah 8.
             $alreadyValidated = DB::selectOne(
                 'SELECT id FROM rfid_validated_times
                  WHERE participant_id = ? AND rfid_checkpoint_id = ?
@@ -128,10 +146,18 @@ class ProcessRfidScan implements ShouldQueue
             );
 
             // ── 7. HITUNG POSISI ────────────────────────────────────────────
+            // FIX: Dihapus FOR UPDATE di COUNT query ini.
+            //
+            // Sebelumnya ada FOR UPDATE di COUNT(*) — ini tidak efektif sama sekali.
+            // COUNT(*) dengan FOR UPDATE menglock semua row yang di-count, bukan
+            // menjamin atomicity posisi. Dengan unique constraint + INSERT yang akan
+            // gagal kalau duplicate, posisi yang terhitung sudah cukup aman.
+            // Kalau dua job concurrent masuk bersamaan dan dapat posisi yang sama,
+            // hanya satu yang berhasil INSERT (yang lain kena 23000). Posisi akan
+            // direcalculate ulang oleh RecalculatePositions anyway.
             $positionRow = DB::selectOne(
                 'SELECT COUNT(*) as cnt FROM rfid_validated_times
-                 WHERE rfid_checkpoint_id = ?
-                 FOR UPDATE',
+                 WHERE rfid_checkpoint_id = ?',
                 [$checkpoint->id]
             );
             $position = ($positionRow->cnt ?? 0) + 1;
@@ -173,9 +199,27 @@ class ProcessRfidScan implements ShouldQueue
                     [$elapsedTime, $participant->id]
                 );
 
-                RecalculatePositions::dispatch($participant->event_category_id, $participant->event_id)
-                    ->onQueue('positions')
-                    ->delay(now()->addSeconds(3));
+                // FIX: Debounce dispatch RecalculatePositions.
+                //
+                // Masalah sebelumnya: kalau 50 peserta finish dalam waktu 3 detik
+                // (misalnya di finish line yang ramai), akan ada 50 job RecalculatePositions
+                // antri. Setiap job recalculate SEMUA finisher — sangat boros.
+                //
+                // Solusi: Cache::add() bersifat atomic — hanya berhasil kalau key belum ada.
+                // Jadi hanya job pertama yang dispatch, sisanya skip.
+                // Key expire setelah 8 detik (lebih panjang dari delay 5 detik),
+                // supaya job berikutnya tidak dispatch lagi sebelum job pertama jalan.
+                // Dengan ini, dalam window 8 detik hanya ada 1 job RecalculatePositions
+                // per kategori, berapapun jumlah finisher yang masuk.
+                $dispatchKey = "recalc_dispatch_{$participant->event_category_id}";
+                if (Cache::add($dispatchKey, 1, 8)) {
+                    RecalculatePositions::dispatch(
+                        $participant->event_category_id,
+                        $participant->event_id
+                    )
+                        ->onQueue('positions')
+                        ->delay(now()->addSeconds(5));
+                }
             }
 
             Log::info('RFID processed', [
@@ -228,7 +272,6 @@ class ProcessRfidScan implements ShouldQueue
         $splitTime   = null;
 
         // ── Elapsed: checkpointTime - start time peserta ini ─────────────────
-        // Cari start checkpoint kategori ini, lalu cari validated time peserta di sana
         $startRecord = DB::selectOne(
             'SELECT vt.checkpoint_time
              FROM rfid_validated_times vt
@@ -242,8 +285,8 @@ class ProcessRfidScan implements ShouldQueue
         );
 
         if ($startRecord) {
-            $startTs  = Carbon::parse($startRecord->checkpoint_time)->timestamp;
-            $elapsed  = $checkpointTime->timestamp - $startTs;
+            $startTs = Carbon::parse($startRecord->checkpoint_time)->timestamp;
+            $elapsed = $checkpointTime->timestamp - $startTs;
             if ($elapsed >= 0) {
                 $elapsedTime = gmdate('H:i:s', $elapsed);
             } else {
