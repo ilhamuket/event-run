@@ -695,6 +695,8 @@
     // ── Init ──────────────────────────────────────────────────────────
     showIdle();
 
+    window.testScan = (tag) => lookup(tag);
+
 })();
 </script>
 </body>
