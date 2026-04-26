@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Jobs\ProcessRfidScan;
+use App\Models\ParticipantRfidMapping;
+use Illuminate\Support\Facades\DB;
+
 
 class RfidTimingController extends Controller
 {
@@ -24,6 +27,237 @@ class RfidTimingController extends Controller
     public function __construct(RfidTimingService $timingService)
     {
         $this->timingService = $timingService;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // RFID MAPPING ENDPOINTS
+    // Route: POST /api/rfid/mapping
+    //        DELETE /api/rfid/mapping
+    //        GET  /api/rfid/mapping/{participant_id}
+    // Auth: X-DEVICE-KEY (sama dengan scanner)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Assign satu atau beberapa RFID tag ke participant.
+     *
+     * POST /api/rfid/mapping
+     *
+     * Body:
+     * {
+     *   "participant_id": 42,
+     *   "rfid_tags": ["E280691500004019...", "E280691500005020..."],
+     *   "mode": "replace" | "append",
+     *   "notes": "optional"
+     * }
+     *
+     * mode=replace : nonaktifkan semua tag lama, assign tag baru
+     * mode=append  : tag lama tetap aktif, tambah tag baru
+     *
+     * HTTP status:
+     * - 200: Sukses
+     * - 401: Device key salah
+     * - 404: Participant tidak ditemukan
+     * - 409: Salah satu tag sudah terdaftar ke participant LAIN (aktif)
+     * - 422: Validasi gagal
+     */
+    public function assignMapping(Request $request): JsonResponse
+    {
+        $deviceKey = $request->header('X-DEVICE-KEY');
+        if (!$deviceKey || $deviceKey !== config('rfid.device_key')) {
+            return response()->json(['success' => false, 'error' => 'unauthorized'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'participant_id' => 'required|integer',
+            'rfid_tags'      => 'required|array|min:1',
+            'rfid_tags.*'    => 'required|string|max:255',
+            'mode'           => 'required|string|in:replace,append',
+            'notes'          => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'validation_failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $v             = $validator->validated();
+        $participantId = $v['participant_id'];
+        $rfidTags      = array_map(fn($t) => strtoupper(trim($t)), $v['rfid_tags']);
+        $mode          = $v['mode'];
+        $notes         = $v['notes'] ?? null;
+
+        // Cek participant ada
+        $participant = Participant::find($participantId);
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'participant_not_found',
+                'message' => "Participant ID {$participantId} tidak ditemukan.",
+            ], 404);
+        }
+
+        // Cek apakah ada tag yang sudah terdaftar ke participant LAIN
+        $conflicts = [];
+        foreach ($rfidTags as $tag) {
+            $existing = ParticipantRfidMapping::where('rfid_tag', $tag)
+                ->where('is_active', true)
+                ->where('participant_id', '!=', $participantId)
+                ->with('participant')
+                ->first();
+
+            if ($existing) {
+                $conflicts[] = [
+                    'tag'            => $tag,
+                    'owner_id'       => $existing->participant_id,
+                    'owner_name'     => $existing->participant->name ?? '-',
+                    'owner_bib'      => $existing->participant->bib_number ?? '-',
+                ];
+            }
+        }
+
+        if (!empty($conflicts)) {
+            return response()->json([
+                'success'   => false,
+                'error'     => 'tag_conflict',
+                'message'   => 'Satu atau lebih tag sudah terdaftar ke participant lain.',
+                'conflicts' => $conflicts,
+            ], 409);
+        }
+
+        // Jalankan mapping dalam transaction
+        DB::transaction(function () use ($participantId, $rfidTags, $mode, $notes) {
+            if ($mode === 'replace') {
+                // Nonaktifkan semua tag lama participant ini
+                ParticipantRfidMapping::where('participant_id', $participantId)
+                    ->where('is_active', true)
+                    ->update(['is_active' => false]);
+            }
+
+            // Assign tag-tag baru
+            foreach ($rfidTags as $tag) {
+                ParticipantRfidMapping::assignTag(
+                    participantId: $participantId,
+                    rfidTag:       $tag,
+                    assignedBy:    0,   // 0 = device (bukan user web)
+                    notes:         $notes,
+                );
+            }
+        });
+
+        // Ambil semua tag aktif setelah operasi
+        $activeTags = ParticipantRfidMapping::where('participant_id', $participantId)
+            ->where('is_active', true)
+            ->pluck('rfid_tag');
+
+        Log::info('RFID mapping updated', [
+            'participant_id' => $participantId,
+            'mode'           => $mode,
+            'tags_added'     => $rfidTags,
+            'active_tags'    => $activeTags,
+        ]);
+
+        return response()->json([
+            'success'        => true,
+            'message'        => $mode === 'replace'
+                ? 'Tag lama diganti, tag baru tersimpan.'
+                : 'Tag baru ditambahkan.',
+            'participant_id' => $participantId,
+            'participant'    => [
+                'name'       => $participant->name,
+                'bib_number' => $participant->bib_number ?? '-',
+            ],
+            'mode'           => $mode,
+            'tags_added'     => $rfidTags,
+            'active_tags'    => $activeTags,
+        ]);
+    }
+
+    /**
+     * Lihat semua tag aktif milik satu participant.
+     *
+     * GET /api/rfid/mapping/{participant_id}
+     */
+    public function getMapping(Request $request, int $participantId): JsonResponse
+    {
+        $deviceKey = $request->header('X-DEVICE-KEY');
+        if (!$deviceKey || $deviceKey !== config('rfid.device_key')) {
+            return response()->json(['success' => false, 'error' => 'unauthorized'], 401);
+        }
+
+        $participant = Participant::find($participantId);
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'participant_not_found',
+            ], 404);
+        }
+
+        $tags = ParticipantRfidMapping::where('participant_id', $participantId)
+            ->where('is_active', true)
+            ->orderBy('assigned_at', 'desc')
+            ->get(['rfid_tag', 'assigned_at', 'notes']);
+
+        return response()->json([
+            'success'        => true,
+            'participant_id' => $participantId,
+            'participant'    => [
+                'name'       => $participant->name,
+                'bib_number' => $participant->bib_number ?? '-',
+            ],
+            'active_tags'    => $tags,
+        ]);
+    }
+
+    /**
+     * Nonaktifkan satu tag tertentu dari participant.
+     *
+     * DELETE /api/rfid/mapping
+     *
+     * Body: { "participant_id": 42, "rfid_tag": "E280..." }
+     */
+    public function removeMapping(Request $request): JsonResponse
+    {
+        $deviceKey = $request->header('X-DEVICE-KEY');
+        if (!$deviceKey || $deviceKey !== config('rfid.device_key')) {
+            return response()->json(['success' => false, 'error' => 'unauthorized'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'participant_id' => 'required|integer',
+            'rfid_tag'       => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'validation_failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $participantId = $validator->validated()['participant_id'];
+        $rfidTag       = strtoupper(trim($validator->validated()['rfid_tag']));
+
+        $deactivated = ParticipantRfidMapping::deactivateTag($participantId, $rfidTag);
+
+        if (!$deactivated) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'tag_not_found',
+                'message' => 'Tag tidak ditemukan atau sudah tidak aktif.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success'        => true,
+            'message'        => 'Tag berhasil dinonaktifkan.',
+            'participant_id' => $participantId,
+            'rfid_tag'       => $rfidTag,
+        ]);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

@@ -62,6 +62,10 @@ Route::prefix('rfid')->group(function () {
     Route::get('/device', [RfidTimingController::class, 'getDeviceConfig'])
         ->name('rfid.device.config');
 
+    Route::post('/mapping',              [RfidTimingController::class, 'assignMapping']);
+    Route::get('/mapping/{participant}', [RfidTimingController::class, 'getMapping']);
+    Route::delete('/mapping',            [RfidTimingController::class, 'removeMapping']);
+
 });
 
 // ── 2. PUBLIC ROUTES ──────────────────────────────────────────────────────────
