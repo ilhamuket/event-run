@@ -176,32 +176,57 @@ class RfidTimingController extends Controller
         ]);
     }
 
-    /**
-     * Lihat semua tag aktif milik satu participant.
-     *
-     * GET /api/rfid/mapping/{participant_id}
-     */
     public function getMapping(Request $request, int $participantId): JsonResponse
     {
         $deviceKey = $request->header('X-DEVICE-KEY');
+
+        Log::info('RFID Mapping Request masuk', [
+            'participant_id' => $participantId,
+            'device_key'     => $deviceKey,
+            'ip'             => $request->ip(),
+            'user_agent'     => $request->userAgent(),
+        ]);
+
         if (!$deviceKey || $deviceKey !== config('rfid.device_key')) {
+            Log::warning('Unauthorized RFID request', [
+                'participant_id' => $participantId,
+                'device_key'     => $deviceKey,
+            ]);
+
             return response()->json(['success' => false, 'error' => 'unauthorized'], 401);
         }
 
         $participant = Participant::find($participantId);
+
         if (!$participant) {
+            Log::error('Participant tidak ditemukan', [
+                'participant_id' => $participantId,
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error'   => 'participant_not_found',
             ], 404);
         }
 
+        Log::info('Participant ditemukan', [
+            'id'         => $participant->id,
+            'name'       => $participant->name,
+            'bib_number' => $participant->bib_number ?? null,
+        ]);
+
         $tags = ParticipantRfidMapping::where('participant_id', $participantId)
             ->where('is_active', true)
             ->orderBy('assigned_at', 'desc')
             ->get(['rfid_tag', 'assigned_at', 'notes']);
 
-        return response()->json([
+        Log::info('RFID active tags diambil', [
+            'participant_id' => $participantId,
+            'total_tags'     => $tags->count(),
+            'tags'           => $tags->toArray(),
+        ]);
+
+        $response = [
             'success'        => true,
             'participant_id' => $participantId,
             'participant'    => [
@@ -209,7 +234,11 @@ class RfidTimingController extends Controller
                 'bib_number' => $participant->bib_number ?? '-',
             ],
             'active_tags'    => $tags,
-        ]);
+        ];
+
+        Log::info('RFID Mapping Response', $response);
+
+        return response()->json($response);
     }
 
     /**
