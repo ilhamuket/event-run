@@ -664,7 +664,9 @@ class EventController extends Controller
                 'general_position'     => $p->general_position,
                 'category_position'    => $p->category_position,
                 'total_finishers'      => (int) $totalFinishers,
-                'last_checkpoint_type' => $latestTime?->checkpoint?->checkpoint_type,
+                'last_checkpoint_type' => $latestTime
+                ? $latestTime->checkpoint?->checkpoint_type
+                : 'not_started',
                 'last_checkpoint_name' => $latestTime?->checkpoint?->checkpoint_name,
                 'last_checkpoint_time' => $latestTime?->checkpoint_time?->format('H:i:s'),
             ];
