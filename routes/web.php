@@ -28,9 +28,9 @@ Route::post('/dev/artisan/stop-worker', [ArtisanRunnerController::class, 'stopWo
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
 
 
-    Route::get('/tv',        [EventController::class, 'tvDisplay'])->name('event.tv');
-    Route::get('/tv/lookup', [EventController::class, 'tvLookup'])->name('event.tv.lookup');
-    Route::get('/tv/stats',  [EventController::class, 'tvStats'])->name('event.tv.stats');
+    Route::get('/tv',        [EventController::class, 'tvDisplay'])->name('tv');
+    Route::get('/tv/lookup', [EventController::class, 'tvLookup'])->name('tv.lookup');
+    Route::get('/tv/stats',  [EventController::class, 'tvStats'])->name('tv.stats');
     // Registration form
     Route::middleware('disable.registration')->group(function () {
         Route::get('/register', [RegistrationController::class, 'create'])->name('register');
