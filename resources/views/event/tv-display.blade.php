@@ -29,7 +29,7 @@
             --gold-light: #F2C43A;
             --white:      #FFFFFF;
             --off-white:  #F5F0E8;
-            --glass-bg:   rgba(8, 8, 8, 0.82);
+            --glass-bg:   rgba(8, 8, 8, 0.85);
             --glass-border: rgba(255,255,255,0.12);
             --glass-border-accent: rgba(192, 41, 42, 0.6);
         }
@@ -59,8 +59,8 @@
         #clock-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 10;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 48px;
-            height: 64px;
+            padding: 0 56px;
+            height: 72px;
             background: rgba(0,0,0,0.55);
             border-bottom: 1px solid rgba(255,255,255,0.08);
             backdrop-filter: blur(12px);
@@ -68,7 +68,7 @@
         }
         #clock-bar .event-name {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
+            font-size: 32px;
             letter-spacing: 2px;
             color: var(--off-white);
         }
@@ -76,18 +76,18 @@
             color: var(--red-light);
         }
         #clock-bar .live-badge {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 12px; font-weight: 500; letter-spacing: 1.5px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 13px; font-weight: 500; letter-spacing: 1.5px;
             color: var(--off-white); text-transform: uppercase;
         }
         #clock-bar .live-dot {
-            width: 8px; height: 8px; border-radius: 50%;
+            width: 10px; height: 10px; border-radius: 50%;
             background: var(--red-light);
             animation: pulse-red 1.4s ease-in-out infinite;
         }
         #clock-bar .clock {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 30px; letter-spacing: 3px;
+            font-size: 34px; letter-spacing: 3px;
             color: var(--off-white);
         }
 
@@ -95,30 +95,32 @@
         #center-stage {
             position: fixed; inset: 0; z-index: 5;
             display: flex; align-items: center; justify-content: center;
+            padding: 88px 24px 64px;
         }
 
         /* ── CARD ── */
         #card {
-            width: min(680px, 90vw);
+            width: min(1040px, 94vw);
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-top: 2px solid var(--glass-border-accent);
-            border-radius: 20px;
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            border-top: 3px solid var(--glass-border-accent);
+            border-radius: 24px;
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
             overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
                         opacity 0.25s ease;
         }
 
         /* ── CARD: IDLE STATE ── */
         #state-idle {
-            padding: 52px 48px;
+            padding: 80px 56px;
             text-align: center;
-            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 28px;
         }
         .scan-icon {
-            width: 72px; height: 72px;
+            width: 96px; height: 96px;
             border: 2px solid rgba(255,255,255,0.15);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -126,164 +128,172 @@
         }
         .scan-icon::before {
             content: '';
-            position: absolute; inset: 6px;
+            position: absolute; inset: 8px;
             border: 1.5px dashed rgba(192,41,42,0.5);
             border-radius: 50%;
             animation: spin 6s linear infinite;
         }
-        .scan-icon svg { width: 32px; height: 32px; color: rgba(255,255,255,0.4); }
+        .scan-icon svg { width: 44px; height: 44px; color: rgba(255,255,255,0.4); }
         #state-idle .prompt-main {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 36px; letter-spacing: 2px;
+            font-size: 52px; letter-spacing: 2px;
             color: var(--off-white);
         }
         #state-idle .prompt-sub {
-            font-size: 15px; color: rgba(255,255,255,0.45);
-            line-height: 1.5; max-width: 340px;
+            font-size: 18px; color: rgba(255,255,255,0.45);
+            line-height: 1.5; max-width: 460px;
         }
         .scan-line-anim {
-            width: 200px; height: 2px;
+            width: 260px; height: 2px;
             background: linear-gradient(90deg, transparent, var(--red-light), transparent);
             border-radius: 1px;
             animation: scan-slide 2.5s ease-in-out infinite;
         }
 
         /* ── CARD: RESULT STATE ── */
-        #state-result {
-            display: none;
-        }
+        #state-result { display: none; }
+
         .result-header {
-            padding: 28px 36px 24px;
+            padding: 44px 52px 36px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
-            display: flex; align-items: center; gap: 20px;
+            display: flex; align-items: center; gap: 32px;
         }
         .bib-badge {
             flex-shrink: 0;
-            width: 72px; height: 72px;
+            width: 130px; height: 130px;
             background: var(--red);
-            border-radius: 12px;
+            border-radius: 18px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 1px;
+            gap: 2px;
+            box-shadow: 0 10px 30px rgba(192,41,42,0.35);
         }
         .bib-badge .bib-label {
-            font-size: 9px; font-weight: 500; letter-spacing: 1.5px;
-            color: rgba(255,255,255,0.6); text-transform: uppercase;
+            font-size: 12px; font-weight: 500; letter-spacing: 2px;
+            color: rgba(255,255,255,0.7); text-transform: uppercase;
         }
         .bib-badge .bib-num {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 30px; letter-spacing: 1px;
+            font-size: 64px; letter-spacing: 1px;
             color: var(--white);
             line-height: 1;
         }
         .result-name-block { flex: 1; min-width: 0; }
         .result-name {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 38px; letter-spacing: 1px;
+            font-size: 88px; letter-spacing: 1.5px;
             color: var(--white);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            line-height: 1;
+            line-height: 0.95;
+            text-shadow: 0 2px 16px rgba(0,0,0,0.4);
         }
+        /* Auto-shrink kalau nama panjang banget */
+        .result-name.long  { font-size: 72px; }
+        .result-name.xlong { font-size: 60px; }
         .result-meta {
-            margin-top: 6px;
-            font-size: 13px; color: rgba(255,255,255,0.5);
-            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            margin-top: 14px;
+            font-size: 18px; color: rgba(255,255,255,0.6);
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
         }
         .result-meta .dot { opacity: 0.3; }
         .result-category-pill {
             display: inline-flex; align-items: center;
-            padding: 3px 10px;
+            padding: 5px 14px;
             background: rgba(192,41,42,0.25);
             border: 1px solid rgba(192,41,42,0.4);
-            border-radius: 20px;
-            font-size: 11px; font-weight: 500; letter-spacing: 0.5px;
+            border-radius: 24px;
+            font-size: 14px; font-weight: 500; letter-spacing: 0.5px;
             color: #F59191;
         }
 
-        /* STATUS BADGE — finish vs checkpoint vs start vs not_started */
+        /* STATUS BADGE */
         .status-pill {
             flex-shrink: 0;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 12px; font-weight: 500; letter-spacing: 0.5px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px; font-weight: 600; letter-spacing: 1px;
             text-transform: uppercase;
         }
-        .status-finish { background: rgba(212,160,23,0.2); color: var(--gold-light); border: 1px solid rgba(212,160,23,0.35); }
-        .status-checkpoint { background: rgba(55,138,221,0.2); color: #8DC4F5; border: 1px solid rgba(55,138,221,0.35); }
-        .status-start { background: rgba(99,153,34,0.2); color: #AAD36A; border: 1px solid rgba(99,153,34,0.35); }
+        .status-finish { background: rgba(212,160,23,0.22); color: var(--gold-light); border: 1px solid rgba(212,160,23,0.4); }
+        .status-checkpoint { background: rgba(55,138,221,0.22); color: #8DC4F5; border: 1px solid rgba(55,138,221,0.4); }
+        .status-start { background: rgba(99,153,34,0.22); color: #AAD36A; border: 1px solid rgba(99,153,34,0.4); }
         .status-not_started {
-            background: rgba(140,140,140,0.18);
+            background: rgba(140,140,140,0.2);
             color: #BFBFBF;
             border: 1px solid rgba(140,140,140,0.35);
         }
 
-        /* STATS GRID */
+        /* STATS GRID — elapsed time jadi hero */
         .result-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: 1.6fr 1fr 1fr;
             border-top: 1px solid rgba(255,255,255,0.06);
         }
         .stat-cell {
-            padding: 22px 28px;
+            padding: 32px 36px;
             border-right: 1px solid rgba(255,255,255,0.06);
-            display: flex; flex-direction: column; gap: 5px;
+            display: flex; flex-direction: column; gap: 8px;
         }
         .stat-cell:last-child { border-right: none; }
         .stat-label {
-            font-size: 10px; font-weight: 500;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            color: rgba(255,255,255,0.35);
+            font-size: 12px; font-weight: 500;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
         }
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 32px; letter-spacing: 1.5px;
+            font-size: 48px; letter-spacing: 1.5px;
             color: var(--white); line-height: 1;
         }
-        .stat-value.highlight { color: var(--gold-light); }
+        .stat-value.hero {
+            font-size: 76px;
+            color: var(--gold-light);
+            text-shadow: 0 2px 14px rgba(212,160,23,0.25);
+        }
         .stat-sub {
-            font-size: 11px; color: rgba(255,255,255,0.35);
-            margin-top: 1px;
+            font-size: 13px; color: rgba(255,255,255,0.4);
+            margin-top: 2px;
         }
 
         /* FINISH CELEBRATION BAR */
         #finish-bar {
             display: none;
-            padding: 14px 28px;
-            background: linear-gradient(135deg, rgba(212,160,23,0.15), rgba(192,41,42,0.15));
-            border-top: 1px solid rgba(212,160,23,0.2);
+            padding: 22px 28px;
+            background: linear-gradient(135deg, rgba(212,160,23,0.18), rgba(192,41,42,0.18));
+            border-top: 1px solid rgba(212,160,23,0.25);
             text-align: center;
         }
         #finish-bar .finish-text {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 20px; letter-spacing: 3px;
+            font-size: 32px; letter-spacing: 4px;
             color: var(--gold-light);
         }
 
         /* ── CARD: ERROR STATE ── */
         #state-error {
-            padding: 44px 36px;
+            padding: 64px 52px;
             text-align: center;
-            display: none; flex-direction: column; align-items: center; gap: 14px;
+            display: none; flex-direction: column; align-items: center; gap: 20px;
         }
         #state-error .error-icon {
-            width: 48px; height: 48px;
+            width: 64px; height: 64px;
             background: rgba(192,41,42,0.15);
             border: 1px solid rgba(192,41,42,0.3);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
         }
-        #state-error .error-icon svg { width: 20px; height: 20px; color: var(--red-light); }
-        #state-error .error-msg { font-size: 15px; color: rgba(255,255,255,0.5); }
-        #state-error .error-tag { font-size: 12px; color: rgba(255,255,255,0.25); font-family: monospace; }
+        #state-error .error-icon svg { width: 28px; height: 28px; color: var(--red-light); }
+        #state-error .error-msg { font-size: 22px; color: rgba(255,255,255,0.6); }
+        #state-error .error-tag { font-size: 14px; color: rgba(255,255,255,0.3); font-family: monospace; letter-spacing: 1px; }
 
         /* ── LOADING OVERLAY ── */
         #loading-overlay {
             position: absolute; inset: 0;
             background: rgba(0,0,0,0.4);
-            border-radius: 20px;
+            border-radius: 24px;
             display: none; align-items: center; justify-content: center;
         }
         .spinner {
-            width: 32px; height: 32px;
+            width: 40px; height: 40px;
             border: 2px solid rgba(255,255,255,0.1);
             border-top-color: var(--red-light);
             border-radius: 50%;
@@ -301,26 +311,26 @@
         /* ── BOTTOM BAR ── */
         #bottom-bar {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
-            height: 48px;
+            height: 56px;
             background: rgba(0,0,0,0.55);
             border-top: 1px solid rgba(255,255,255,0.07);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             display: flex; align-items: center; justify-content: center;
-            gap: 40px;
+            gap: 48px;
         }
         .bottom-stat { text-align: center; }
         .bottom-stat .bs-val {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 20px; letter-spacing: 1px;
+            font-size: 24px; letter-spacing: 1px;
             color: var(--off-white);
         }
         .bottom-stat .bs-label {
-            font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-            color: rgba(255,255,255,0.35);
+            font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
         }
         .bottom-divider {
-            width: 1px; height: 24px;
+            width: 1px; height: 28px;
             background: rgba(255,255,255,0.1);
         }
 
@@ -333,10 +343,10 @@
             to { transform: rotate(360deg); }
         }
         @keyframes scan-slide {
-            0% { transform: translateX(-80px); opacity: 0; }
+            0% { transform: translateX(-100px); opacity: 0; }
             20% { opacity: 1; }
             80% { opacity: 1; }
-            100% { transform: translateX(80px); opacity: 0; }
+            100% { transform: translateX(100px); opacity: 0; }
         }
         @keyframes card-pop {
             0% { transform: scale(0.96); opacity: 0; }
@@ -344,7 +354,7 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .card-animate {
-            animation: card-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: card-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
     </style>
 </head>
@@ -414,7 +424,7 @@
             <div class="result-stats">
                 <div class="stat-cell">
                     <span class="stat-label">Elapsed Time</span>
-                    <span class="stat-value highlight" id="r-elapsed">—:——:——</span>
+                    <span class="stat-value hero" id="r-elapsed">—:——:——</span>
                     <span class="stat-sub">sejak start</span>
                 </div>
                 <div class="stat-cell">
@@ -479,33 +489,35 @@
 (function () {
     'use strict';
 
-    const LOOKUP_URL   = '{{ route("event.tv.lookup", $event) }}';
-    const STATS_URL    = '{{ route("event.tv.stats", $event) }}';
-    const IDLE_TIMEOUT = 12000;   // ms sampai kembali ke idle
-    const STATS_INTERVAL = 20000; // refresh stats bar
+    const LOOKUP_URL    = '{{ route("event.tv.lookup", $event) }}';
+    const STATS_URL     = '{{ route("event.tv.stats", $event) }}';
+    const IDLE_TIMEOUT  = 12000;   // ms sampai kembali ke idle
+    const STATS_INTERVAL = 20000;  // refresh stats bar
+    const SCAN_IDLE_MS  = 80;      // jeda antar karakter > ini = scan dianggap selesai
+    const SCAN_LOCKOUT  = 600;     // lockout setelah scan diproses (cegah double-trigger)
 
     // ── DOM refs ──────────────────────────────────────────────────────
-    const $idle    = document.getElementById('state-idle');
-    const $result  = document.getElementById('state-result');
-    const $error   = document.getElementById('state-error');
-    const $loading = document.getElementById('loading-overlay');
-    const $card    = document.getElementById('card');
+    const $idle      = document.getElementById('state-idle');
+    const $result    = document.getElementById('state-result');
+    const $error     = document.getElementById('state-error');
+    const $loading   = document.getElementById('loading-overlay');
+    const $card      = document.getElementById('card');
     const $finishBar = document.getElementById('finish-bar');
 
     // Result fields
     const f = {
-        bib:       document.getElementById('r-bib'),
-        name:      document.getElementById('r-name'),
-        gender:    document.getElementById('r-gender'),
-        age:       document.getElementById('r-age'),
-        city:      document.getElementById('r-city'),
-        category:  document.getElementById('r-category'),
-        statusPill:document.getElementById('r-status-pill'),
-        elapsed:   document.getElementById('r-elapsed'),
-        posGeneral:document.getElementById('r-pos-general'),
-        totalFin:  document.getElementById('r-total-finishers'),
-        cpTime:    document.getElementById('r-checkpoint-time'),
-        cpName:    document.getElementById('r-checkpoint-name'),
+        bib:        document.getElementById('r-bib'),
+        name:       document.getElementById('r-name'),
+        gender:     document.getElementById('r-gender'),
+        age:        document.getElementById('r-age'),
+        city:       document.getElementById('r-city'),
+        category:   document.getElementById('r-category'),
+        statusPill: document.getElementById('r-status-pill'),
+        elapsed:    document.getElementById('r-elapsed'),
+        posGeneral: document.getElementById('r-pos-general'),
+        totalFin:   document.getElementById('r-total-finishers'),
+        cpTime:     document.getElementById('r-checkpoint-time'),
+        cpName:     document.getElementById('r-checkpoint-name'),
     };
 
     // Stats bar
@@ -517,11 +529,9 @@
     };
 
     // ── State ─────────────────────────────────────────────────────────
-    let idleTimer    = null;
-    let inputBuffer  = '';
-    let bufferTimer  = null;
-    let lastTag      = '';
-    let isLoading    = false;
+    let idleTimer  = null;
+    let isLoading  = false;
+    let scanLocked = false;
 
     // ── Clock ─────────────────────────────────────────────────────────
     function updateClock() {
@@ -534,14 +544,23 @@
     updateClock();
     setInterval(updateClock, 1000);
 
+    // ── Auto-fit nama panjang ─────────────────────────────────────────
+    function fitName(text) {
+        f.name.classList.remove('long', 'xlong');
+        f.name.textContent = text;
+        const len = (text || '').length;
+        if (len > 28)      f.name.classList.add('xlong');
+        else if (len > 18) f.name.classList.add('long');
+    }
+
     // ── Show states ───────────────────────────────────────────────────
     function showIdle() {
-        $idle.style.display   = 'flex';
-        $result.style.display = 'none';
-        $error.style.display  = 'none';
+        $idle.style.display      = 'flex';
+        $result.style.display    = 'none';
+        $error.style.display     = 'none';
         $finishBar.style.display = 'none';
         $card.classList.remove('card-animate');
-        void $card.offsetWidth; // reflow
+        void $card.offsetWidth;
         $card.classList.add('card-animate');
     }
 
@@ -551,17 +570,17 @@
         $result.style.display = 'block';
 
         // Populate fields
-        f.bib.textContent      = data.bib || '—';
-        f.name.textContent     = data.name || '—';
-        f.gender.textContent   = data.gender === 'M' ? 'Pria' : (data.gender === 'F' ? 'Wanita' : '—');
-        f.age.textContent      = data.age || '—';
-        f.city.textContent     = data.city || '—';
-        f.category.textContent = data.category || '—';
-        f.elapsed.textContent  = data.elapsed_time || '—:——:——';
+        f.bib.textContent        = data.bib || '—';
+        fitName(data.name || '—');
+        f.gender.textContent     = data.gender === 'M' ? 'Pria' : (data.gender === 'F' ? 'Wanita' : '—');
+        f.age.textContent        = data.age || '—';
+        f.city.textContent       = data.city || '—';
+        f.category.textContent   = data.category || '—';
+        f.elapsed.textContent    = data.elapsed_time || '—:——:——';
         f.posGeneral.textContent = data.general_position ? '#' + data.general_position : '#—';
-        f.totalFin.textContent = data.total_finishers || '—';
-        f.cpTime.textContent   = data.last_checkpoint_time || '——:——';
-        f.cpName.textContent   = data.last_checkpoint_name || '—';
+        f.totalFin.textContent   = data.total_finishers || '—';
+        f.cpTime.textContent     = data.last_checkpoint_time || '——:——';
+        f.cpName.textContent     = data.last_checkpoint_name || '—';
 
         // Tentukan type DULU sebelum dipakai
         const type = data.last_checkpoint_type || 'not_started';
@@ -593,9 +612,9 @@
     }
 
     function showError(msg, tag) {
-        $idle.style.display   = 'none';
-        $result.style.display = 'none';
-        $error.style.display  = 'flex';
+        $idle.style.display      = 'none';
+        $result.style.display    = 'none';
+        $error.style.display     = 'flex';
         $finishBar.style.display = 'none';
         document.getElementById('error-msg').textContent = msg || 'Tag tidak dikenali';
         document.getElementById('error-tag').textContent = tag || '';
@@ -662,67 +681,60 @@
     setInterval(refreshStats, STATS_INTERVAL);
 
     // ── RFID Input capture ────────────────────────────────────────────
-    // Metode 1: Keyboard wedge / HID barcode reader (ketik cepat)
-    // RFID reader yang terhubung via USB biasanya emulasi keyboard.
-    // Karakternya datang sangat cepat (< 50ms antar karakter) lalu diakhiri Enter.
+    // Strategi: debounce by idle gap.
+    // RFID reader (HID keyboard wedge) ngirim karakter sangat cepat (< 20ms antar char).
+    // Kalau ada jeda > SCAN_IDLE_MS, dianggap scan selesai → proses & clear buffer.
+    // Setelah lookup, scanLocked aktif selama SCAN_LOCKOUT untuk cegah karakter sisa
+    // (yg masih nyamber dari scanner) memicu lookup lagi.
 
     const rfidInput = document.getElementById('rfid-capture');
 
     // Fokus input terus-menerus
     document.addEventListener('click', () => rfidInput.focus());
-    document.addEventListener('keydown', () => rfidInput.focus());
     rfidInput.focus();
-
-    // Periodically refocus supaya tidak kehilangan fokus
     setInterval(() => rfidInput.focus(), 5000);
 
-    rfidInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            const tag = rfidInput.value.trim().toUpperCase();
+    let scanTimer = null;
+
+    function processBuffer() {
+        const tag = rfidInput.value.trim().toUpperCase();
+        rfidInput.value = '';
+        if (scanLocked) return;
+        if (tag.length < 8) return;
+
+        scanLocked = true;
+        lookup(tag);
+
+        // Buang karakter apapun yang masuk selama lockout
+        setTimeout(() => {
             rfidInput.value = '';
-            if (tag.length >= 8) {
-                lookup(tag);
-            }
-        }
-    });
+            scanLocked = false;
+        }, SCAN_LOCKOUT);
+    }
 
     rfidInput.addEventListener('input', function () {
-        const tag = rfidInput.value.trim().toUpperCase();
-
-        if (tag.length >= 8) {
-            lookup(tag);
+        if (scanLocked) {
+            // Drop sisa karakter yang nyamber dari scan sebelumnya
             rfidInput.value = '';
-        }
-    });
-
-    // Metode 2: Global keydown buffer
-    // Fallback kalau input tidak bisa fokus (misalnya layar sentuh)
-    let globalBuffer = '';
-    let globalTimer  = null;
-
-    document.addEventListener('keydown', function (e) {
-        if (e.target === rfidInput) return; // sudah ditangani di atas
-
-        // Abaikan modifier keys
-        if (e.key.length > 1 && e.key !== 'Enter') return;
-
-        if (e.key === 'Enter') {
-            const tag = globalBuffer.trim().toUpperCase();
-            globalBuffer = '';
-            clearTimeout(globalTimer);
-            if (tag.length >= 8) lookup(tag);
             return;
         }
+        clearTimeout(scanTimer);
+        scanTimer = setTimeout(processBuffer, SCAN_IDLE_MS);
+    });
 
-        globalBuffer += e.key;
-        clearTimeout(globalTimer);
-        // Reset buffer kalau tidak ada input selama 300ms (bukan scanner)
-        globalTimer = setTimeout(() => { globalBuffer = ''; }, 300);
+    rfidInput.addEventListener('keydown', function (e) {
+        // Beberapa scanner kirim Enter sebagai terminator → langsung proses
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(scanTimer);
+            processBuffer();
+        }
     });
 
     // ── Init ──────────────────────────────────────────────────────────
     showIdle();
 
+    // Helper buat testing manual via DevTools
     window.testScan = (tag) => lookup(tag);
 
 })();
