@@ -468,7 +468,7 @@
 </div>
 
 {{-- Hidden RFID capture input --}}
-<input id="rfid-capture" type="text" autocomplete="off" readonly />
+<input id="rfid-capture" type="text" autocomplete="off" style="position:absolute;opacity:0;" />
 
 <script>
 (function () {
@@ -664,6 +664,15 @@
             if (tag.length >= 8) {
                 lookup(tag);
             }
+        }
+    });
+
+    rfidInput.addEventListener('input', function () {
+        const tag = rfidInput.value.trim().toUpperCase();
+
+        if (tag.length >= 8) {
+            lookup(tag);
+            rfidInput.value = '';
         }
     });
 
