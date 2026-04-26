@@ -199,7 +199,7 @@
             color: #F59191;
         }
 
-        /* STATUS BADGE — finish vs checkpoint vs start */
+        /* STATUS BADGE — finish vs checkpoint vs start vs not_started */
         .status-pill {
             flex-shrink: 0;
             padding: 6px 14px;
@@ -211,10 +211,10 @@
         .status-checkpoint { background: rgba(55,138,221,0.2); color: #8DC4F5; border: 1px solid rgba(55,138,221,0.35); }
         .status-start { background: rgba(99,153,34,0.2); color: #AAD36A; border: 1px solid rgba(99,153,34,0.35); }
         .status-not_started {
-        background: rgba(140,140,140,0.18);
-        color: #BFBFBF;
-        border: 1px solid rgba(140,140,140,0.35);
-}
+            background: rgba(140,140,140,0.18);
+            color: #BFBFBF;
+            border: 1px solid rgba(140,140,140,0.35);
+        }
 
         /* STATS GRID */
         .result-stats {
@@ -563,21 +563,24 @@
         f.cpTime.textContent   = data.last_checkpoint_time || '——:——';
         f.cpName.textContent   = data.last_checkpoint_name || '—';
 
+        // Tentukan type DULU sebelum dipakai
+        const type = data.last_checkpoint_type || 'not_started';
+
+        // Override field kalau belum start
         if (type === 'not_started') {
-            f.elapsed.textContent = '—:——:——';
+            f.elapsed.textContent    = '—:——:——';
             f.posGeneral.textContent = '#—';
-            f.cpTime.textContent = '——:——';
-            f.cpName.textContent = 'Belum melewati checkpoint';
+            f.cpTime.textContent     = '——:——';
+            f.cpName.textContent     = 'Belum melewati checkpoint';
         }
 
         // Status pill
-        const type = data.last_checkpoint_type || 'not_started';
         f.statusPill.className = 'status-pill status-' + type;
         f.statusPill.textContent =
             type === 'finish'      ? 'Finish' :
             type === 'checkpoint'  ? 'On Course' :
             type === 'start'       ? 'Sudah Start' :
-                                    'Belum Start';
+                                     'Belum Start';
 
         // Finish bar cuma muncul kalau benar-benar finish
         $finishBar.style.display = type === 'finish' ? 'block' : 'none';
@@ -633,6 +636,7 @@
                 showError(data.message || 'Tag tidak terdaftar', tag);
             }
         } catch (e) {
+            console.error('Lookup failed:', e);
             showError('Koneksi ke server gagal', tag);
         } finally {
             setLoading(false);
@@ -650,7 +654,9 @@
                 s.started.textContent  = data.started   ?? '—';
                 s.total.textContent    = data.total     ?? '—';
             }
-        } catch (_) {}
+        } catch (err) {
+            console.error('Stats refresh failed:', err);
+        }
     }
     refreshStats();
     setInterval(refreshStats, STATS_INTERVAL);
