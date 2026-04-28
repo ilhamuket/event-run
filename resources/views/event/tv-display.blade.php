@@ -38,8 +38,8 @@
 
         #bg {
             position: fixed; inset: 0; z-index: 0;
-            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev.png") }}');
-            background-size: cover;
+            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_tv.png") }}');
+            background-size: contain;
             background-position: center center;
             background-repeat: no-repeat;
         }
