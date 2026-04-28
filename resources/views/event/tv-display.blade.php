@@ -51,8 +51,10 @@
 
         #frame {
             position: relative;
-            width: min(100vw, calc(100vh * 16 / 9));
-            height: min(100vh, calc(100vw * 9 / 16));
+            /* width: min(100vw, calc(100vh * 16 / 9));
+            height: min(100vh, calc(100vw * 9 / 16)); */
+            width: 100vw;
+            height: 100vh;
         }
 
         /*
