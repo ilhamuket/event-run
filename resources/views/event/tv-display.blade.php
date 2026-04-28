@@ -39,7 +39,7 @@
         #bg {
             position: fixed; inset: 0; z-index: 0;
             background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_tv.png") }}');
-            background-size: contain;
+            background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
         }
@@ -51,10 +51,8 @@
 
         #frame {
             position: relative;
-            /* width: min(100vw, calc(100vh * 16 / 9));
-            height: min(100vh, calc(100vw * 9 / 16)); */
-            width: 100vw;
-            height: 100vh;
+            width: min(100vw, calc(100vh * 16 / 9));
+            height: min(100vh, calc(100vw * 9 / 16));
         }
 
         /*
