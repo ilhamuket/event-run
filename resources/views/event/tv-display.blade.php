@@ -70,21 +70,38 @@
             height: min(100vh, calc(100vw * 9 / 16));
         }
 
-        /* Kotak konten utama — koordinat dari pixel analysis image 7680×4320:
-         *   Kotak hitam: left=14.6% top=12.7% right=85.3% bottom=64.7%
-         *   Logo Scout20 RUN26 (di dalam kotak) sampai y=20.6% dari image
-         *   → Konten dimulai setelah logo: top=20.6%
-         *   → height = 64.7% - 20.6% = 44.1%
+        /* Kotak konten utama — cover seluruh kotak hitam dari atas (12.7%)
+         * dengan background solid untuk MENUTUPI logo RUN26 di background image.
+         * Kotak hitam: left=14.6% top=12.7% width=70.7% bottom=64.7% (height=52%)
          */
         #content-box {
             position: absolute;
             left:   14.6%;
-            top:    20.6%;
+            top:    12.7%;
             width:  70.7%;
-            height: 44.1%;
+            height: 52%;
+            background: #080808;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+
+        /* Spacer yang menutupi area logo RUN26 di dalam kotak hitam.
+         * Logo berakhir di y=20.6% dari image; kotak mulai di 12.7%.
+         * Spacer height = (20.6-12.7)/52 * 100% = 15.2% dari box height.
+         * Kita pakai aspect-ratio trick: spacer tingginya = 15.2% of box height.
+         * Karena box height = 52% of frame height, spacer = 52*0.152 = 7.9% of frame.
+         * Dalam box flex column: pakai flex-basis yang di-clamp.
+         */
+        #logo-spacer {
+            flex-shrink: 0;
+            /* 15.2% of box height. Box = 52% of frame h. Frame h ≈ viewport 9/16 width.
+               Easiest: just hardcode in vh-like terms using aspect ratio of frame.
+               #frame height = min(100vh, 100vw*9/16).
+               Spacer = 7.9% of frame height = 7.9% of min(100vh, 100vw*9/16).
+               We approximate with: height = 7.9vw * 9/16 won't work cleanly.
+               Simplest correct approach: set in %, overridden by JS on resize. */
+            height: 15.2%;
         }
 
         /* ── INNER CLOCK BAR (di dalam kotak, strip tipis atas) ── */
