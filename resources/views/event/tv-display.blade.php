@@ -18,12 +18,15 @@
             --red:        #C0292A;
             --red-light:  #E8474A;
             --red-dark:   #8B1A1A;
-            --gold:       #D4A017;
-            --gold-light: #F2C43A;
+            --gold:       #B8860B;
+            --gold-dark:  #8A6100;
             --white:      #FFFFFF;
-            --off-white:  #F5F0E8;
-            /* Content box bg: semi-transparent dark maroon so bg image shows through */
-            --box-bg:     rgba(20, 4, 4, 0.55);
+
+            /* ── Dark text palette for white card background ── */
+            --text-primary:   #1A1A1A;
+            --text-secondary: #3D3D3D;
+            --text-muted:     #6B6B6B;
+            --text-faint:     #A0A0A0;
         }
 
         html, body {
@@ -53,10 +56,8 @@
         }
 
         /*
-         * Kotak konten — posisi sama dengan sebelumnya.
-         * Sekarang kita beri background semi-transparan gelap agar teks terbaca
-         * tapi gambar background di belakangnya tetap terasa.
-         * Tanpa border-radius besar agar menyatu dengan kotak putih di gambar.
+         * Content box — tepat di atas area kartu putih gambar background.
+         * background: transparent → kartu putih dari gambar yang jadi surface.
          */
         #content-box {
             position: absolute;
@@ -67,9 +68,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            /* Slight dark overlay so text is always readable */
-            background: rgba(10, 2, 2, 0.50);
-            border-radius: 4px;
+            background: transparent;
         }
 
         /* ── CLOCK BAR ── */
@@ -78,14 +77,14 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 4%;
             height: 48px;
-            border-bottom: 1px solid rgba(192, 41, 42, 0.35);
-            background: rgba(0,0,0,0.25);
+            border-bottom: 1px solid rgba(192, 41, 42, 0.18);
+            background: rgba(192, 41, 42, 0.05);
         }
         #clock-bar .live-badge {
             display: flex; align-items: center; gap: 8px;
             font-size: clamp(10px, 1.1vw, 14px);
-            font-weight: 500; letter-spacing: 1.5px;
-            color: rgba(255,255,255,0.75);
+            font-weight: 700; letter-spacing: 1.5px;
+            color: var(--red);
             text-transform: uppercase;
         }
         #clock-bar .live-dot {
@@ -96,24 +95,24 @@
         #clock-bar .clock {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(18px, 2.8vw, 38px);
-            letter-spacing: 3px; color: var(--off-white);
+            letter-spacing: 3px;
+            color: var(--text-primary);
         }
         #clock-bar .stat-mini {
             display: flex; gap: clamp(12px, 2vw, 28px);
         }
-        #clock-bar .stat-mini-item {
-            text-align: center;
-        }
+        #clock-bar .stat-mini-item { text-align: center; }
         #clock-bar .stat-mini-item .smv {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(14px, 1.8vw, 24px);
-            letter-spacing: 1px; color: var(--off-white);
+            letter-spacing: 1px;
+            color: var(--text-primary);
             display: block;
         }
         #clock-bar .stat-mini-item .sml {
             font-size: clamp(7px, 0.7vw, 10px);
             letter-spacing: 1px; text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
+            color: var(--text-muted);
             display: block;
         }
 
@@ -130,15 +129,14 @@
 
         /* ── STATE: IDLE ── */
         #state-idle {
-            width: 100%;
-            text-align: center;
+            width: 100%; text-align: center;
             display: flex; flex-direction: column; align-items: center;
             gap: clamp(8px, 1.5vh, 20px);
         }
         .scan-icon {
             width: clamp(50px, 7vw, 88px);
             height: clamp(50px, 7vw, 88px);
-            border: 2px solid rgba(255,255,255,0.15);
+            border: 2px solid rgba(192, 41, 42, 0.18);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             position: relative;
@@ -146,27 +144,24 @@
         .scan-icon::before {
             content: '';
             position: absolute; inset: 7px;
-            border: 1.5px dashed rgba(232, 71, 74, 0.6);
+            border: 1.5px dashed rgba(192,41,42,0.35);
             border-radius: 50%;
             animation: spin 6s linear infinite;
         }
         .scan-icon svg {
             width: clamp(24px, 3.5vw, 44px);
             height: clamp(24px, 3.5vw, 44px);
-            color: rgba(255,255,255,0.55);
+            color: var(--red);
         }
         #state-idle .prompt-main {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(22px, 3.8vw, 52px);
             letter-spacing: 2px;
-            /* Bright white so it pops on dark background */
-            color: var(--off-white);
-            text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+            color: var(--text-primary);
         }
         #state-idle .prompt-sub {
             font-size: clamp(11px, 1.2vw, 16px);
-            /* More visible than before */
-            color: rgba(255,255,255,0.55);
+            color: var(--text-muted);
             line-height: 1.5; max-width: 70%;
         }
         .scan-line-anim {
@@ -185,14 +180,13 @@
             padding: 3% 5% 4%;
         }
 
-        /* ── TOP: nama hero area ── */
         .result-top {
             display: flex;
             align-items: flex-start;
             gap: 3%;
         }
 
-        /* BIB badge */
+        /* BIB badge — merah agar kontras dengan card putih */
         .bib-badge {
             flex-shrink: 0;
             width:  clamp(56px, 7vw, 96px);
@@ -200,66 +194,57 @@
             background: var(--red);
             border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 0px;
-            box-shadow: 0 6px 20px rgba(192,41,42,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+            box-shadow: 0 4px 16px rgba(192,41,42,0.3);
             margin-top: 4px;
         }
         .bib-badge .bib-label {
             font-size: clamp(7px, 0.6vw, 10px);
             font-weight: 700; letter-spacing: 3px;
-            /* White so it's readable on red badge */
-            color: rgba(255,255,255,0.8);
+            color: rgba(255,255,255,0.85);
             text-transform: uppercase;
         }
         .bib-badge .bib-num {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(26px, 4.2vw, 58px);
-            letter-spacing: 1px; color: var(--white);
+            letter-spacing: 1px; color: #FFFFFF;
             line-height: 1;
         }
 
-        /* NAME BLOCK */
-        .result-name-block {
-            flex: 1; min-width: 0;
-        }
+        .result-name-block { flex: 1; min-width: 0; }
 
-        /* THE BIG NAME */
+        /* Nama besar — hitam gelap di atas putih */
         .result-name {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(48px, 8.5vw, 120px);
             letter-spacing: 2px;
-            /* Pure white, strong shadow for legibility on dark bg */
-            color: var(--white);
+            color: var(--text-primary);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             line-height: 0.92;
-            text-shadow: 0 2px 16px rgba(0,0,0,0.7), 0 0 40px rgba(255,255,255,0.06);
         }
         .result-name.long  { font-size: clamp(36px, 6.5vw, 92px); }
         .result-name.xlong { font-size: clamp(28px, 5vw,  70px); }
 
-        /* Meta row below name */
         .result-meta {
             margin-top: clamp(4px, 0.6vh, 10px);
             font-size: clamp(11px, 1.1vw, 16px);
-            /* More visible meta text */
-            color: rgba(255,255,255,0.65);
+            color: var(--text-secondary);
             display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
             line-height: 1;
         }
-        .result-meta .dot { opacity: 0.35; font-size: 1.2em; }
+        .result-meta .dot { color: var(--text-faint); font-size: 1.2em; }
+
         .result-category-pill {
             display: inline-flex; align-items: center;
             padding: 3px 12px;
-            background: rgba(192,41,42,0.4);
-            border: 1px solid rgba(232, 71, 74, 0.6);
+            background: rgba(192,41,42,0.08);
+            border: 1px solid rgba(192,41,42,0.3);
             border-radius: 20px;
             font-size: clamp(10px, 0.9vw, 13px);
-            font-weight: 600; letter-spacing: 0.5px;
-            /* Bright pink-white for category text */
-            color: #FFAEAE;
+            font-weight: 700; letter-spacing: 0.5px;
+            color: var(--red-dark);
         }
 
-        /* Status pill */
+        /* Status pills — dark text on light tinted bg */
         .status-pill {
             flex-shrink: 0;
             align-self: flex-start;
@@ -270,37 +255,35 @@
             font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
         }
         .status-finish {
-            background: rgba(212,160,23,0.25);
-            color: #FFD875;
-            border: 1px solid rgba(212,160,23,0.6);
-            box-shadow: 0 0 20px rgba(212,160,23,0.25);
+            background: rgba(184,134,11,0.1);
+            color: var(--gold-dark);
+            border: 1px solid rgba(184,134,11,0.35);
         }
         .status-checkpoint {
-            background: rgba(55,138,221,0.25);
-            color: #A8D8FF;
-            border: 1px solid rgba(55,138,221,0.5);
+            background: rgba(24,95,165,0.08);
+            color: #164B85;
+            border: 1px solid rgba(24,95,165,0.3);
         }
         .status-start {
-            background: rgba(99,153,34,0.25);
-            color: #C2E880;
-            border: 1px solid rgba(99,153,34,0.5);
+            background: rgba(45,94,10,0.08);
+            color: #254E08;
+            border: 1px solid rgba(45,94,10,0.3);
         }
         .status-not_started {
-            background: rgba(180,180,180,0.15);
-            color: #D8D8D8;
-            border: 1px solid rgba(200,200,200,0.35);
+            background: rgba(90,90,90,0.07);
+            color: #4A4A4A;
+            border: 1px solid rgba(90,90,90,0.2);
         }
 
         /* ── DIVIDER ── */
         .result-divider {
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(192,41,42,0.7), rgba(255,255,255,0.12), rgba(192,41,42,0.7));
+            width: 100%; height: 1px;
+            background: linear-gradient(90deg, rgba(192,41,42,0.4), rgba(192,41,42,0.08), rgba(192,41,42,0.4));
             flex-shrink: 0;
             margin: 2% 0;
         }
 
-        /* ── BOTTOM: Stats 3-column grid ── */
+        /* ── STATS 3 kolom ── */
         .result-stats {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -308,7 +291,7 @@
         }
         .stat-cell {
             padding: 0 clamp(12px, 2vw, 32px);
-            border-right: 1px solid rgba(255,255,255,0.10);
+            border-right: 1px solid rgba(0,0,0,0.07);
             display: flex; flex-direction: column; gap: 2px;
         }
         .stat-cell:first-child { padding-left: 0; }
@@ -316,37 +299,29 @@
 
         .stat-label {
             font-size: clamp(8px, 0.7vw, 11px);
-            font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
-            /* Brighter label text — was 0.3 opacity, now 0.55 */
-            color: rgba(255,255,255,0.55);
+            font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--text-muted);
             margin-bottom: 2px;
         }
-        /* Elapsed time — gold gradient */
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(28px, 4vw, 56px);
             letter-spacing: 2px;
-            /* Pure white so numbers are legible */
-            color: var(--white);
+            color: var(--text-primary);
             line-height: 1;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
+        /* Elapsed time — amber/gold gelap agar terbaca di putih */
         .stat-value.hero {
             font-size: clamp(36px, 5.5vw, 76px);
-            background: linear-gradient(135deg, var(--gold-light) 0%, #FFD875 50%, var(--gold) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 2px 8px rgba(212,160,23,0.4));
+            color: var(--gold);
         }
         .stat-sub {
             font-size: clamp(9px, 0.75vw, 12px);
-            /* Slightly brighter sub-text */
-            color: rgba(255,255,255,0.45);
+            color: var(--text-faint);
             margin-top: 1px;
         }
 
-        /* ── FINISH CELEBRATION ── */
+        /* ── FINISH BAR ── */
         #finish-bar {
             display: none;
             width: 100%;
@@ -357,16 +332,12 @@
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(20px, 2.8vw, 38px);
             letter-spacing: 6px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 2s ease-in-out infinite;
-            background-size: 200% 100%;
+            color: var(--gold-dark);
+            animation: blink-gold 1.8s ease-in-out infinite;
         }
-        @keyframes shimmer {
-            0%   { background-position: 100% 0; }
-            100% { background-position: -100% 0; }
+        @keyframes blink-gold {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.55; }
         }
 
         /* ── STATE: ERROR ── */
@@ -377,48 +348,38 @@
         }
         #state-error .error-icon {
             width: clamp(40px, 5vw, 64px); height: clamp(40px, 5vw, 64px);
-            background: rgba(192,41,42,0.2);
-            border: 1px solid rgba(232, 71, 74, 0.45);
+            background: rgba(192,41,42,0.07);
+            border: 1px solid rgba(192,41,42,0.25);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
         }
         #state-error .error-icon svg {
             width: clamp(18px, 2.5vw, 30px); height: clamp(18px, 2.5vw, 30px);
-            color: var(--red-light);
+            color: var(--red);
         }
-        /* Error message — bright white, was 0.6 opacity */
-        #state-error .error-msg  {
-            font-size: clamp(14px, 1.6vw, 22px);
-            color: rgba(255,255,255,0.85);
-        }
-        #state-error .error-tag  {
-            font-size: clamp(10px, 0.9vw, 14px);
-            color: rgba(255,255,255,0.45);
-            font-family: monospace; letter-spacing: 1px;
-        }
+        #state-error .error-msg  { font-size: clamp(14px, 1.6vw, 22px); color: var(--text-secondary); }
+        #state-error .error-tag  { font-size: clamp(10px, 0.9vw, 14px); color: var(--text-muted); font-family: monospace; letter-spacing: 1px; }
 
         /* ── LOADING OVERLAY ── */
         #loading-overlay {
             position: absolute; inset: 0;
-            background: rgba(0,0,0,0.55);
+            background: rgba(255,255,255,0.65);
             display: none; align-items: center; justify-content: center;
             z-index: 20;
         }
         .spinner {
             width: 36px; height: 36px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: var(--red-light);
+            border: 3px solid rgba(192,41,42,0.12);
+            border-top-color: var(--red);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
 
-        /* ── RFID INPUT ── */
         #rfid-capture {
             position: fixed; bottom: -200px; left: 0;
             width: 1px; height: 1px; opacity: 0;
         }
 
-        /* ── KEYFRAMES ── */
         @keyframes pulse-red {
             0%, 100% { opacity: 1; transform: scale(1); }
             50%       { opacity: 0.4; transform: scale(0.85); }
@@ -440,22 +401,16 @@
 </head>
 <body>
 
-{{-- Background --}}
 <div id="bg"></div>
 
-{{-- Stage: content overlaid on image --}}
 <div id="stage-wrapper">
     <div id="frame">
-
-        {{-- Content box: dark semi-transparent overlay over the white card area in background image --}}
         <div id="content-box">
 
-            {{-- Loading overlay --}}
             <div id="loading-overlay">
                 <div class="spinner"></div>
             </div>
 
-            {{-- Clock Bar --}}
             <div id="clock-bar">
                 <div class="live-badge">
                     <span class="live-dot"></span>
@@ -478,7 +433,6 @@
                 </div>
             </div>
 
-            {{-- State area --}}
             <div id="inner-center">
 
                 {{-- STATE: IDLE --}}
@@ -498,8 +452,6 @@
 
                 {{-- STATE: RESULT --}}
                 <div id="state-result">
-
-                    {{-- TOP: BIB + NAME + STATUS --}}
                     <div class="result-top">
                         <div class="bib-badge">
                             <span class="bib-label">BIB</span>
@@ -522,7 +474,6 @@
 
                     <div class="result-divider"></div>
 
-                    {{-- BOTTOM: 3 stats --}}
                     <div class="result-stats">
                         <div class="stat-cell">
                             <span class="stat-label">Elapsed Time</span>
@@ -541,11 +492,9 @@
                         </div>
                     </div>
 
-                    {{-- Finish celebration (only shown on type=finish) --}}
                     <div id="finish-bar">
                         <span class="finish-text">✦ SELAMAT TELAH FINISH! ✦</span>
                     </div>
-
                 </div>
 
                 {{-- STATE: ERROR --}}
@@ -560,13 +509,11 @@
                     <div class="error-tag" id="error-tag"></div>
                 </div>
 
-            </div>{{-- #inner-center --}}
-        </div>{{-- #content-box --}}
+            </div>
+        </div>
+    </div>
+</div>
 
-    </div>{{-- #frame --}}
-</div>{{-- #stage-wrapper --}}
-
-{{-- Hidden RFID capture --}}
 <input id="rfid-capture" type="text" autocomplete="off" />
 
 <script>
@@ -612,7 +559,6 @@
     let isLoading  = false;
     let scanLocked = false;
 
-    // Clock
     function updateClock() {
         const now = new Date();
         document.getElementById('clock').textContent =
@@ -736,7 +682,6 @@
     refreshStats();
     setInterval(refreshStats, STATS_INTERVAL);
 
-    // RFID capture
     const rfidInput = document.getElementById('rfid-capture');
     document.addEventListener('click', () => rfidInput.focus());
     rfidInput.focus();
