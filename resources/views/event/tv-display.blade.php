@@ -70,31 +70,29 @@
             height: min(100vh, calc(100vw * 9 / 16));
         }
 
-        /* Kotak konten utama (black box di image)
-         * Koordinat diukur dari image asli 1456×816:
-         *   kotak hitam: x1≈217, y1≈100, x2≈1238, y2≈520
-         *   left  = 217/1456 = 14.9%
-         *   top   = 100/816  = 12.3%   ← turun dari 8.6% ke 12.3%
-         *   width = (1238-217)/1456 = 70.1%
-         *   height= (520-100)/816   = 51.5%
+        /* Kotak konten utama — koordinat dari pixel analysis image 7680×4320:
+         *   Kotak hitam: left=14.6% top=12.7% right=85.3% bottom=64.7%
+         *   Logo Scout20 RUN26 (di dalam kotak) sampai y=20.6% dari image
+         *   → Konten dimulai setelah logo: top=20.6%
+         *   → height = 64.7% - 20.6% = 44.1%
          */
         #content-box {
             position: absolute;
-            left:   14.9%;
-            top:    12.3%;
-            width:  70.1%;
-            height: 51.5%;
+            left:   14.6%;
+            top:    20.6%;
+            width:  70.7%;
+            height: 44.1%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* ── INNER CLOCK BAR (di dalam kotak hitam, bagian atas) ── */
+        /* ── INNER CLOCK BAR (di dalam kotak, strip tipis atas) ── */
         #clock-bar {
             flex-shrink: 0;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 4%;
-            height: 13%;
+            height: 48px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         #clock-bar .live-badge {
@@ -136,8 +134,12 @@
         #inner-center {
             flex: 1;
             display: flex; align-items: center; justify-content: center;
-            padding: 2% 4%;
             position: relative;
+            overflow: hidden;
+        }
+        /* When result is shown it fills the space entirely */
+        #inner-center:has(#state-result[style*="flex"]) {
+            align-items: stretch;
         }
 
         /* ── STATE: IDLE ── */
@@ -184,119 +186,192 @@
             animation: scan-slide 2.5s ease-in-out infinite;
         }
 
-        /* ── STATE: RESULT ── */
-        #state-result { display: none; width: 100%; }
-
-        .result-header {
-            display: flex; align-items: center;
-            gap: clamp(10px, 2vw, 28px);
-            padding-bottom: clamp(8px, 1.2vh, 16px);
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+        /* ══════════════════════════════════════════
+           STATE: RESULT  —  Epic photo-moment layout
+           Layout (flex column, fills 100% height):
+             [TOP ROW]   BIB + NAME HERO + STATUS PILL
+             [DIVIDER]
+             [STATS ROW] 3 columns equal
+           ══════════════════════════════════════════ */
+        #state-result {
+            display: none;
+            width: 100%; height: 100%;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3% 5% 4%;
         }
+
+        /* ── TOP: nama hero area ── */
+        .result-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 3%;
+        }
+
+        /* BIB badge — vertikal di kiri */
         .bib-badge {
             flex-shrink: 0;
-            width: clamp(64px, 8.5vw, 110px);
-            height: clamp(64px, 8.5vw, 110px);
+            width:  clamp(56px, 7vw, 96px);
+            height: clamp(56px, 7vw, 96px);
             background: var(--red);
-            border-radius: 14px;
+            border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 1px;
-            box-shadow: 0 8px 24px rgba(192,41,42,0.35);
+            gap: 0px;
+            box-shadow: 0 6px 20px rgba(192,41,42,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+            margin-top: 4px;
         }
         .bib-badge .bib-label {
-            font-size: clamp(8px, 0.7vw, 11px);
-            font-weight: 500; letter-spacing: 2px;
-            color: rgba(255,255,255,0.7); text-transform: uppercase;
+            font-size: clamp(7px, 0.6vw, 10px);
+            font-weight: 700; letter-spacing: 3px;
+            color: rgba(255,255,255,0.65); text-transform: uppercase;
         }
         .bib-badge .bib-num {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(28px, 5vw, 62px);
+            font-size: clamp(26px, 4.2vw, 58px);
             letter-spacing: 1px; color: var(--white);
             line-height: 1;
         }
-        .result-name-block { flex: 1; min-width: 0; }
+
+        /* NAME BLOCK — takes all remaining width */
+        .result-name-block {
+            flex: 1; min-width: 0;
+        }
+
+        /* THE BIG NAME — this is the star of the show */
         .result-name {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(32px, 6vw, 80px);
-            letter-spacing: 1.5px; color: var(--white);
+            font-size: clamp(48px, 8.5vw, 120px);
+            letter-spacing: 2px;
+            color: var(--white);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            line-height: 0.95;
+            line-height: 0.92;
+            /* Subtle text glow to pop on dark bg */
+            text-shadow: 0 0 40px rgba(255,255,255,0.08), 0 2px 0 rgba(0,0,0,0.4);
         }
-        .result-name.long  { font-size: clamp(26px, 4.8vw, 64px); }
-        .result-name.xlong { font-size: clamp(20px, 3.8vw, 52px); }
+        .result-name.long  { font-size: clamp(36px, 6.5vw, 92px); }
+        .result-name.xlong { font-size: clamp(28px, 5vw,  70px); }
+
+        /* Meta row below name */
         .result-meta {
-            margin-top: clamp(6px, 0.8vh, 12px);
-            font-size: clamp(10px, 1vw, 15px);
-            color: rgba(255,255,255,0.55);
-            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            margin-top: clamp(4px, 0.6vh, 10px);
+            font-size: clamp(11px, 1.1vw, 16px);
+            color: rgba(255,255,255,0.5);
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            line-height: 1;
         }
-        .result-meta .dot { opacity: 0.3; }
+        .result-meta .dot { opacity: 0.25; font-size: 1.2em; }
         .result-category-pill {
             display: inline-flex; align-items: center;
-            padding: 3px 10px;
-            background: rgba(192,41,42,0.25);
-            border: 1px solid rgba(192,41,42,0.4);
+            padding: 3px 12px;
+            background: rgba(192,41,42,0.3);
+            border: 1px solid rgba(192,41,42,0.5);
             border-radius: 20px;
-            font-size: clamp(9px, 0.85vw, 13px);
-            font-weight: 500; letter-spacing: 0.5px;
+            font-size: clamp(10px, 0.9vw, 13px);
+            font-weight: 600; letter-spacing: 0.5px;
             color: #F59191;
         }
+
+        /* Status pill — floated right, aligned to name top */
         .status-pill {
             flex-shrink: 0;
-            padding: clamp(4px, 0.6vh, 8px) clamp(8px, 1vw, 16px);
+            align-self: flex-start;
+            margin-top: 6px;
+            padding: clamp(6px, 0.8vh, 10px) clamp(12px, 1.4vw, 22px);
             border-radius: 8px;
-            font-size: clamp(9px, 0.9vw, 14px);
-            font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+            font-size: clamp(10px, 1vw, 15px);
+            font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
         }
-        .status-finish      { background: rgba(212,160,23,0.22); color: var(--gold-light); border: 1px solid rgba(212,160,23,0.4); }
-        .status-checkpoint  { background: rgba(55,138,221,0.22); color: #8DC4F5; border: 1px solid rgba(55,138,221,0.4); }
-        .status-start       { background: rgba(99,153,34,0.22);  color: #AAD36A;  border: 1px solid rgba(99,153,34,0.4); }
-        .status-not_started { background: rgba(140,140,140,0.2); color: #BFBFBF;  border: 1px solid rgba(140,140,140,0.35); }
+        .status-finish {
+            background: linear-gradient(135deg, rgba(212,160,23,0.3), rgba(212,160,23,0.15));
+            color: var(--gold-light);
+            border: 1px solid rgba(212,160,23,0.5);
+            box-shadow: 0 0 20px rgba(212,160,23,0.2);
+        }
+        .status-checkpoint {
+            background: rgba(55,138,221,0.2);
+            color: #8DC4F5;
+            border: 1px solid rgba(55,138,221,0.4);
+        }
+        .status-start {
+            background: rgba(99,153,34,0.2);
+            color: #AAD36A;
+            border: 1px solid rgba(99,153,34,0.4);
+        }
+        .status-not_started {
+            background: rgba(140,140,140,0.15);
+            color: #BFBFBF;
+            border: 1px solid rgba(140,140,140,0.3);
+        }
 
+        /* ── DIVIDER ── */
+        .result-divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(192,41,42,0.6), rgba(255,255,255,0.08), rgba(192,41,42,0.6));
+            flex-shrink: 0;
+            margin: 2% 0;
+        }
+
+        /* ── BOTTOM: Stats 3-column grid ── */
         .result-stats {
             display: grid;
-            grid-template-columns: 1.6fr 1fr 1fr;
-            gap: 0;
-            margin-top: clamp(8px, 1.2vh, 18px);
+            grid-template-columns: 1fr 1fr 1fr;
+            flex-shrink: 0;
         }
         .stat-cell {
-            padding: clamp(10px, 1.5vh, 22px) clamp(12px, 1.8vw, 28px);
-            border-right: 1px solid rgba(255,255,255,0.06);
-            display: flex; flex-direction: column; gap: 4px;
+            padding: 0 clamp(12px, 2vw, 32px);
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex; flex-direction: column; gap: 2px;
         }
-        .stat-cell:last-child { border-right: none; }
+        .stat-cell:first-child { padding-left: 0; }
+        .stat-cell:last-child  { border-right: none; }
+
         .stat-label {
             font-size: clamp(8px, 0.7vw, 11px);
-            font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
-            color: rgba(255,255,255,0.35);
+            font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 2px;
         }
+        /* Elapsed time — biggest number, gold */
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(22px, 3.5vw, 46px);
-            letter-spacing: 1.5px; color: var(--white); line-height: 1;
+            font-size: clamp(28px, 4vw, 56px);
+            letter-spacing: 2px; color: var(--white); line-height: 1;
         }
         .stat-value.hero {
-            font-size: clamp(32px, 5.5vw, 72px);
-            color: var(--gold-light);
-            text-shadow: 0 2px 14px rgba(212,160,23,0.25);
+            font-size: clamp(36px, 5.5vw, 76px);
+            background: linear-gradient(135deg, var(--gold-light) 0%, #FFD875 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 8px rgba(212,160,23,0.3));
         }
         .stat-sub {
-            font-size: clamp(9px, 0.7vw, 12px);
-            color: rgba(255,255,255,0.35); margin-top: 2px;
+            font-size: clamp(9px, 0.75vw, 12px);
+            color: rgba(255,255,255,0.3); margin-top: 1px;
         }
 
+        /* ── FINISH CELEBRATION ── */
         #finish-bar {
             display: none;
-            padding: clamp(8px, 1.2vh, 16px) 20px;
-            background: linear-gradient(135deg, rgba(212,160,23,0.15), rgba(192,41,42,0.15));
-            border-top: 1px solid rgba(212,160,23,0.2);
+            width: 100%;
+            padding: clamp(6px, 1vh, 12px) 0 0;
             text-align: center;
-            margin-top: clamp(6px, 1vh, 14px);
         }
         #finish-bar .finish-text {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(18px, 2.4vw, 30px);
-            letter-spacing: 4px; color: var(--gold-light);
+            font-size: clamp(20px, 2.8vw, 38px);
+            letter-spacing: 6px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 2s ease-in-out infinite;
+            background-size: 200% 100%;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
         }
 
         /* ── STATE: ERROR ── */
@@ -420,7 +495,9 @@
 
                 {{-- STATE: RESULT --}}
                 <div id="state-result">
-                    <div class="result-header">
+
+                    {{-- TOP: BIB + NAME + STATUS --}}
+                    <div class="result-top">
                         <div class="bib-badge">
                             <span class="bib-label">BIB</span>
                             <span class="bib-num" id="r-bib">—</span>
@@ -430,7 +507,7 @@
                             <div class="result-meta">
                                 <span id="r-gender">—</span>
                                 <span class="dot">·</span>
-                                <span id="r-age">—</span> th
+                                <span id="r-age">—</span>&nbsp;th
                                 <span class="dot">·</span>
                                 <span id="r-city">—</span>
                                 <span class="dot">·</span>
@@ -440,6 +517,9 @@
                         <span class="status-pill" id="r-status-pill">—</span>
                     </div>
 
+                    <div class="result-divider"></div>
+
+                    {{-- BOTTOM: 3 stats --}}
                     <div class="result-stats">
                         <div class="stat-cell">
                             <span class="stat-label">Elapsed Time</span>
@@ -452,15 +532,17 @@
                             <span class="stat-sub">dari <span id="r-total-finishers">—</span> finisher</span>
                         </div>
                         <div class="stat-cell">
-                            <span class="stat-label">Checkpoint</span>
+                            <span class="stat-label">Checkpoint Terakhir</span>
                             <span class="stat-value" id="r-checkpoint-time">——:——</span>
                             <span class="stat-sub" id="r-checkpoint-name">—</span>
                         </div>
                     </div>
 
+                    {{-- Finish celebration (only shown on type=finish) --}}
                     <div id="finish-bar">
-                        <span class="finish-text">🏅 Selamat — Finish!</span>
+                        <span class="finish-text">✦ SELAMAT TELAH FINISH! ✦</span>
                     </div>
+
                 </div>
 
                 {{-- STATE: ERROR --}}
@@ -563,7 +645,7 @@
     function showResult(data) {
         $idle.style.display   = 'none';
         $error.style.display  = 'none';
-        $result.style.display = 'block';
+        $result.style.display = 'flex';
 
         f.bib.textContent        = data.bib || '—';
         fitName(data.name || '—');
