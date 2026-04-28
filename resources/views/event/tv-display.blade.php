@@ -22,21 +22,17 @@
             --gold-light: #F2C43A;
             --white:      #FFFFFF;
             --off-white:  #F5F0E8;
+            /* Content box bg: semi-transparent dark maroon so bg image shows through */
+            --box-bg:     rgba(20, 4, 4, 0.55);
         }
 
         html, body {
             width: 100%; height: 100%;
             overflow: hidden;
-            /* Warna background sesuai tepi image */
             background: #6b1010;
             font-family: 'DM Sans', sans-serif;
         }
 
-        /* ── BACKGROUND ──
-         * Gambar di-contain agar tidak terpotong, pas di tengah layar.
-         * Aspek rasio gambar: 1456×816 ≈ 16:9
-         * Body background diisi warna senada merah gelap.
-         */
         #bg {
             position: fixed; inset: 0; z-index: 0;
             background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_tv.png") }}');
@@ -45,34 +41,22 @@
             background-repeat: no-repeat;
         }
 
-        /*
-         * ── CONTENT OVERLAY ──
-         * Kita overlay tepat di atas gambar dengan posisi yang sama (contain, center).
-         * Karena gambar 16:9, kita pakai wrapper 16:9 yang auto-fit ke viewport,
-         * lalu letakkan konten dalam % relatif ke wrapper ini.
-         *
-         * Koordinat kotak hitam dalam image (dari inspeksi visual):
-         *   left  ≈ 14.9%   right  ≈ 85.1%   → width ≈ 70.2%
-         *   top   ≈  8.6%   bottom ≈ 68.4%   → height ≈ 59.8%
-         *
-         * Logo Scout20 RUN26 nongol di atas kotak di background — biarkan apa adanya.
-         * Clock bar kita taruh di dalam top kotak, bukan pakai posisi fixed sendiri.
-         */
         #stage-wrapper {
             position: fixed; inset: 0; z-index: 5;
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Box 16:9, max 100vw / 100vh */
         #frame {
             position: relative;
             width: min(100vw, calc(100vh * 16 / 9));
             height: min(100vh, calc(100vw * 9 / 16));
         }
 
-        /* Kotak konten — dimulai tepat di bawah logo RUN26 (y=20.6% image).
-         * Tidak pakai background agar logo di bg image tetap terlihat di atasnya.
-         * bottom kotak = 64.7%, jadi height = 64.7% - 20.6% = 44.1%
+        /*
+         * Kotak konten — posisi sama dengan sebelumnya.
+         * Sekarang kita beri background semi-transparan gelap agar teks terbaca
+         * tapi gambar background di belakangnya tetap terasa.
+         * Tanpa border-radius besar agar menyatu dengan kotak putih di gambar.
          */
         #content-box {
             position: absolute;
@@ -83,21 +67,26 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            /* Slight dark overlay so text is always readable */
+            background: rgba(10, 2, 2, 0.50);
+            border-radius: 4px;
         }
 
-        /* ── INNER CLOCK BAR (di dalam kotak, strip tipis atas) ── */
+        /* ── CLOCK BAR ── */
         #clock-bar {
             flex-shrink: 0;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 4%;
             height: 48px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 1px solid rgba(192, 41, 42, 0.35);
+            background: rgba(0,0,0,0.25);
         }
         #clock-bar .live-badge {
             display: flex; align-items: center; gap: 8px;
             font-size: clamp(10px, 1.1vw, 14px);
             font-weight: 500; letter-spacing: 1.5px;
-            color: rgba(255,255,255,0.7); text-transform: uppercase;
+            color: rgba(255,255,255,0.75);
+            text-transform: uppercase;
         }
         #clock-bar .live-dot {
             width: 8px; height: 8px; border-radius: 50%;
@@ -124,18 +113,17 @@
         #clock-bar .stat-mini-item .sml {
             font-size: clamp(7px, 0.7vw, 10px);
             letter-spacing: 1px; text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.5);
             display: block;
         }
 
-        /* ── INNER CENTER: states ── */
+        /* ── INNER CENTER ── */
         #inner-center {
             flex: 1;
             display: flex; align-items: center; justify-content: center;
             position: relative;
             overflow: hidden;
         }
-        /* When result is shown it fills the space entirely */
         #inner-center:has(#state-result[style*="flex"]) {
             align-items: stretch;
         }
@@ -150,7 +138,7 @@
         .scan-icon {
             width: clamp(50px, 7vw, 88px);
             height: clamp(50px, 7vw, 88px);
-            border: 2px solid rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.15);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             position: relative;
@@ -158,23 +146,27 @@
         .scan-icon::before {
             content: '';
             position: absolute; inset: 7px;
-            border: 1.5px dashed rgba(192,41,42,0.5);
+            border: 1.5px dashed rgba(232, 71, 74, 0.6);
             border-radius: 50%;
             animation: spin 6s linear infinite;
         }
         .scan-icon svg {
             width: clamp(24px, 3.5vw, 44px);
             height: clamp(24px, 3.5vw, 44px);
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.55);
         }
         #state-idle .prompt-main {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(22px, 3.8vw, 52px);
-            letter-spacing: 2px; color: var(--off-white);
+            letter-spacing: 2px;
+            /* Bright white so it pops on dark background */
+            color: var(--off-white);
+            text-shadow: 0 2px 12px rgba(0,0,0,0.6);
         }
         #state-idle .prompt-sub {
             font-size: clamp(11px, 1.2vw, 16px);
-            color: rgba(255,255,255,0.4);
+            /* More visible than before */
+            color: rgba(255,255,255,0.55);
             line-height: 1.5; max-width: 70%;
         }
         .scan-line-anim {
@@ -184,13 +176,7 @@
             animation: scan-slide 2.5s ease-in-out infinite;
         }
 
-        /* ══════════════════════════════════════════
-           STATE: RESULT  —  Epic photo-moment layout
-           Layout (flex column, fills 100% height):
-             [TOP ROW]   BIB + NAME HERO + STATUS PILL
-             [DIVIDER]
-             [STATS ROW] 3 columns equal
-           ══════════════════════════════════════════ */
+        /* ── STATE: RESULT ── */
         #state-result {
             display: none;
             width: 100%; height: 100%;
@@ -206,7 +192,7 @@
             gap: 3%;
         }
 
-        /* BIB badge — vertikal di kiri */
+        /* BIB badge */
         .bib-badge {
             flex-shrink: 0;
             width:  clamp(56px, 7vw, 96px);
@@ -215,13 +201,15 @@
             border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 0px;
-            box-shadow: 0 6px 20px rgba(192,41,42,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+            box-shadow: 0 6px 20px rgba(192,41,42,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
             margin-top: 4px;
         }
         .bib-badge .bib-label {
             font-size: clamp(7px, 0.6vw, 10px);
             font-weight: 700; letter-spacing: 3px;
-            color: rgba(255,255,255,0.65); text-transform: uppercase;
+            /* White so it's readable on red badge */
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
         }
         .bib-badge .bib-num {
             font-family: 'Bebas Neue', sans-serif;
@@ -230,21 +218,21 @@
             line-height: 1;
         }
 
-        /* NAME BLOCK — takes all remaining width */
+        /* NAME BLOCK */
         .result-name-block {
             flex: 1; min-width: 0;
         }
 
-        /* THE BIG NAME — this is the star of the show */
+        /* THE BIG NAME */
         .result-name {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(48px, 8.5vw, 120px);
             letter-spacing: 2px;
+            /* Pure white, strong shadow for legibility on dark bg */
             color: var(--white);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             line-height: 0.92;
-            /* Subtle text glow to pop on dark bg */
-            text-shadow: 0 0 40px rgba(255,255,255,0.08), 0 2px 0 rgba(0,0,0,0.4);
+            text-shadow: 0 2px 16px rgba(0,0,0,0.7), 0 0 40px rgba(255,255,255,0.06);
         }
         .result-name.long  { font-size: clamp(36px, 6.5vw, 92px); }
         .result-name.xlong { font-size: clamp(28px, 5vw,  70px); }
@@ -253,23 +241,25 @@
         .result-meta {
             margin-top: clamp(4px, 0.6vh, 10px);
             font-size: clamp(11px, 1.1vw, 16px);
-            color: rgba(255,255,255,0.5);
+            /* More visible meta text */
+            color: rgba(255,255,255,0.65);
             display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
             line-height: 1;
         }
-        .result-meta .dot { opacity: 0.25; font-size: 1.2em; }
+        .result-meta .dot { opacity: 0.35; font-size: 1.2em; }
         .result-category-pill {
             display: inline-flex; align-items: center;
             padding: 3px 12px;
-            background: rgba(192,41,42,0.3);
-            border: 1px solid rgba(192,41,42,0.5);
+            background: rgba(192,41,42,0.4);
+            border: 1px solid rgba(232, 71, 74, 0.6);
             border-radius: 20px;
             font-size: clamp(10px, 0.9vw, 13px);
             font-weight: 600; letter-spacing: 0.5px;
-            color: #F59191;
+            /* Bright pink-white for category text */
+            color: #FFAEAE;
         }
 
-        /* Status pill — floated right, aligned to name top */
+        /* Status pill */
         .status-pill {
             flex-shrink: 0;
             align-self: flex-start;
@@ -280,32 +270,32 @@
             font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
         }
         .status-finish {
-            background: linear-gradient(135deg, rgba(212,160,23,0.3), rgba(212,160,23,0.15));
-            color: var(--gold-light);
-            border: 1px solid rgba(212,160,23,0.5);
-            box-shadow: 0 0 20px rgba(212,160,23,0.2);
+            background: rgba(212,160,23,0.25);
+            color: #FFD875;
+            border: 1px solid rgba(212,160,23,0.6);
+            box-shadow: 0 0 20px rgba(212,160,23,0.25);
         }
         .status-checkpoint {
-            background: rgba(55,138,221,0.2);
-            color: #8DC4F5;
-            border: 1px solid rgba(55,138,221,0.4);
+            background: rgba(55,138,221,0.25);
+            color: #A8D8FF;
+            border: 1px solid rgba(55,138,221,0.5);
         }
         .status-start {
-            background: rgba(99,153,34,0.2);
-            color: #AAD36A;
-            border: 1px solid rgba(99,153,34,0.4);
+            background: rgba(99,153,34,0.25);
+            color: #C2E880;
+            border: 1px solid rgba(99,153,34,0.5);
         }
         .status-not_started {
-            background: rgba(140,140,140,0.15);
-            color: #BFBFBF;
-            border: 1px solid rgba(140,140,140,0.3);
+            background: rgba(180,180,180,0.15);
+            color: #D8D8D8;
+            border: 1px solid rgba(200,200,200,0.35);
         }
 
         /* ── DIVIDER ── */
         .result-divider {
             width: 100%;
             height: 1px;
-            background: linear-gradient(90deg, rgba(192,41,42,0.6), rgba(255,255,255,0.08), rgba(192,41,42,0.6));
+            background: linear-gradient(90deg, rgba(192,41,42,0.7), rgba(255,255,255,0.12), rgba(192,41,42,0.7));
             flex-shrink: 0;
             margin: 2% 0;
         }
@@ -318,7 +308,7 @@
         }
         .stat-cell {
             padding: 0 clamp(12px, 2vw, 32px);
-            border-right: 1px solid rgba(255,255,255,0.07);
+            border-right: 1px solid rgba(255,255,255,0.10);
             display: flex; flex-direction: column; gap: 2px;
         }
         .stat-cell:first-child { padding-left: 0; }
@@ -327,14 +317,19 @@
         .stat-label {
             font-size: clamp(8px, 0.7vw, 11px);
             font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
-            color: rgba(255,255,255,0.3);
+            /* Brighter label text — was 0.3 opacity, now 0.55 */
+            color: rgba(255,255,255,0.55);
             margin-bottom: 2px;
         }
-        /* Elapsed time — biggest number, gold */
+        /* Elapsed time — gold gradient */
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(28px, 4vw, 56px);
-            letter-spacing: 2px; color: var(--white); line-height: 1;
+            letter-spacing: 2px;
+            /* Pure white so numbers are legible */
+            color: var(--white);
+            line-height: 1;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
         .stat-value.hero {
             font-size: clamp(36px, 5.5vw, 76px);
@@ -342,11 +337,13 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            filter: drop-shadow(0 2px 8px rgba(212,160,23,0.3));
+            filter: drop-shadow(0 2px 8px rgba(212,160,23,0.4));
         }
         .stat-sub {
             font-size: clamp(9px, 0.75vw, 12px);
-            color: rgba(255,255,255,0.3); margin-top: 1px;
+            /* Slightly brighter sub-text */
+            color: rgba(255,255,255,0.45);
+            margin-top: 1px;
         }
 
         /* ── FINISH CELEBRATION ── */
@@ -380,8 +377,8 @@
         }
         #state-error .error-icon {
             width: clamp(40px, 5vw, 64px); height: clamp(40px, 5vw, 64px);
-            background: rgba(192,41,42,0.15);
-            border: 1px solid rgba(192,41,42,0.3);
+            background: rgba(192,41,42,0.2);
+            border: 1px solid rgba(232, 71, 74, 0.45);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
         }
@@ -389,13 +386,21 @@
             width: clamp(18px, 2.5vw, 30px); height: clamp(18px, 2.5vw, 30px);
             color: var(--red-light);
         }
-        #state-error .error-msg  { font-size: clamp(14px, 1.6vw, 22px); color: rgba(255,255,255,0.6); }
-        #state-error .error-tag  { font-size: clamp(10px, 0.9vw, 14px); color: rgba(255,255,255,0.3); font-family: monospace; letter-spacing: 1px; }
+        /* Error message — bright white, was 0.6 opacity */
+        #state-error .error-msg  {
+            font-size: clamp(14px, 1.6vw, 22px);
+            color: rgba(255,255,255,0.85);
+        }
+        #state-error .error-tag  {
+            font-size: clamp(10px, 0.9vw, 14px);
+            color: rgba(255,255,255,0.45);
+            font-family: monospace; letter-spacing: 1px;
+        }
 
         /* ── LOADING OVERLAY ── */
         #loading-overlay {
             position: absolute; inset: 0;
-            background: rgba(0,0,0,0.45);
+            background: rgba(0,0,0,0.55);
             display: none; align-items: center; justify-content: center;
             z-index: 20;
         }
@@ -442,7 +447,7 @@
 <div id="stage-wrapper">
     <div id="frame">
 
-        {{-- Content box: positioned below RUN26 logo area (top=20.6%), transparent bg --}}
+        {{-- Content box: dark semi-transparent overlay over the white card area in background image --}}
         <div id="content-box">
 
             {{-- Loading overlay --}}
@@ -450,7 +455,6 @@
                 <div class="spinner"></div>
             </div>
 
-            {{-- Spacer covering the RUN26 logo zone (15.2% of box height) --}}
             {{-- Clock Bar --}}
             <div id="clock-bar">
                 <div class="live-badge">
