@@ -70,38 +70,19 @@
             height: min(100vh, calc(100vw * 9 / 16));
         }
 
-        /* Kotak konten utama — cover seluruh kotak hitam dari atas (12.7%)
-         * dengan background solid untuk MENUTUPI logo RUN26 di background image.
-         * Kotak hitam: left=14.6% top=12.7% width=70.7% bottom=64.7% (height=52%)
+        /* Kotak konten — dimulai tepat di bawah logo RUN26 (y=20.6% image).
+         * Tidak pakai background agar logo di bg image tetap terlihat di atasnya.
+         * bottom kotak = 64.7%, jadi height = 64.7% - 20.6% = 44.1%
          */
         #content-box {
             position: absolute;
             left:   14.6%;
-            top:    12.7%;
+            top:    20.6%;
             width:  70.7%;
-            height: 52%;
-            background: #080808;
+            height: 44.1%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        /* Spacer yang menutupi area logo RUN26 di dalam kotak hitam.
-         * Logo berakhir di y=20.6% dari image; kotak mulai di 12.7%.
-         * Spacer height = (20.6-12.7)/52 * 100% = 15.2% dari box height.
-         * Kita pakai aspect-ratio trick: spacer tingginya = 15.2% of box height.
-         * Karena box height = 52% of frame height, spacer = 52*0.152 = 7.9% of frame.
-         * Dalam box flex column: pakai flex-basis yang di-clamp.
-         */
-        #logo-spacer {
-            flex-shrink: 0;
-            /* 15.2% of box height. Box = 52% of frame h. Frame h ≈ viewport 9/16 width.
-               Easiest: just hardcode in vh-like terms using aspect ratio of frame.
-               #frame height = min(100vh, 100vw*9/16).
-               Spacer = 7.9% of frame height = 7.9% of min(100vh, 100vw*9/16).
-               We approximate with: height = 7.9vw * 9/16 won't work cleanly.
-               Simplest correct approach: set in %, overridden by JS on resize. */
-            height: 15.2%;
         }
 
         /* ── INNER CLOCK BAR (di dalam kotak, strip tipis atas) ── */
@@ -461,7 +442,7 @@
 <div id="stage-wrapper">
     <div id="frame">
 
-        {{-- Content box = black box area in background image --}}
+        {{-- Content box: positioned below RUN26 logo area (top=20.6%), transparent bg --}}
         <div id="content-box">
 
             {{-- Loading overlay --}}
@@ -469,7 +450,8 @@
                 <div class="spinner"></div>
             </div>
 
-            {{-- Clock Bar (top strip inside black box) --}}
+            {{-- Spacer covering the RUN26 logo zone (15.2% of box height) --}}
+            {{-- Clock Bar --}}
             <div id="clock-bar">
                 <div class="live-badge">
                     <span class="live-dot"></span>
