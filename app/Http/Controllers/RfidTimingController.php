@@ -142,7 +142,7 @@ class RfidTimingController extends Controller
                 ParticipantRfidMapping::assignTag(
                     participantId: $participantId,
                     rfidTag:       $tag,
-                    assignedBy:    0,   // 0 = device (bukan user web)
+                    assignedBy:    2,   // 0 = device (bukan user web)
                     notes:         $notes,
                 );
             }
