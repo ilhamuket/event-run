@@ -35,7 +35,7 @@
         /* ── BACKGROUND ── */
         #bg {
             position: fixed; inset: 0; z-index: 0;
-            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev2.jpeg") }}');
+            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev.png") }}');
             background-size: contain;
             background-position: center center;
             background-repeat: no-repeat;
@@ -158,6 +158,7 @@
             justify-content: center;
             gap: clamp(8px, 1.5vh, 20px);
             text-align: center;
+            overflow: hidden;
         }
 
         /* BIB */
@@ -182,7 +183,7 @@
         }
         .bib-badge .bib-num {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(36px, 7vw, 100px);
+            font-size: clamp(60px, 11vw, 160px);
             letter-spacing: 2px;
             color: #FFFFFF;
             line-height: 1;
@@ -191,18 +192,19 @@
         /* Nama */
         .result-name {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(52px, 10vw, 150px);
+            font-size: clamp(36px, 7vw, 100px);
             letter-spacing: 3px;
             color: var(--text-primary);
-            line-height: 0.9;
-            /* Jika nama sangat panjang, shrink otomatis */
+            line-height: 1.05;
             max-width: 100%;
-            overflow: hidden;
-            /* scale font otomatis via container query fallback: */
+            /* Bungkus kata panjang ke baris baru, tidak overflow */
+            overflow-wrap: break-word;
             word-break: break-word;
+            white-space: normal;
+            text-align: center;
         }
-        .result-name.long  { font-size: clamp(40px, 7.5vw, 110px); }
-        .result-name.xlong { font-size: clamp(30px, 5.5vw, 80px); }
+        .result-name.long  { font-size: clamp(28px, 5.5vw, 78px); }
+        .result-name.xlong { font-size: clamp(22px, 4vw, 58px); }
 
         /* Divider tipis */
         .result-divider {
@@ -360,7 +362,7 @@
     'use strict';
 
     const LOOKUP_URL   = '{{ route("event.tv.lookup", $event) }}';
-    const IDLE_TIMEOUT = 15000;
+    const IDLE_TIMEOUT = 20000;
     const SCAN_IDLE_MS = 80;
     const SCAN_LOCKOUT = 600;
 
