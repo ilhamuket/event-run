@@ -416,7 +416,7 @@
                     <span class="live-dot"></span>
                     Live Tracking
                 </div>
-                <div class="clock" id="clock">00:00:00</div>
+                {{-- <div class="clock" id="clock">00:00:00</div> --}}
                 <div class="stat-mini">
                     <div class="stat-mini-item">
                         <span class="smv" id="stat-finish">—</span>
