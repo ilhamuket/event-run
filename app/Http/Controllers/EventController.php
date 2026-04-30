@@ -653,7 +653,7 @@ class EventController extends Controller
 
             return [
                 'bib'                  => $p->bib,
-                'name'                 => $p->bib_name ?: $p->name,
+                'name'                 => $p->name ?: $p->bib_name,
                 'gender'               => $p->gender,
                 'age'                  => $p->age,
                 'city'                 => $p->city,
