@@ -321,7 +321,7 @@
             <div id="state-result">
                 <div class="bib-row">
                     <div class="bib-badge">
-                        <span class="bib-label">BIB</span>
+                        <span class="bib-label"></span>
                         <span class="bib-num" id="r-bib">—</span>
                     </div>
                 </div>
@@ -361,7 +361,7 @@
 
     const LOOKUP_URL   = '{{ route("event.tv.lookup", $event) }}';
     const IDLE_TIMEOUT = 12000;
-    const SCAN_IDLE_MS = 80;
+    const SCAN_IDLE_MS = 8000;
     const SCAN_LOCKOUT = 600;
 
     const $idle      = document.getElementById('state-idle');
