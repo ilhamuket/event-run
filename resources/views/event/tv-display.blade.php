@@ -15,18 +15,14 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --red:        #C0292A;
-            --red-light:  #E8474A;
-            --red-dark:   #8B1A1A;
-            --gold:       #B8860B;
-            --gold-dark:  #8A6100;
-            --white:      #FFFFFF;
-
-            /* ── Dark text palette for white card background ── */
+            --red:       #C0292A;
+            --red-light: #E8474A;
+            --gold:      #B8860B;
+            --gold-dark: #8A6100;
+            --white:     #FFFFFF;
             --text-primary:   #1A1A1A;
             --text-secondary: #3D3D3D;
             --text-muted:     #6B6B6B;
-            --text-faint:     #A0A0A0;
         }
 
         html, body {
@@ -36,14 +32,16 @@
             font-family: 'DM Sans', sans-serif;
         }
 
+        /* ── BACKGROUND ── */
         #bg {
             position: fixed; inset: 0; z-index: 0;
-            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev.png") }}');
+            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev2.jpeg") }}');
             background-size: contain;
             background-position: center center;
             background-repeat: no-repeat;
         }
 
+        /* ── STAGE — 16:9 frame, selalu fit ke layar ── */
         #stage-wrapper {
             position: fixed; inset: 0; z-index: 5;
             display: flex; align-items: center; justify-content: center;
@@ -51,349 +49,242 @@
 
         #frame {
             position: relative;
-            width: min(100vw, calc(100vh * 16 / 9));
+            /*
+             * Lebar = min(100vw, tinggi×16/9)
+             * Tinggi = min(100vh, lebar×9/16)
+             * Ini memastikan frame 16:9 selalu pas di layar apapun.
+             */
+            width:  min(100vw, calc(100vh * 16 / 9));
             height: min(100vh, calc(100vw * 9 / 16));
         }
 
         /*
-         * Content box — tepat di atas area kartu putih gambar background.
-         * background: transparent → kartu putih dari gambar yang jadi surface.
+         * #content-box — overlay tepat di atas area kotak putih gambar.
+         *
+         * Kotak putih di bg_rev.png (diukur dari gambar):
+         *   left  ≈ 6.5%   top  ≈ 18%   (di bawah logo Scout Run)
+         *   right ≈ 96%    bottom ≈ 84%
+         *
+         * Sesuaikan nilai ini jika posisi kotak putih di gambar berbeda.
          */
         #content-box {
             position: absolute;
-            left:   14.6%;
-            top:    20.6%;
-            width:  70.7%;
-            height: 44.1%;
+            left:   6.5%;
+            top:    18%;
+            width:  89.5%;   /* 96% - 6.5% */
+            height: 66%;     /* 84% - 18% */
+
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
             background: transparent;
+            padding: 2% 4%;
         }
 
-        /* ── CLOCK BAR ── */
-        #clock-bar {
-            flex-shrink: 0;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 4%;
-            height: 48px;
-            border-bottom: 1px solid rgba(192, 41, 42, 0.18);
-            background: rgba(192, 41, 42, 0.05);
+        /* ── LOADING OVERLAY ── */
+        #loading-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 20; border-radius: 8px;
         }
-        #clock-bar .live-badge {
-            display: flex; align-items: center; gap: 8px;
-            font-size: clamp(10px, 1.1vw, 14px);
-            font-weight: 700; letter-spacing: 1.5px;
-            color: var(--red);
-            text-transform: uppercase;
-        }
-        #clock-bar .live-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: var(--red-light);
-            animation: pulse-red 1.4s ease-in-out infinite;
-        }
-        #clock-bar .clock {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(18px, 2.8vw, 38px);
-            letter-spacing: 3px;
-            color: var(--text-primary);
-        }
-        #clock-bar .stat-mini {
-            display: flex; gap: clamp(12px, 2vw, 28px);
-        }
-        #clock-bar .stat-mini-item { text-align: center; }
-        #clock-bar .stat-mini-item .smv {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(14px, 1.8vw, 24px);
-            letter-spacing: 1px;
-            color: var(--text-primary);
-            display: block;
-        }
-        #clock-bar .stat-mini-item .sml {
-            font-size: clamp(7px, 0.7vw, 10px);
-            letter-spacing: 1px; text-transform: uppercase;
-            color: var(--text-muted);
-            display: block;
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(192,41,42,0.15);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
 
-        /* ── INNER CENTER ── */
-        #inner-center {
-            flex: 1;
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-        #inner-center:has(#state-result[style*="flex"]) {
-            align-items: stretch;
-        }
-
-        /* ── STATE: IDLE ── */
+        /* ══════════════════════════════
+           STATE: IDLE
+        ══════════════════════════════ */
         #state-idle {
             width: 100%; text-align: center;
             display: flex; flex-direction: column; align-items: center;
-            gap: clamp(8px, 1.5vh, 20px);
+            gap: clamp(12px, 2vh, 28px);
         }
+
         .scan-icon {
-            width: clamp(50px, 7vw, 88px);
-            height: clamp(50px, 7vw, 88px);
-            border: 2px solid rgba(192, 41, 42, 0.18);
+            width:  clamp(60px, 8vw, 100px);
+            height: clamp(60px, 8vw, 100px);
+            border: 2px solid rgba(192,41,42,0.2);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             position: relative;
         }
         .scan-icon::before {
             content: '';
-            position: absolute; inset: 7px;
+            position: absolute; inset: 8px;
             border: 1.5px dashed rgba(192,41,42,0.35);
             border-radius: 50%;
             animation: spin 6s linear infinite;
         }
         .scan-icon svg {
-            width: clamp(24px, 3.5vw, 44px);
-            height: clamp(24px, 3.5vw, 44px);
+            width:  clamp(28px, 4vw, 50px);
+            height: clamp(28px, 4vw, 50px);
             color: var(--red);
         }
+
         #state-idle .prompt-main {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(22px, 3.8vw, 52px);
+            font-size: clamp(28px, 4.5vw, 64px);
             letter-spacing: 2px;
             color: var(--text-primary);
         }
         #state-idle .prompt-sub {
-            font-size: clamp(11px, 1.2vw, 16px);
+            font-size: clamp(13px, 1.4vw, 20px);
             color: var(--text-muted);
-            line-height: 1.5; max-width: 70%;
+            line-height: 1.5;
+            max-width: 65%;
         }
         .scan-line-anim {
-            width: 200px; height: 2px;
+            width: 220px; height: 2px;
             background: linear-gradient(90deg, transparent, var(--red-light), transparent);
             border-radius: 1px;
             animation: scan-slide 2.5s ease-in-out infinite;
         }
 
-        /* ── STATE: RESULT ── */
+        /* ══════════════════════════════
+           STATE: RESULT  (Nama · BIB · Kategori)
+        ══════════════════════════════ */
         #state-result {
             display: none;
             width: 100%; height: 100%;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 3% 5% 4%;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 1.5vh, 20px);
+            text-align: center;
         }
 
-        .result-top {
-            display: flex;
-            align-items: flex-start;
-            gap: 3%;
+        /* BIB */
+        .bib-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: clamp(10px, 1.5vw, 20px);
         }
-
-        /* BIB badge — merah agar kontras dengan card putih */
         .bib-badge {
-            flex-shrink: 0;
-            width:  clamp(56px, 7vw, 96px);
-            height: clamp(56px, 7vw, 96px);
+            display: inline-flex; flex-direction: column;
+            align-items: center; justify-content: center;
             background: var(--red);
-            border-radius: 12px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 4px 16px rgba(192,41,42,0.3);
-            margin-top: 4px;
+            border-radius: clamp(8px, 1vw, 16px);
+            padding: clamp(6px, 0.8vw, 12px) clamp(16px, 2.5vw, 36px);
+            box-shadow: 0 4px 20px rgba(192,41,42,0.35);
         }
         .bib-badge .bib-label {
-            font-size: clamp(7px, 0.6vw, 10px);
+            font-size: clamp(9px, 0.8vw, 13px);
             font-weight: 700; letter-spacing: 3px;
-            color: rgba(255,255,255,0.85);
+            color: rgba(255,255,255,0.8);
             text-transform: uppercase;
+            line-height: 1;
         }
         .bib-badge .bib-num {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(26px, 4.2vw, 58px);
-            letter-spacing: 1px; color: #FFFFFF;
+            font-size: clamp(36px, 7vw, 100px);
+            letter-spacing: 2px;
+            color: #FFFFFF;
             line-height: 1;
         }
 
-        .result-name-block { flex: 1; min-width: 0; }
-
-        /* Nama besar — hitam gelap di atas putih */
+        /* Nama */
         .result-name {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(48px, 8.5vw, 120px);
-            letter-spacing: 2px;
+            font-size: clamp(52px, 10vw, 150px);
+            letter-spacing: 3px;
             color: var(--text-primary);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            line-height: 0.92;
+            line-height: 0.9;
+            /* Jika nama sangat panjang, shrink otomatis */
+            max-width: 100%;
+            overflow: hidden;
+            /* scale font otomatis via container query fallback: */
+            word-break: break-word;
         }
-        .result-name.long  { font-size: clamp(36px, 6.5vw, 92px); }
-        .result-name.xlong { font-size: clamp(28px, 5vw,  70px); }
+        .result-name.long  { font-size: clamp(40px, 7.5vw, 110px); }
+        .result-name.xlong { font-size: clamp(30px, 5.5vw, 80px); }
 
-        .result-meta {
-            margin-top: clamp(4px, 0.6vh, 10px);
-            font-size: clamp(11px, 1.1vw, 16px);
-            color: var(--text-secondary);
-            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-            line-height: 1;
-        }
-        .result-meta .dot { color: var(--text-faint); font-size: 1.2em; }
-
-        .result-category-pill {
-            display: inline-flex; align-items: center;
-            padding: 3px 12px;
-            background: rgba(192,41,42,0.08);
-            border: 1px solid rgba(192,41,42,0.3);
-            border-radius: 20px;
-            font-size: clamp(10px, 0.9vw, 13px);
-            font-weight: 700; letter-spacing: 0.5px;
-            color: var(--red-dark);
-        }
-
-        /* Status pills — dark text on light tinted bg */
-        .status-pill {
-            flex-shrink: 0;
-            align-self: flex-start;
-            margin-top: 6px;
-            padding: clamp(6px, 0.8vh, 10px) clamp(12px, 1.4vw, 22px);
-            border-radius: 8px;
-            font-size: clamp(10px, 1vw, 15px);
-            font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-        }
-        .status-finish {
-            background: rgba(184,134,11,0.1);
-            color: var(--gold-dark);
-            border: 1px solid rgba(184,134,11,0.35);
-        }
-        .status-checkpoint {
-            background: rgba(24,95,165,0.08);
-            color: #164B85;
-            border: 1px solid rgba(24,95,165,0.3);
-        }
-        .status-start {
-            background: rgba(45,94,10,0.08);
-            color: #254E08;
-            border: 1px solid rgba(45,94,10,0.3);
-        }
-        .status-not_started {
-            background: rgba(90,90,90,0.07);
-            color: #4A4A4A;
-            border: 1px solid rgba(90,90,90,0.2);
-        }
-
-        /* ── DIVIDER ── */
+        /* Divider tipis */
         .result-divider {
-            width: 100%; height: 1px;
-            background: linear-gradient(90deg, rgba(192,41,42,0.4), rgba(192,41,42,0.08), rgba(192,41,42,0.4));
-            flex-shrink: 0;
-            margin: 2% 0;
-        }
-
-        /* ── STATS 3 kolom ── */
-        .result-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            width: 60%; height: 1.5px;
+            background: linear-gradient(90deg, transparent, rgba(192,41,42,0.4), transparent);
             flex-shrink: 0;
         }
-        .stat-cell {
-            padding: 0 clamp(12px, 2vw, 32px);
-            border-right: 1px solid rgba(0,0,0,0.07);
-            display: flex; flex-direction: column; gap: 2px;
-        }
-        .stat-cell:first-child { padding-left: 0; }
-        .stat-cell:last-child  { border-right: none; }
 
-        .stat-label {
-            font-size: clamp(8px, 0.7vw, 11px);
-            font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-        }
-        .stat-value {
+        /* Kategori */
+        .result-category {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(28px, 4vw, 56px);
-            letter-spacing: 2px;
-            color: var(--text-primary);
-            line-height: 1;
-        }
-        /* Elapsed time — amber/gold gelap agar terbaca di putih */
-        .stat-value.hero {
-            font-size: clamp(36px, 5.5vw, 76px);
-            color: var(--gold);
-        }
-        .stat-sub {
-            font-size: clamp(9px, 0.75vw, 12px);
-            color: var(--text-faint);
-            margin-top: 1px;
+            font-size: clamp(28px, 5vw, 72px);
+            letter-spacing: 4px;
+            color: var(--red);
         }
 
-        /* ── FINISH BAR ── */
+        /* Status finish */
         #finish-bar {
             display: none;
-            width: 100%;
-            padding: clamp(6px, 1vh, 12px) 0 0;
-            text-align: center;
         }
         #finish-bar .finish-text {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(20px, 2.8vw, 38px);
+            font-size: clamp(22px, 3vw, 44px);
             letter-spacing: 6px;
             color: var(--gold-dark);
             animation: blink-gold 1.8s ease-in-out infinite;
         }
-        @keyframes blink-gold {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.55; }
-        }
 
-        /* ── STATE: ERROR ── */
+        /* ══════════════════════════════
+           STATE: ERROR
+        ══════════════════════════════ */
         #state-error {
+            display: none;
             width: 100%; text-align: center;
-            display: none; flex-direction: column; align-items: center;
+            flex-direction: column; align-items: center;
             gap: clamp(10px, 1.5vh, 20px);
         }
         #state-error .error-icon {
-            width: clamp(40px, 5vw, 64px); height: clamp(40px, 5vw, 64px);
+            width:  clamp(44px, 5.5vw, 72px);
+            height: clamp(44px, 5.5vw, 72px);
             background: rgba(192,41,42,0.07);
             border: 1px solid rgba(192,41,42,0.25);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
         }
         #state-error .error-icon svg {
-            width: clamp(18px, 2.5vw, 30px); height: clamp(18px, 2.5vw, 30px);
+            width:  clamp(20px, 2.8vw, 36px);
+            height: clamp(20px, 2.8vw, 36px);
             color: var(--red);
         }
-        #state-error .error-msg  { font-size: clamp(14px, 1.6vw, 22px); color: var(--text-secondary); }
-        #state-error .error-tag  { font-size: clamp(10px, 0.9vw, 14px); color: var(--text-muted); font-family: monospace; letter-spacing: 1px; }
-
-        /* ── LOADING OVERLAY ── */
-        #loading-overlay {
-            position: absolute; inset: 0;
-            background: rgba(255,255,255,0.65);
-            display: none; align-items: center; justify-content: center;
-            z-index: 20;
+        #state-error .error-msg {
+            font-size: clamp(16px, 2vw, 28px);
+            color: var(--text-secondary);
         }
-        .spinner {
-            width: 36px; height: 36px;
-            border: 3px solid rgba(192,41,42,0.12);
-            border-top-color: var(--red);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        #state-error .error-tag {
+            font-size: clamp(12px, 1vw, 16px);
+            color: var(--text-muted);
+            font-family: monospace;
+            letter-spacing: 1px;
         }
 
+        /* ── Hidden RFID input ── */
         #rfid-capture {
             position: fixed; bottom: -200px; left: 0;
             width: 1px; height: 1px; opacity: 0;
         }
 
-        @keyframes pulse-red {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.4; transform: scale(0.85); }
-        }
+        /* ── Animations ── */
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes scan-slide {
-            0%   { transform: translateX(-120px); opacity: 0; }
+            0%   { transform: translateX(-130px); opacity: 0; }
             20%  { opacity: 1; }
             80%  { opacity: 1; }
-            100% { transform: translateX(120px); opacity: 0; }
+            100% { transform: translateX(130px); opacity: 0; }
+        }
+        @keyframes blink-gold {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.5; }
         }
         @keyframes card-pop {
-            0%   { transform: scale(0.97); opacity: 0; }
-            60%  { transform: scale(1.01); }
+            0%   { transform: scale(0.96); opacity: 0; }
+            65%  { transform: scale(1.015); }
             100% { transform: scale(1); opacity: 1; }
         }
         .card-animate { animation: card-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
@@ -411,105 +302,53 @@
                 <div class="spinner"></div>
             </div>
 
-            <div id="clock-bar">
-                <div class="live-badge">
-                    <span class="live-dot"></span>
-                    Live Tracking
+            {{-- ── STATE: IDLE ── --}}
+            <div id="state-idle">
+                <div class="scan-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/>
+                    </svg>
                 </div>
-                {{-- <div class="clock" id="clock">00:00:00</div> --}}
-                <div class="stat-mini">
-                    <div class="stat-mini-item">
-                        <span class="smv" id="stat-finish">—</span>
-                        <span class="sml">Finish</span>
+                <div class="prompt-main">Scan RFID untuk melihat info peserta</div>
+                <div class="prompt-sub">Dekatkan tag RFID ke reader untuk menampilkan data peserta di layar</div>
+                <div class="scan-line-anim"></div>
+            </div>
+
+            {{-- ── STATE: RESULT ── --}}
+            <div id="state-result">
+                <div class="bib-row">
+                    <div class="bib-badge">
+                        <span class="bib-label">BIB</span>
+                        <span class="bib-num" id="r-bib">—</span>
                     </div>
-                    <div class="stat-mini-item">
-                        <span class="smv" id="stat-oncourse">—</span>
-                        <span class="sml">On Course</span>
-                    </div>
-                    <div class="stat-mini-item">
-                        <span class="smv" id="stat-total">{{ $totalParticipants ?? '—' }}</span>
-                        <span class="sml">Total</span>
-                    </div>
+                </div>
+
+                <div class="result-name" id="r-name">—</div>
+
+                <div class="result-divider"></div>
+
+                <div class="result-category" id="r-category">—</div>
+
+                <div id="finish-bar">
+                    <span class="finish-text">✦ SELAMAT TELAH FINISH! ✦</span>
                 </div>
             </div>
 
-            <div id="inner-center">
-
-                {{-- STATE: IDLE --}}
-                <div id="state-idle">
-                    <div class="scan-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/>
-                        </svg>
-                    </div>
-                    <div class="prompt-main">Scan RFID untuk melihat info peserta</div>
-                    <div class="prompt-sub">Dekatkan tag RFID ke reader untuk menampilkan waktu dan posisi peserta</div>
-                    <div class="scan-line-anim"></div>
+            {{-- ── STATE: ERROR ── --}}
+            <div id="state-error">
+                <div class="error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                    </svg>
                 </div>
-
-                {{-- STATE: RESULT --}}
-                <div id="state-result">
-                    <div class="result-top">
-                        <div class="bib-badge">
-                            <span class="bib-label">BIB</span>
-                            <span class="bib-num" id="r-bib">—</span>
-                        </div>
-                        <div class="result-name-block">
-                            <div class="result-name" id="r-name">—</div>
-                            <div class="result-meta">
-                                <span id="r-gender">—</span>
-                                <span class="dot">·</span>
-                                <span id="r-age">—</span>&nbsp;th
-                                <span class="dot">·</span>
-                                <span id="r-city">—</span>
-                                <span class="dot">·</span>
-                                <span class="result-category-pill" id="r-category">—</span>
-                            </div>
-                        </div>
-                        <span class="status-pill" id="r-status-pill">—</span>
-                    </div>
-
-                    <div class="result-divider"></div>
-
-                    <div class="result-stats">
-                        <div class="stat-cell">
-                            <span class="stat-label">Elapsed Time</span>
-                            <span class="stat-value hero" id="r-elapsed">—:——:——</span>
-                            <span class="stat-sub">sejak start</span>
-                        </div>
-                        <div class="stat-cell">
-                            <span class="stat-label">Posisi Umum</span>
-                            <span class="stat-value" id="r-pos-general">#—</span>
-                            <span class="stat-sub">dari <span id="r-total-finishers">—</span> finisher</span>
-                        </div>
-                        <div class="stat-cell">
-                            <span class="stat-label">Checkpoint Terakhir</span>
-                            <span class="stat-value" id="r-checkpoint-time">——:——</span>
-                            <span class="stat-sub" id="r-checkpoint-name">—</span>
-                        </div>
-                    </div>
-
-                    <div id="finish-bar">
-                        <span class="finish-text">✦ SELAMAT TELAH FINISH! ✦</span>
-                    </div>
-                </div>
-
-                {{-- STATE: ERROR --}}
-                <div id="state-error">
-                    <div class="error-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-                        </svg>
-                    </div>
-                    <div class="error-msg" id="error-msg">Tag tidak dikenali</div>
-                    <div class="error-tag" id="error-tag"></div>
-                </div>
-
+                <div class="error-msg" id="error-msg">Tag tidak dikenali</div>
+                <div class="error-tag" id="error-tag"></div>
             </div>
+
         </div>
     </div>
 </div>
@@ -520,12 +359,10 @@
 (function () {
     'use strict';
 
-    const LOOKUP_URL     = '{{ route("event.tv.lookup", $event) }}';
-    const STATS_URL      = '{{ route("event.tv.stats", $event) }}';
-    const IDLE_TIMEOUT   = 12000;
-    const STATS_INTERVAL = 20000;
-    const SCAN_IDLE_MS   = 80;
-    const SCAN_LOCKOUT   = 600;
+    const LOOKUP_URL   = '{{ route("event.tv.lookup", $event) }}';
+    const IDLE_TIMEOUT = 12000;
+    const SCAN_IDLE_MS = 80;
+    const SCAN_LOCKOUT = 600;
 
     const $idle      = document.getElementById('state-idle');
     const $result    = document.getElementById('state-result');
@@ -535,52 +372,29 @@
     const $box       = document.getElementById('content-box');
 
     const f = {
-        bib:        document.getElementById('r-bib'),
-        name:       document.getElementById('r-name'),
-        gender:     document.getElementById('r-gender'),
-        age:        document.getElementById('r-age'),
-        city:       document.getElementById('r-city'),
-        category:   document.getElementById('r-category'),
-        statusPill: document.getElementById('r-status-pill'),
-        elapsed:    document.getElementById('r-elapsed'),
-        posGeneral: document.getElementById('r-pos-general'),
-        totalFin:   document.getElementById('r-total-finishers'),
-        cpTime:     document.getElementById('r-checkpoint-time'),
-        cpName:     document.getElementById('r-checkpoint-name'),
-    };
-
-    const s = {
-        finish:   document.getElementById('stat-finish'),
-        oncourse: document.getElementById('stat-oncourse'),
-        total:    document.getElementById('stat-total'),
+        bib:      document.getElementById('r-bib'),
+        name:     document.getElementById('r-name'),
+        category: document.getElementById('r-category'),
     };
 
     let idleTimer  = null;
     let isLoading  = false;
     let scanLocked = false;
 
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('clock').textContent =
-            String(now.getHours()).padStart(2,'0') + ':' +
-            String(now.getMinutes()).padStart(2,'0') + ':' +
-            String(now.getSeconds()).padStart(2,'0');
-    }
-   // updateClock();
-    setInterval(updateClock, 1000);
-
-    function fitName(text) {
-        f.name.classList.remove('long', 'xlong');
-        f.name.textContent = text;
-        const len = (text || '').length;
-        if (len > 28)      f.name.classList.add('xlong');
-        else if (len > 18) f.name.classList.add('long');
-    }
-
+    /* Animasi masuk */
     function animateBox() {
         $box.classList.remove('card-animate');
         void $box.offsetWidth;
         $box.classList.add('card-animate');
+    }
+
+    /* Sesuaikan ukuran font nama berdasarkan panjang teks */
+    function fitName(text) {
+        f.name.classList.remove('long', 'xlong');
+        f.name.textContent = text || '—';
+        const len = (text || '').length;
+        if (len > 24)      f.name.classList.add('xlong');
+        else if (len > 16) f.name.classList.add('long');
     }
 
     function showIdle() {
@@ -596,33 +410,11 @@
         $error.style.display  = 'none';
         $result.style.display = 'flex';
 
-        f.bib.textContent        = data.bib || '—';
-        fitName(data.name || '—');
-        f.gender.textContent     = data.gender === 'M' ? 'Pria' : (data.gender === 'F' ? 'Wanita' : '—');
-        f.age.textContent        = data.age || '—';
-        f.city.textContent       = data.city || '—';
-        f.category.textContent   = data.category || '—';
-        f.elapsed.textContent    = data.elapsed_time || '—:——:——';
-        f.posGeneral.textContent = data.general_position ? '#' + data.general_position : '#—';
-        f.totalFin.textContent   = data.total_finishers || '—';
-        f.cpTime.textContent     = data.last_checkpoint_time || '——:——';
-        f.cpName.textContent     = data.last_checkpoint_name || '—';
+        f.bib.textContent      = data.bib || '—';
+        fitName(data.name);
+        f.category.textContent = data.category || '—';
 
         const type = data.last_checkpoint_type || 'not_started';
-
-        if (type === 'not_started') {
-            f.elapsed.textContent    = '—:——:——';
-            f.posGeneral.textContent = '#—';
-            f.cpTime.textContent     = '——:——';
-            f.cpName.textContent     = 'Belum melewati checkpoint';
-        }
-
-        f.statusPill.className    = 'status-pill status-' + type;
-        f.statusPill.textContent  =
-            type === 'finish'     ? 'Finish' :
-            type === 'checkpoint' ? 'On Course' :
-            type === 'start'      ? 'Sudah Start' : 'Belum Start';
-
         $finishBar.style.display = type === 'finish' ? 'block' : 'none';
 
         animateBox();
@@ -668,20 +460,7 @@
         }
     }
 
-    async function refreshStats() {
-        try {
-            const res  = await fetch(STATS_URL, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
-            if (data.success) {
-                s.finish.textContent   = data.finished  ?? '—';
-                s.oncourse.textContent = data.on_course ?? '—';
-                s.total.textContent    = data.total     ?? '—';
-            }
-        } catch (e) { /* silent */ }
-    }
-    refreshStats();
-    setInterval(refreshStats, STATS_INTERVAL);
-
+    /* RFID input handling */
     const rfidInput = document.getElementById('rfid-capture');
     document.addEventListener('click', () => rfidInput.focus());
     rfidInput.focus();
@@ -711,6 +490,7 @@
 
     showIdle();
 
+    /* Helper untuk testing di console browser */
     window.testScan = (tag) => lookup(tag);
 })();
 </script>
