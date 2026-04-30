@@ -35,7 +35,7 @@
         /* ── BACKGROUND ── */
         #bg {
             position: fixed; inset: 0; z-index: 0;
-            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev.png") }}');
+            background-image: url('{{ $event->tv_background_url ?? asset("assets/images/bg_rev2.jpeg") }}');
             background-size: contain;
             background-position: center center;
             background-repeat: no-repeat;
