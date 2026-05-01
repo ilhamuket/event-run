@@ -3,7 +3,6 @@
 
 @section('title', 'Cek Status Pembayaran Tripay')
 
-@push('styles')
 <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
@@ -249,7 +248,7 @@
         color: var(--muted);
     }
 </style>
-@endpush
+
 
 @section('content')
 <div class="ps-wrap">
