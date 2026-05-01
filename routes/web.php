@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ArtisanRunnerController;
+use App\Http\Controllers\TransactionController;
+
 
 
 Route::get('/', [EventController::class, 'home'])->name('home');
@@ -25,6 +27,13 @@ Route::post('/dev/artisan/start-worker', [ArtisanRunnerController::class, 'start
 Route::post('/dev/artisan/stop-worker', [ArtisanRunnerController::class, 'stopWorker'])->name('artisan.runner.stop-worker');
 Route::post('/dev/artisan/backfill-start', [ArtisanRunnerController::class, 'backfillStart'])
     ->name('artisan.runner.backfill-start');
+
+
+// Atau kalau mau per-transaksi:
+Route::get('/transactions/{merchantRef}/check-payment-status', [TransactionController::class, 'checkSinglePaymentStatus']);
+// routes/web.php
+Route::get('/transactions/check-payment-status', [TransactionController::class, 'checkPaymentStatus'])
+    ->name('transactions.check-payment-status');
 
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
