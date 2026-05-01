@@ -463,7 +463,7 @@
     </div>
 </div>
 
-@push('scripts')
+
 <script>
     function switchTab(name, btn) {
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -480,5 +480,4 @@
         });
     }
 </script>
-@endpush
 @endsection
