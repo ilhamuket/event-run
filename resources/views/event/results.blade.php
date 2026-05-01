@@ -26,13 +26,22 @@
             <p class="mt-2 text-sm text-gray-500">
                 Finisher: {{ $results->total() }} peserta
             </p>
+            {{-- Label metode ranking --}}
+            @if($hasGunTime)
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 mt-3 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
+                    🏁 Ranking berdasarkan Gun Time
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 mt-3 text-xs font-semibold text-gray-600 bg-gray-100 rounded-full">
+                    ⏱ Ranking berdasarkan Chip Time
+                </span>
+            @endif
         </div>
 
         {{-- Search & Filters --}}
         <div class="mb-10 overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
             <form method="GET" class="p-6 space-y-4">
 
-                {{-- Search Row --}}
                 <div class="flex flex-col gap-4 md:flex-row">
                     <input
                         type="text"
@@ -53,7 +62,6 @@
                     @endif
                 </div>
 
-                {{-- Filter Toggle --}}
                 <div>
                     <button type="button"
                             onclick="document.getElementById('filterPanel').classList.toggle('hidden')"
@@ -71,11 +79,9 @@
                     </button>
                 </div>
 
-                {{-- Filter Panel --}}
                 <div id="filterPanel" class="{{ $activeFilters > 0 ? '' : 'hidden' }}">
                     <div class="grid grid-cols-1 gap-3 pt-4 border-t border-gray-200 sm:grid-cols-3">
 
-                        {{-- Kategori --}}
                         <div>
                             <label class="block mb-1 text-xs font-semibold text-gray-500 uppercase">Kategori</label>
                             <select name="category"
@@ -89,7 +95,6 @@
                             </select>
                         </div>
 
-                        {{-- Gender --}}
                         <div>
                             <label class="block mb-1 text-xs font-semibold text-gray-500 uppercase">Gender</label>
                             <select name="gender"
@@ -100,7 +105,6 @@
                             </select>
                         </div>
 
-                        {{-- Kota --}}
                         <div>
                             <label class="block mb-1 text-xs font-semibold text-gray-500 uppercase">Kota</label>
                             <select name="city"
@@ -115,8 +119,6 @@
                         </div>
 
                     </div>
-
-                    {{-- Apply button for mobile --}}
                     <div class="pt-3 mt-3 border-t border-gray-200 sm:hidden">
                         <button type="submit"
                                 class="w-full px-6 py-3 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-700">
@@ -162,9 +164,7 @@
         {{-- Empty --}}
         @if($results->isEmpty())
             <div class="p-16 text-center bg-white border border-gray-200 shadow-sm rounded-2xl">
-                <h3 class="text-lg font-semibold text-gray-900">
-                    Belum ada hasil lomba
-                </h3>
+                <h3 class="text-lg font-semibold text-gray-900">Belum ada hasil lomba</h3>
                 <p class="mt-2 text-sm text-gray-600">
                     Peserta belum menyelesaikan lomba atau tidak sesuai filter
                 </p>
@@ -181,7 +181,20 @@
                             <th class="px-6 py-4">Peserta</th>
                             <th class="px-6 py-4">Kategori</th>
                             <th class="px-6 py-4 text-center">Cat Rank</th>
-                            <th class="px-6 py-4 text-center">Waktu</th>
+                            @if($hasGunTime)
+                                {{-- Kalau gun time aktif: tampilkan dua kolom waktu --}}
+                                <th class="px-6 py-4 text-center">
+                                    Gun Time
+                                    <span class="block font-normal text-gray-400 normal-case">gun start → finish</span>
+                                </th>
+                                <th class="px-6 py-4 text-center">
+                                    Chip Time
+                                    <span class="block font-normal text-gray-400 normal-case">rfid start → finish</span>
+                                </th>
+                            @else
+                                {{-- Pure chip time --}}
+                                <th class="px-6 py-4 text-center">Waktu</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -189,7 +202,6 @@
                     @foreach($results as $index => $p)
                         <tr class="transition hover:bg-gray-50">
 
-                            {{-- GENERAL RANK --}}
                             <td class="px-6 py-4 text-center">
                                 <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl
                                     {{ $p->general_position <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700' }}
@@ -198,19 +210,13 @@
                                 </div>
                             </td>
 
-                            {{-- PESERTA --}}
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
                                     <div class="flex items-center justify-center w-12 h-12 bg-red-800 rounded-xl">
-                                        <span class="text-sm font-bold text-white">
-                                            {{ $p->bib }}
-                                        </span>
+                                        <span class="text-sm font-bold text-white">{{ $p->bib }}</span>
                                     </div>
-
                                     <div>
-                                        <div class="font-semibold text-gray-900">
-                                            {{ $p->display_name }}
-                                        </div>
+                                        <div class="font-semibold text-gray-900">{{ $p->display_name }}</div>
                                         <div class="text-xs text-gray-500">
                                             {{ $p->gender === 'M' ? 'Pria' : 'Wanita' }}
                                             · {{ $p->age ?? '-' }} th
@@ -220,32 +226,42 @@
                                 </div>
                             </td>
 
-                            {{-- KATEGORI --}}
                             <td class="px-6 py-4">
-                                <div class="font-medium text-gray-900">
-                                    {{ $p->category?->name ?? '-' }}
-                                </div>
+                                <div class="font-medium text-gray-900">{{ $p->category?->name ?? '-' }}</div>
                                 <div class="text-xs text-gray-500">
                                     {{ $p->category?->distance ? $p->category->distance.' KM' : '' }}
                                 </div>
                             </td>
 
-                            {{-- CATEGORY RANK --}}
                             <td class="px-6 py-4 text-center">
                                 <span class="px-3 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
                                     #{{ $p->category_position ?? '-' }}
                                 </span>
                             </td>
 
-                            {{-- ELAPSED TIME --}}
-                            <td class="px-6 py-4 text-center">
-                                <div class="text-lg font-bold text-gray-900">
-                                    {{ $p->formatted_elapsed_time }}
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    Finish
-                                </div>
-                            </td>
+                            @if($hasGunTime)
+                                {{-- Gun time — kolom utama, dipakai untuk ranking --}}
+                                <td class="px-6 py-4 text-center">
+                                    <div class="text-lg font-bold text-gray-900">
+                                        {{ $p->formatted_gun_elapsed_time ?? '-' }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">Gun</div>
+                                </td>
+                                {{-- Chip time — kolom sekunder, informatif --}}
+                                <td class="px-6 py-4 text-center">
+                                    <div class="text-base font-medium text-gray-500">
+                                        {{ $p->formatted_elapsed_time ?? '-' }}
+                                    </div>
+                                    <div class="text-xs text-gray-400">Chip</div>
+                                </td>
+                            @else
+                                <td class="px-6 py-4 text-center">
+                                    <div class="text-lg font-bold text-gray-900">
+                                        {{ $p->formatted_elapsed_time }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">Finish</div>
+                                </td>
+                            @endif
 
                         </tr>
                     @endforeach
@@ -259,39 +275,30 @@
         @foreach($results as $index => $p)
             <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
 
-                {{-- Header --}}
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-800 rounded-lg">
                             {{ $p->bib }}
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">
-                                {{ $p->display_name }}
-                            </div>
+                            <div class="font-semibold text-gray-900">{{ $p->display_name }}</div>
                             <div class="text-xs text-gray-500">
                                 {{ $p->gender === 'M' ? 'Pria' : 'Wanita' }}
                                 · {{ $p->age ?? '-' }} th
                             </div>
                         </div>
                     </div>
-
-                    {{-- Rank --}}
                     <div class="flex items-center justify-center w-10 h-10 font-bold rounded-lg
                         {{ $p->general_position <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700' }}">
                         {{ $p->general_position ?? ($results->firstItem() + $index) }}
                     </div>
                 </div>
 
-                {{-- Info --}}
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
                         <div class="text-xs text-gray-500">Kategori</div>
-                        <div class="font-medium text-gray-900">
-                            {{ $p->category?->name ?? '-' }}
-                        </div>
+                        <div class="font-medium text-gray-900">{{ $p->category?->name ?? '-' }}</div>
                     </div>
-
                     <div>
                         <div class="text-xs text-gray-500">Cat Rank</div>
                         <span class="inline-block px-3 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
@@ -299,22 +306,34 @@
                         </span>
                     </div>
 
-                    <div class="col-span-2">
-                        <div class="text-xs text-gray-500">Waktu Finish</div>
-                        <div class="text-lg font-bold text-gray-900">
-                            {{ $p->formatted_elapsed_time }}
+                    @if($hasGunTime)
+                        <div>
+                            <div class="text-xs text-gray-500">Gun Time</div>
+                            <div class="text-lg font-bold text-gray-900">
+                                {{ $p->formatted_gun_elapsed_time ?? '-' }}
+                            </div>
                         </div>
-                    </div>
+                        <div>
+                            <div class="text-xs text-gray-500">Chip Time</div>
+                            <div class="text-base font-medium text-gray-500">
+                                {{ $p->formatted_elapsed_time ?? '-' }}
+                            </div>
+                        </div>
+                    @else
+                        <div class="col-span-2">
+                            <div class="text-xs text-gray-500">Waktu Finish</div>
+                            <div class="text-lg font-bold text-gray-900">
+                                {{ $p->formatted_elapsed_time }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         @endforeach
         </div>
 
-        {{-- Pagination --}}
         @if($results->hasPages())
-            <div class="mt-8">
-                {{ $results->links() }}
-            </div>
+            <div class="mt-8">{{ $results->links() }}</div>
         @endif
 
         @endif

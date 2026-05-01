@@ -175,24 +175,22 @@ class EventController extends Controller
     }
 
     /**
-     * RACE RESULTS - Raw query, with comprehensive filters
+     * RACE RESULTS - Tambah gun_elapsed_time + info apakah kategori pakai gun time
      */
     public function results(Event $event, Request $request)
     {
-        $search = $request->q;
+        $search         = $request->q;
         $filterCategory = $request->category;
-        $filterGender = $request->gender;
-        $filterCity = $request->city;
-        $perPage = 25;
-        $page = max(1, (int) $request->input('page', 1));
-        $offset = ($page - 1) * $perPage;
+        $filterGender   = $request->gender;
+        $filterCity     = $request->city;
+        $perPage        = 25;
+        $page           = max(1, (int) $request->input('page', 1));
+        $offset         = ($page - 1) * $perPage;
 
-        // Get categories for filter dropdown
         $categories = Cache::remember("event_cats:{$event->id}", 120, function () use ($event) {
             return $event->categories()->where('is_active', true)->orderBy('order')->get();
         });
 
-        // Get distinct cities for filter
         $filterCities = Cache::remember("result_cities:{$event->id}", 120, function () use ($event) {
             $cities = DB::select("
                 SELECT DISTINCT p.city FROM participants p
@@ -204,7 +202,28 @@ class EventController extends Controller
             return array_column($cities, 'city');
         });
 
-        $baseWhere = "p.event_id = ? AND p.elapsed_time IS NOT NULL
+        // ── Cek apakah event ini pakai gun time ──────────────────────────────
+        // Kalau ada minimal satu kategori yang sudah set gun_time → tampilkan kolom gun time.
+        // Ini supaya tampilan konsisten: kalau ada sebagian yang pakai, tetap tampil semua
+        // dengan null untuk yang belum set, daripada kolom muncul-hilang tergantung filter.
+        $hasGunTime = Cache::remember("has_gun_time:{$event->id}", 60, function () use ($event) {
+            $row = DB::selectOne(
+                'SELECT COUNT(*) as cnt FROM event_categories
+                 WHERE event_id = ? AND gun_time IS NOT NULL',
+                [$event->id]
+            );
+            return ($row->cnt ?? 0) > 0;
+        });
+
+        // ── Tentukan kolom sort ───────────────────────────────────────────────
+        // Kalau gun time aktif, sort dan ranking pakai gun_elapsed_time.
+        // Kalau tidak, tetap elapsed_time (chip time).
+        // Fallback COALESCE supaya peserta yang gun_elapsed_time-nya null
+        // (kategori belum set gun_time) tetap muncul, tidak tersembunyi.
+        $sortColumn  = $hasGunTime ? 'gun_elapsed_time' : 'elapsed_time';
+        $filterColumn = $hasGunTime ? 'p.gun_elapsed_time' : 'p.elapsed_time';
+
+        $baseWhere = "p.event_id = ? AND {$filterColumn} IS NOT NULL
             AND EXISTS (
                 SELECT 1 FROM transactions t
                 WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
@@ -217,7 +236,6 @@ class EventController extends Controller
             array_push($bindings, $like, $like, $like);
         }
 
-        // Category filter
         if ($filterCategory) {
             $cat = $categories->firstWhere('slug', $filterCategory);
             if ($cat) {
@@ -226,13 +244,11 @@ class EventController extends Controller
             }
         }
 
-        // Gender filter
         if ($filterGender && in_array($filterGender, ['M', 'F'])) {
             $baseWhere .= " AND p.gender = ?";
             $bindings[] = $filterGender;
         }
 
-        // City filter
         if ($filterCity) {
             $baseWhere .= " AND p.city = ?";
             $bindings[] = $filterCity;
@@ -246,24 +262,34 @@ class EventController extends Controller
         $rows = DB::select("
             SELECT
                 p.id, p.bib, p.bib_name, p.name, p.gender, p.age, p.city,
-                p.elapsed_time, p.general_position, p.category_position,
+                p.elapsed_time,
+                p.gun_elapsed_time,
+                p.general_position, p.category_position,
                 p.event_category_id,
-                ec.name as category_name, ec.distance as category_distance
+                ec.name as category_name, ec.distance as category_distance,
+                ec.gun_time as category_gun_time
             FROM participants p
             LEFT JOIN event_categories ec ON ec.id = p.event_category_id
             WHERE {$baseWhere}
-            ORDER BY p.elapsed_time ASC
+            ORDER BY p.{$sortColumn} ASC
             LIMIT ? OFFSET ?
         ", array_merge($bindings, [$perPage, $offset]));
 
-        // Add computed attributes
         $rows = array_map(function ($r) {
             $r->display_name = $r->bib_name ?: $r->name;
+
+            // Chip time (RFID start → RFID finish)
             $r->formatted_elapsed_time = $r->elapsed_time
                 ? \Carbon\Carbon::parse($r->elapsed_time)->format('H:i:s')
                 : null;
+
+            // Gun time (gun start → RFID finish) — null kalau kategori belum set gun_time
+            $r->formatted_gun_elapsed_time = $r->gun_elapsed_time
+                ? \Carbon\Carbon::parse($r->gun_elapsed_time)->format('H:i:s')
+                : null;
+
             $r->category = (object) [
-                'name' => $r->category_name,
+                'name'     => $r->category_name,
                 'distance' => $r->category_distance,
             ];
             return $r;
@@ -281,7 +307,7 @@ class EventController extends Controller
             ->filter()->count();
 
         return view('event.results', compact(
-            'event', 'results', 'categories', 'filterCities', 'activeFilters'
+            'event', 'results', 'categories', 'filterCities', 'activeFilters', 'hasGunTime'
         ));
     }
 
@@ -370,6 +396,7 @@ class EventController extends Controller
 
         $notStarted        = collect($data['notStarted'])->map(fn ($p) => (object) $p);
         $totalParticipants = $data['totalParticipants'];
+        $hasGunTime        = $data['hasGunTime'];   // ← BARU
 
         $finishedCount   = $checkpointGroups->has('finish')
             ? $checkpointGroups['finish']['participants']->count()
@@ -379,13 +406,14 @@ class EventController extends Controller
         $onCourseCount   = max(0, $startedCount - $finishedCount);
 
         return [
-            'event'            => $event,
-            'categories'       => $categories,
-            'selectedCategory' => $selectedCategory,
-            'checkpointGroups' => $checkpointGroups,
-            'notStarted'       => $notStarted,
-            'totalParticipants'=> $totalParticipants,
-            'summary'          => [
+            'event'             => $event,
+            'categories'        => $categories,
+            'selectedCategory'  => $selectedCategory,
+            'checkpointGroups'  => $checkpointGroups,
+            'notStarted'        => $notStarted,
+            'totalParticipants' => $totalParticipants,
+            'hasGunTime'        => $hasGunTime,       // ← BARU, dipakai di live-section-finish
+            'summary'           => [
                 'not_started' => $notStartedCount,
                 'started'     => $startedCount,
                 'on_course'   => $onCourseCount,
@@ -395,14 +423,14 @@ class EventController extends Controller
         ];
     }
 
-    // ══════════════════════════════════════════════════════════
-    // HEAVY-LIFTING QUERY (only called on cache miss)
+     // ══════════════════════════════════════════════════════════
+    // fetchLiveData — tambah gun_elapsed_time & hasGunTime
     // ══════════════════════════════════════════════════════════
 
     protected function fetchLiveData(
-        Event  $event,
-        array  $categoryIds,
-        ?int   $filteredCategoryId,
+        Event   $event,
+        array   $categoryIds,
+        ?int    $filteredCategoryId,
         ?string $search,
         ?string $filterGender
     ): array {
@@ -419,7 +447,7 @@ class EventController extends Controller
 
         $checkpointMap = collect($checkpoints)->keyBy('id');
 
-        // ── 2. Participants ──────────────────────────────────
+        // ── 2. Participants — tambah gun_elapsed_time ────────
         $participantWhere = "p.event_id = ? AND EXISTS (
             SELECT 1 FROM transactions t
             WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
@@ -445,9 +473,12 @@ class EventController extends Controller
         $participants = DB::select("
             SELECT
                 p.id, p.bib, p.bib_name, p.name, p.gender, p.age, p.city,
-                p.elapsed_time, p.general_position, p.category_position,
+                p.elapsed_time,
+                p.gun_elapsed_time,
+                p.general_position, p.category_position,
                 p.event_category_id,
-                ec.name as category_name
+                ec.name as category_name,
+                ec.gun_time as category_gun_time
             FROM participants p
             LEFT JOIN event_categories ec ON ec.id = p.event_category_id
             WHERE {$participantWhere}
@@ -462,10 +493,20 @@ class EventController extends Controller
                 'checkpointGroups'  => [],
                 'notStarted'        => [],
                 'totalParticipants' => 0,
+                'hasGunTime'        => false,
             ];
         }
 
-        // ── 3. All validated times in one query ──────────────
+        // ── 3. Cek apakah ada gun_time aktif di kategori yang ditampilkan ────
+        $catPlaceholders = implode(',', array_fill(0, count($categoryIds), '?'));
+        $gunTimeRow = DB::selectOne(
+            "SELECT COUNT(*) as cnt FROM event_categories
+             WHERE id IN ({$catPlaceholders}) AND gun_time IS NOT NULL",
+            $categoryIds
+        );
+        $hasGunTime = ($gunTimeRow->cnt ?? 0) > 0;
+
+        // ── 4. All validated times ───────────────────────────
         $pidPlaceholders = implode(',', array_fill(0, count($participantIds), '?'));
         $validatedTimes  = DB::select("
             SELECT
@@ -482,20 +523,20 @@ class EventController extends Controller
             ORDER BY rc.checkpoint_order DESC
         ", $participantIds);
 
-        // ── 4. Latest checkpoint per participant ─────────────
+        // ── 5. Latest checkpoint per participant ─────────────
         $latestByParticipant = [];
         foreach ($validatedTimes as $vt) {
             $pid = $vt->participant_id;
             if (!isset($latestByParticipant[$pid])) {
-                $latestByParticipant[$pid] = $vt; // First = highest order (DESC)
+                $latestByParticipant[$pid] = $vt;
             }
         }
 
-        // ── 5. Build groups ──────────────────────────────────
+        // ── 6. Build groups ──────────────────────────────────
         $groups = [];
         foreach ($checkpoints as $cp) {
-            $key           = $cp->checkpoint_type === 'checkpoint' ? 'cp_' . $cp->id : $cp->checkpoint_type;
-            $groups[$key]  = ['checkpoint' => $cp, 'participants' => []];
+            $key          = $cp->checkpoint_type === 'checkpoint' ? 'cp_' . $cp->id : $cp->checkpoint_type;
+            $groups[$key] = ['checkpoint' => $cp, 'participants' => []];
         }
 
         $notStarted = [];
@@ -504,6 +545,13 @@ class EventController extends Controller
             $p               = $participantMap[$pid];
             $p->display_name = $p->bib_name ?: $p->name;
             $p->category     = (object) ['name' => $p->category_name];
+
+            $p->formatted_elapsed_time = $p->elapsed_time
+                ? \Carbon\Carbon::parse($p->elapsed_time)->format('H:i:s')
+                : null;
+            $p->formatted_gun_elapsed_time = $p->gun_elapsed_time
+                ? \Carbon\Carbon::parse($p->gun_elapsed_time)->format('H:i:s')
+                : null;
 
             if (!isset($latestByParticipant[$pid])) {
                 $notStarted[] = $p;
@@ -528,10 +576,6 @@ class EventController extends Controller
                 ? \Carbon\Carbon::parse($latestVt->checkpoint_time)
                 : null;
 
-            $p->formatted_elapsed_time = $p->elapsed_time
-                ? \Carbon\Carbon::parse($p->elapsed_time)->format('H:i:s')
-                : null;
-
             if (isset($groups[$key])) {
                 $groups[$key]['participants'][] = [
                     'participant'    => $p,
@@ -540,12 +584,17 @@ class EventController extends Controller
             }
         }
 
-        // ── 6. Sort each group ───────────────────────────────
+        // ── 7. Sort each group ───────────────────────────────
         foreach ($groups as $key => &$group) {
             if ($key === 'finish') {
-                usort($group['participants'], function ($a, $b) {
-                    $aTime = $a['validated_time']->elapsed_time ?? '99:99:99';
-                    $bTime = $b['validated_time']->elapsed_time ?? '99:99:99';
+                // Sort finish by gun_elapsed_time kalau ada, fallback ke chip elapsed
+                usort($group['participants'], function ($a, $b) use ($hasGunTime) {
+                    $aTime = $hasGunTime
+                        ? ($a['participant']->gun_elapsed_time ?? $a['validated_time']->elapsed_time ?? '99:99:99')
+                        : ($a['validated_time']->elapsed_time ?? '99:99:99');
+                    $bTime = $hasGunTime
+                        ? ($b['participant']->gun_elapsed_time ?? $b['validated_time']->elapsed_time ?? '99:99:99')
+                        : ($b['validated_time']->elapsed_time ?? '99:99:99');
                     return strcmp($aTime, $bTime);
                 });
             } else {
@@ -564,9 +613,9 @@ class EventController extends Controller
             'checkpointGroups'  => $groups,
             'notStarted'        => $notStarted,
             'totalParticipants' => count($participants),
+            'hasGunTime'        => $hasGunTime,
         ];
     }
-
     // ══════════════════════════════════════════════════════════
     // HELPERS
     // ══════════════════════════════════════════════════════════

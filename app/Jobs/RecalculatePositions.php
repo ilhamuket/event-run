@@ -1,5 +1,4 @@
 <?php
-// app/Jobs/RecalculatePositions.php
 
 namespace App\Jobs;
 
@@ -26,39 +25,15 @@ class RecalculatePositions implements ShouldQueue
 
     public function handle(): void
     {
-        // FIX: TTL lock diperpanjang dari 10 → 30 detik.
-        //
-        // Sebelumnya lock TTL hanya 10 detik, tapi timeout job adalah 60 detik.
-        // Kalau recalculate untuk 1300 peserta butuh > 10 detik (misalnya karena
-        // load DB tinggi saat race), lock expire duluan sebelum job selesai.
-        // Job kedua yang antri akan masuk dan jalan bersamaan → dua job recalculate
-        // kategori yang sama secara paralel → UPDATE race condition di kolom position.
-        //
-        // 30 detik memberi ruang yang cukup untuk 1300 peserta dengan beban normal.
-        // Kalau lewat 30 detik, kemungkinan besar ada masalah lain (deadlock, slow query)
-        // yang harus diselesaikan di level DB, bukan di sini.
         $lock = Cache::lock("recalc_positions_{$this->categoryId}", 30);
 
-        // FIX: Ganti lock->get() dengan lock->block(0).
-        //
-        // lock->get() langsung return false kalau lock sedang dipegang job lain.
-        // Akibatnya job ini dianggap selesai (success) tanpa recalculate sama sekali —
-        // posisi tidak terupdate sampai ada trigger berikutnya.
-        //
-        // block(0) sama dengan get() dalam hal "tidak menunggu", tapi dengan semantik
-        // yang lebih eksplisit: kalau tidak dapat lock, lempar LockTimeoutException
-        // yang akan ditangkap di bawah dan di-release kembali ke queue untuk di-retry.
-        // Dengan tries=3 dan backoff=[1,3,5], job ini akan retry dan akhirnya jalan.
         try {
             $lock->block(0);
         } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
-            // Job lain sedang recalculate kategori ini.
-            // Release job ini ke queue untuk di-retry nanti (pakai backoff).
-            // Ini lebih baik daripada silent skip — posisi pasti terupdate.
             Log::info('RecalculatePositions: lock busy, akan retry', [
                 'category_id' => $this->categoryId,
             ]);
-            $this->release(5); // retry setelah 5 detik
+            $this->release(5);
             return;
         }
 
@@ -71,11 +46,33 @@ class RecalculatePositions implements ShouldQueue
 
     private function recalculate(): void
     {
+        // Tentukan kolom ranking yang dipakai untuk kategori ini.
+        //
+        // Kalau gun_time sudah di-set di kategori → ranking pakai gun_elapsed_time.
+        // Kalau belum di-set → ranking tetap pakai elapsed_time (chip time).
+        //
+        // Ini penting: gun_time yang belum di-set berarti race belum dimulai
+        // atau admin belum input, jadi jangan paksa ranking pakai gun time
+        // yang nilainya null semua.
+        $category = DB::selectOne(
+            'SELECT gun_time FROM event_categories WHERE id = ? LIMIT 1',
+            [$this->categoryId]
+        );
+
+        $rankColumn = ($category && $category->gun_time)
+            ? 'gun_elapsed_time'
+            : 'elapsed_time';
+
+        Log::info('RecalculatePositions: ranking column', [
+            'category_id' => $this->categoryId,
+            'rank_column' => $rankColumn,
+        ]);
+
         // ── Category positions ───────────────────────────────────────────────
         $categoryFinishers = DB::select(
-            'SELECT id FROM participants
-             WHERE event_category_id = ? AND elapsed_time IS NOT NULL
-             ORDER BY elapsed_time ASC',
+            "SELECT id FROM participants
+             WHERE event_category_id = ? AND {$rankColumn} IS NOT NULL
+             ORDER BY {$rankColumn} ASC",
             [$this->categoryId]
         );
 
@@ -85,12 +82,27 @@ class RecalculatePositions implements ShouldQueue
         }
 
         // ── General positions (lintas kategori) ──────────────────────────────
+        // General position selalu pakai gun_elapsed_time kalau ada,
+        // karena perbandingan lintas kategori harus apple-to-apple.
+        // Kalau sebagian kategori punya gun_time dan sebagian tidak,
+        // hanya finisher yang punya gun_elapsed_time yang diikutkan.
         $allFinishers = DB::select(
             'SELECT id FROM participants
-             WHERE event_id = ? AND elapsed_time IS NOT NULL
-             ORDER BY elapsed_time ASC',
+             WHERE event_id = ? AND gun_elapsed_time IS NOT NULL
+             ORDER BY gun_elapsed_time ASC',
             [$this->eventId]
         );
+
+        // Fallback: kalau tidak ada yang punya gun_elapsed_time sama sekali
+        // (semua kategori belum set gun_time), pakai chip time
+        if (empty($allFinishers)) {
+            $allFinishers = DB::select(
+                'SELECT id FROM participants
+                 WHERE event_id = ? AND elapsed_time IS NOT NULL
+                 ORDER BY elapsed_time ASC',
+                [$this->eventId]
+            );
+        }
 
         if (!empty($allFinishers)) {
             $ids = array_column($allFinishers, 'id');
@@ -100,6 +112,7 @@ class RecalculatePositions implements ShouldQueue
         Log::info('Positions recalculated', [
             'category_id'        => $this->categoryId,
             'event_id'           => $this->eventId,
+            'rank_column'        => $rankColumn,
             'category_finishers' => count($categoryFinishers),
             'total_finishers'    => count($allFinishers),
         ]);
@@ -111,7 +124,6 @@ class RecalculatePositions implements ShouldQueue
             return;
         }
 
-        // Chunk 500 untuk hindari binding limit MySQL (max_allowed_packet)
         $chunks   = array_chunk($orderedIds, 500);
         $position = 1;
 

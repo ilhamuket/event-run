@@ -22,10 +22,19 @@ class ArtisanRunnerController extends Controller
         'queue:work --queue=rfid,default --tries=3',
     ];
 
+    // Command backfill tidak masuk ALLOWED_COMMANDS karena punya endpoint tersendiri
+    // dengan parameter event_id yang dinamis, bukan command string statis.
+
     public function index()
     {
+        // Ambil semua event yang published untuk dropdown backfill
+        $events = DB::select(
+            'SELECT id, name FROM events WHERE is_published = 1 ORDER BY id DESC'
+        );
+
         return view('dev.artisan-runner', [
             'commands' => self::ALLOWED_COMMANDS,
+            'events'   => $events,
         ]);
     }
 
@@ -50,6 +59,60 @@ class ArtisanRunnerController extends Controller
         }
     }
 
+    /**
+     * Backfill start scans — dry run atau eksekusi penuh.
+     * Selalu untuk semua kategori (tanpa --category) karena semua lari bareng.
+     */
+    public function backfillStart(Request $request)
+    {
+        $request->validate([
+            'pin'      => 'required|string',
+            'event_id' => 'required|integer',
+            'dry_run'  => 'required|boolean',
+            'spread'   => 'nullable|integer|min:1|max:600',
+        ]);
+
+        if ($request->pin !== self::PIN) {
+            return response()->json(['success' => false, 'output' => 'PIN salah.'], 403);
+        }
+
+        $eventId = (int) $request->event_id;
+        $spread  = (int) ($request->spread ?? 60);
+        $dryRun  = (bool) $request->dry_run;
+
+        // Validasi event ada
+        $event = DB::selectOne(
+            'SELECT id, name FROM events WHERE id = ? AND is_published = 1 LIMIT 1',
+            [$eventId]
+        );
+        if (!$event) {
+            return response()->json(['success' => false, 'output' => "Event ID {$eventId} tidak ditemukan."], 422);
+        }
+
+        // Jalankan command dengan --no-interaction supaya tidak nunggu confirm
+        $params = [
+            'event_id' => $eventId,
+            '--spread'  => $spread,
+        ];
+        if ($dryRun) {
+            $params['--dry-run'] = true;
+        }
+
+        // --no-interaction: skip semua confirm() prompt di dalam command
+        // Ini aman karena kita sudah eksplisit pilih dry-run atau tidak dari UI
+        try {
+            Artisan::call('rfid:backfill-start', $params + ['--no-interaction' => true]);
+            $output = Artisan::output() ?: 'Command selesai (tidak ada output).';
+
+            return response()->json([
+                'success' => true,
+                'output'  => ($dryRun ? "[DRY RUN] " : "[EKSEKUSI] ") . "Event: {$event->name}\n\n" . $output,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'output' => $e->getMessage()], 500);
+        }
+    }
+
     public function status(Request $request)
     {
         if ($request->pin !== self::PIN) {
@@ -69,7 +132,6 @@ class ArtisanRunnerController extends Controller
             ->where('is_valid', true)
             ->count();
 
-        // Cek worker process
         exec("ps aux | grep 'queue:work' | grep -v grep", $psOutput);
         $workerStatus = !empty($psOutput) ? '🟢 RUNNING' : '🔴 MATI';
 
@@ -89,7 +151,6 @@ class ArtisanRunnerController extends Controller
             return response()->json(['success' => false, 'output' => 'PIN salah.'], 403);
         }
 
-        // Cek apakah worker sudah jalan
         exec("ps aux | grep 'queue:work' | grep -v grep", $psOutput);
         if (!empty($psOutput)) {
             return response()->json(['success' => true, 'output' => "Worker sudah jalan:\n" . implode("\n", $psOutput)]);

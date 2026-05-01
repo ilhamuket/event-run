@@ -323,7 +323,7 @@
                 </div>
 
                 {{-- Action Grid --}}
-                <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div class="grid grid-cols-2 gap-4 lg:grid-cols-2">
                     <a href="{{ route('event.participants', $event->slug) }}" class="action-card group">
                         <div class="action-icon bg-gradient-to-br from-red-700 to-red-900">
                             <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,7 +334,7 @@
                         <p class="action-desc">Lihat peserta terdaftar</p>
                     </a>
 
-                    <a href="{{ route('event.results', $event->slug) }}" class="action-card group">
+                    {{-- <a href="{{ route('event.results', $event->slug) }}" class="action-card group">
                         <div class="action-icon bg-gradient-to-br from-yellow-500 to-orange-500">
                             <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
@@ -353,7 +353,7 @@
                         </div>
                         <h4 class="action-title">Live Preview</h4>
                         <p class="action-desc">Lihat live tracking</p>
-                    </a>
+                    </a> --}}
 
                     {{-- @if($event->strava_route_url)
                     <a href="{{ $event->strava_route_url }}" target="_blank" class="action-card group">

@@ -1,6 +1,7 @@
 {{--
     event/_live-section-finish.blade.php
-    @param array $group  ['checkpoint' => object, 'participants' => Collection]
+    @param array $group       ['checkpoint' => object, 'participants' => Collection]
+    @param bool  $hasGunTime  true kalau event ini pakai gun time
 --}}
 <div class="mb-8">
     <div class="flex items-center gap-3 mb-4">
@@ -12,7 +13,12 @@
         </div>
         <div>
             <h2 class="text-lg font-bold text-gray-900">🏁 Finish</h2>
-            <p class="text-xs text-gray-500">{{ $group['participants']->count() }} peserta</p>
+            <p class="text-xs text-gray-500">
+                {{ $group['participants']->count() }} peserta
+                @if($hasGunTime)
+                    · Ranking by Gun Time
+                @endif
+            </p>
         </div>
     </div>
 
@@ -24,7 +30,18 @@
                     <th class="px-6 py-4 text-center">Rank</th>
                     <th class="px-6 py-4">Peserta</th>
                     <th class="px-6 py-4">Kategori</th>
-                    <th class="px-6 py-4 text-center">Elapsed Time</th>
+                    @if($hasGunTime)
+                        <th class="px-6 py-4 text-center">
+                            Gun Time
+                            <span class="block font-normal text-gray-400 normal-case">gun start → finish</span>
+                        </th>
+                        <th class="px-6 py-4 text-center">
+                            Chip Time
+                            <span class="block font-normal text-gray-400 normal-case">rfid start → finish</span>
+                        </th>
+                    @else
+                        <th class="px-6 py-4 text-center">Elapsed Time</th>
+                    @endif
                     <th class="px-6 py-4 text-center">Finish At</th>
                 </tr>
             </thead>
@@ -55,11 +72,32 @@
                     <td class="px-6 py-4">
                         <div class="font-medium text-gray-900">{{ $item['participant']->category?->name ?? '-' }}</div>
                     </td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="text-lg font-bold text-red-800">
-                            {{ $item['validated_time']->formatted_elapsed_time ?? $item['participant']->formatted_elapsed_time ?? '-' }}
-                        </div>
-                    </td>
+
+                    @if($hasGunTime)
+                        {{-- Gun time — angka utama --}}
+                        <td class="px-6 py-4 text-center">
+                            <div class="text-lg font-bold text-red-800">
+                                {{ $item['participant']->formatted_gun_elapsed_time ?? '-' }}
+                            </div>
+                        </td>
+                        {{-- Chip time — sekunder --}}
+                        <td class="px-6 py-4 text-center">
+                            <div class="text-base font-medium text-gray-400">
+                                {{ $item['validated_time']->formatted_elapsed_time
+                                    ?? $item['participant']->formatted_elapsed_time
+                                    ?? '-' }}
+                            </div>
+                        </td>
+                    @else
+                        <td class="px-6 py-4 text-center">
+                            <div class="text-lg font-bold text-red-800">
+                                {{ $item['validated_time']->formatted_elapsed_time
+                                    ?? $item['participant']->formatted_elapsed_time
+                                    ?? '-' }}
+                            </div>
+                        </td>
+                    @endif
+
                     <td class="px-6 py-4 text-xs text-center text-gray-500">
                         {{ $item['validated_time']->checkpoint_time?->format('H:i:s') ?? '-' }}
                     </td>
@@ -100,12 +138,32 @@
                     <div class="text-xs text-gray-500">Finish At</div>
                     <div class="text-xs text-gray-700">{{ $item['validated_time']->checkpoint_time?->format('H:i:s') ?? '-' }}</div>
                 </div>
-                <div class="col-span-2">
-                    <div class="text-xs text-gray-500">Elapsed Time</div>
-                    <div class="text-lg font-bold text-red-800">
-                        {{ $item['validated_time']->formatted_elapsed_time ?? $item['participant']->formatted_elapsed_time ?? '-' }}
+
+                @if($hasGunTime)
+                    <div>
+                        <div class="text-xs text-gray-500">Gun Time</div>
+                        <div class="text-lg font-bold text-red-800">
+                            {{ $item['participant']->formatted_gun_elapsed_time ?? '-' }}
+                        </div>
                     </div>
-                </div>
+                    <div>
+                        <div class="text-xs text-gray-500">Chip Time</div>
+                        <div class="text-base font-medium text-gray-400">
+                            {{ $item['validated_time']->formatted_elapsed_time
+                                ?? $item['participant']->formatted_elapsed_time
+                                ?? '-' }}
+                        </div>
+                    </div>
+                @else
+                    <div class="col-span-2">
+                        <div class="text-xs text-gray-500">Elapsed Time</div>
+                        <div class="text-lg font-bold text-red-800">
+                            {{ $item['validated_time']->formatted_elapsed_time
+                                ?? $item['participant']->formatted_elapsed_time
+                                ?? '-' }}
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
         @endforeach
