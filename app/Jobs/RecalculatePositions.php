@@ -15,8 +15,9 @@ class RecalculatePositions implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
-    public int $timeout = 60;
+    public int   $tries   = 10;
+    public int   $timeout = 90;
+    public array $backoff = [3, 5, 10, 15, 20, 30];
 
     public function __construct(
         public readonly int $categoryId,
@@ -25,15 +26,18 @@ class RecalculatePositions implements ShouldQueue
 
     public function handle(): void
     {
-        $lock = Cache::lock("recalc_positions_{$this->categoryId}", 30);
+        $lock = Cache::lock("recalc_positions_{$this->categoryId}", 60);
 
         try {
-            $lock->block(0);
+            // Tunggu sampai 10 detik untuk dapat lock
+            // jauh lebih efisien daripada langsung throw + re-queue
+            $lock->block(10);
         } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
-            Log::info('RecalculatePositions: lock busy, akan retry', [
+            Log::info('RecalculatePositions: lock timeout, retry', [
                 'category_id' => $this->categoryId,
+                'attempt'     => $this->attempts(),
             ]);
-            $this->release(5);
+            $this->release(10);
             return;
         }
 
@@ -46,14 +50,6 @@ class RecalculatePositions implements ShouldQueue
 
     private function recalculate(): void
     {
-        // Tentukan kolom ranking yang dipakai untuk kategori ini.
-        //
-        // Kalau gun_time sudah di-set di kategori → ranking pakai gun_elapsed_time.
-        // Kalau belum di-set → ranking tetap pakai elapsed_time (chip time).
-        //
-        // Ini penting: gun_time yang belum di-set berarti race belum dimulai
-        // atau admin belum input, jadi jangan paksa ranking pakai gun time
-        // yang nilainya null semua.
         $category = DB::selectOne(
             'SELECT gun_time FROM event_categories WHERE id = ? LIMIT 1',
             [$this->categoryId]
@@ -82,10 +78,6 @@ class RecalculatePositions implements ShouldQueue
         }
 
         // ── General positions (lintas kategori) ──────────────────────────────
-        // General position selalu pakai gun_elapsed_time kalau ada,
-        // karena perbandingan lintas kategori harus apple-to-apple.
-        // Kalau sebagian kategori punya gun_time dan sebagian tidak,
-        // hanya finisher yang punya gun_elapsed_time yang diikutkan.
         $allFinishers = DB::select(
             'SELECT id FROM participants
              WHERE event_id = ? AND gun_elapsed_time IS NOT NULL
@@ -93,8 +85,6 @@ class RecalculatePositions implements ShouldQueue
             [$this->eventId]
         );
 
-        // Fallback: kalau tidak ada yang punya gun_elapsed_time sama sekali
-        // (semua kategori belum set gun_time), pakai chip time
         if (empty($allFinishers)) {
             $allFinishers = DB::select(
                 'SELECT id FROM participants

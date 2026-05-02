@@ -16,9 +16,9 @@ class ProcessRfidScan implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int   $tries   = 3;
+    public int   $tries   = 5;
     public int   $timeout = 30;
-    public array $backoff = [1, 3, 5];
+    public array $backoff = [1, 3, 5, 10];
 
     public function __construct(
         public readonly int     $eventId,
@@ -87,8 +87,6 @@ class ProcessRfidScan implements ShouldQueue
             );
 
             // ── 4. GUARD: scan START sebelum gun time → buang ───────────────
-            // Peserta sering scan sebelum race benar-benar mulai.
-            // Kalau gun_time sudah di-set dan scan terjadi sebelumnya → abaikan.
             if ($this->checkpointType === 'start') {
                 $category = DB::selectOne(
                     'SELECT gun_time FROM event_categories WHERE id = ? LIMIT 1',
@@ -124,10 +122,8 @@ class ProcessRfidScan implements ShouldQueue
 
             // ── 6. ALREADY VALIDATED ────────────────────────────────────────
             //
-            // START  → nimpa terus (last-write-wins), pakai scan paling akhir
-            //          supaya peserta yang masih antri di garis tidak salah start time
-            //
-            // FINISH / CHECKPOINT → ambil yang pertama, scan berikutnya diabaikan
+            // START  → nimpa terus (last-write-wins)
+            // FINISH / CHECKPOINT → ambil yang pertama
             $alreadyValidated = DB::selectOne(
                 'SELECT id FROM rfid_validated_times
                  WHERE participant_id = ? AND rfid_checkpoint_id = ?
@@ -138,7 +134,6 @@ class ProcessRfidScan implements ShouldQueue
 
             if ($alreadyValidated) {
                 if ($this->checkpointType === 'start') {
-                    // Nimpa start time dengan scan terbaru
                     DB::update(
                         'UPDATE rfid_validated_times
                          SET checkpoint_time = ?, rfid_raw_log_id = ?, updated_at = ?
@@ -157,10 +152,9 @@ class ProcessRfidScan implements ShouldQueue
                         'raw_log'   => $this->rawLogId,
                     ]);
 
-                    return; // selesai, tidak perlu lanjut ke insert
+                    return;
                 }
 
-                // Finish & checkpoint: scan pertama yang menang
                 $this->markInvalid('already_validated', 'Already scanned at this checkpoint');
                 return;
             }
@@ -213,8 +207,6 @@ class ProcessRfidScan implements ShouldQueue
             // ── 10. FINISH ──────────────────────────────────────────────────
             if ($this->checkpointType === 'finish') {
 
-                // Chip time  = finish RFID - start RFID peserta ini
-                // Gun time   = finish RFID - gun_time kategori (acuan resmi)
                 $gunElapsedTime = $this->calculateGunElapsedTime(
                     $participant->event_category_id,
                     $scannedAt
@@ -279,13 +271,6 @@ class ProcessRfidScan implements ShouldQueue
         ]);
     }
 
-    /**
-     * Hitung gun elapsed time = waktu finish RFID - gun_time kategori.
-     *
-     * Berbeda dengan chip elapsed time yang pakai start RFID per peserta,
-     * gun time pakai satu acuan yang sama untuk semua peserta dalam kategori.
-     * Kalau gun_time belum di-set di kategori, return null (tidak menghitung).
-     */
     private function calculateGunElapsedTime(int $categoryId, Carbon $finishTime): ?string
     {
         $category = DB::selectOne(
@@ -320,7 +305,6 @@ class ProcessRfidScan implements ShouldQueue
         $elapsedTime = null;
         $splitTime   = null;
 
-        // ── Elapsed: checkpointTime - start time peserta ini (chip time) ─────
         $startRecord = DB::selectOne(
             'SELECT vt.checkpoint_time
              FROM rfid_validated_times vt
@@ -348,7 +332,6 @@ class ProcessRfidScan implements ShouldQueue
             }
         }
 
-        // ── Split: checkpointTime - waktu checkpoint sebelumnya ──────────────
         $prevRecord = DB::selectOne(
             'SELECT vt.checkpoint_time
              FROM rfid_validated_times vt
