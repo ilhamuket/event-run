@@ -19,7 +19,7 @@
         .pin-input:focus { outline: none; border-color: #c8f542; }
 
         /* Worker buttons */
-        .worker-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; }
+        .worker-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px; }
         .worker-btn { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px 12px;
                       border-radius: 6px; cursor: pointer; text-align: center; border: 1px solid; transition: all 0.15s; }
         .btn-status { background: #1a1a1a; border-color: #2a2a2a; color: #aaa; }
@@ -28,6 +28,7 @@
         .btn-start:hover  { background: #223a15; }
         .btn-stop   { background: #2a1010; border-color: #4a1010; color: #f54242; }
         .btn-stop:hover   { background: #3a1515; }
+        .worker-hint { color: #444; font-size: 11px; margin-bottom: 1.5rem; }
 
         /* Artisan command grid */
         .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
@@ -87,10 +88,14 @@
     <input class="pin-input" type="password" id="pin" placeholder="••••••••" maxlength="8" />
 
     <div class="section-label">queue worker</div>
-    <div class="worker-grid" style="margin-bottom:1.5rem;">
+    <div class="worker-grid">
         <button class="worker-btn btn-status" onclick="checkStatus()">● cek status</button>
-        <button class="worker-btn btn-start"  onclick="startWorker()">▶ start worker</button>
-        <button class="worker-btn btn-stop"   onclick="stopWorker()">■ stop worker</button>
+        <button class="worker-btn btn-start"  onclick="startWorker()">▶ start workers</button>
+        <button class="worker-btn btn-stop"   onclick="stopWorker()">■ stop all</button>
+    </div>
+    {{-- Hint jumlah worker yang akan dijalankan --}}
+    <div class="worker-hint">
+        start = 3× rfid worker + 2× positions worker (total 5 process, paralel)
     </div>
 
     {{-- ── BACKFILL START SCANS ─────────────────────────────────── --}}
@@ -185,7 +190,6 @@
 
         if (!eventId) { flash('Pilih event dulu.', 'error'); return; }
 
-        // Konfirmasi eksekusi (bukan dry run)
         if (!isDryRun) {
             const ok = confirm(
                 '⚠ EKSEKUSI BACKFILL\n\n' +
@@ -234,14 +238,14 @@
 
     async function startWorker() {
         const p = pin(); if (!p) return;
-        flash('⏳ Starting worker...', '');
+        flash('⏳ Starting workers (3× rfid + 2× positions)...', 'warn');
         const data = await post('{{ route("artisan.runner.start-worker") }}', { pin: p });
         flash(data.output, data.success ? 'success' : 'error');
     }
 
     async function stopWorker() {
         const p = pin(); if (!p) return;
-        flash('⏳ Stopping worker...', '');
+        flash('⏳ Stopping all workers...', '');
         const data = await post('{{ route("artisan.runner.stop-worker") }}', { pin: p });
         flash(data.output, data.success ? 'success' : 'error');
     }

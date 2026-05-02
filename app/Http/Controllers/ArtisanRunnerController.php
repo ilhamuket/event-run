@@ -20,14 +20,11 @@ class ArtisanRunnerController extends Controller
         'optimize',
         'queue:restart',
         'queue:work --queue=rfid,default --tries=3',
+        'queue:work --queue=positions,default --tries=3',
     ];
-
-    // Command backfill tidak masuk ALLOWED_COMMANDS karena punya endpoint tersendiri
-    // dengan parameter event_id yang dinamis, bukan command string statis.
 
     public function index()
     {
-        // Ambil semua event yang published untuk dropdown backfill
         $events = DB::select(
             'SELECT id, name FROM events WHERE is_published = 1 ORDER BY id DESC'
         );
@@ -59,10 +56,6 @@ class ArtisanRunnerController extends Controller
         }
     }
 
-    /**
-     * Backfill start scans — dry run atau eksekusi penuh.
-     * Selalu untuk semua kategori (tanpa --category) karena semua lari bareng.
-     */
     public function backfillStart(Request $request)
     {
         $request->validate([
@@ -80,7 +73,6 @@ class ArtisanRunnerController extends Controller
         $spread  = (int) ($request->spread ?? 60);
         $dryRun  = (bool) $request->dry_run;
 
-        // Validasi event ada
         $event = DB::selectOne(
             'SELECT id, name FROM events WHERE id = ? AND is_published = 1 LIMIT 1',
             [$eventId]
@@ -89,7 +81,6 @@ class ArtisanRunnerController extends Controller
             return response()->json(['success' => false, 'output' => "Event ID {$eventId} tidak ditemukan."], 422);
         }
 
-        // Jalankan command dengan --no-interaction supaya tidak nunggu confirm
         $params = [
             'event_id' => $eventId,
             '--spread'  => $spread,
@@ -98,8 +89,6 @@ class ArtisanRunnerController extends Controller
             $params['--dry-run'] = true;
         }
 
-        // --no-interaction: skip semua confirm() prompt di dalam command
-        // Ini aman karena kita sudah eksplisit pilih dry-run atau tidak dari UI
         try {
             Artisan::call('rfid:backfill-start', $params + ['--no-interaction' => true]);
             $output = Artisan::output() ?: 'Command selesai (tidak ada output).';
@@ -119,57 +108,116 @@ class ArtisanRunnerController extends Controller
             return response()->json(['success' => false, 'output' => 'PIN salah.'], 403);
         }
 
-        $pending = DB::table('jobs')
-            ->where('queue', 'rfid')
-            ->count();
+        // Queue counts
+        $pendingRfid      = DB::table('jobs')->where('queue', 'rfid')->count();
+        $pendingPositions = DB::table('jobs')->where('queue', 'positions')->count();
+        $pendingDefault   = DB::table('jobs')->where('queue', 'default')->count();
 
-        $failed = DB::table('failed_jobs')
-            ->where('queue', 'rfid')
-            ->count();
+        $failedRfid      = DB::table('failed_jobs')->where('queue', 'rfid')->count();
+        $failedPositions = DB::table('failed_jobs')->where('queue', 'positions')->count();
 
         $unprocessed = DB::table('rfid_raw_logs')
             ->whereNull('rfid_checkpoint_id')
             ->where('is_valid', true)
             ->count();
 
-        exec("ps aux | grep 'queue:work' | grep -v grep", $psOutput);
-        $workerStatus = !empty($psOutput) ? '🟢 RUNNING' : '🔴 MATI';
+        // Cek worker per queue
+        exec("ps aux | grep 'queue:work' | grep -v grep", $psAll);
+
+        $workerRfid      = collect($psAll)->filter(fn($l) => str_contains($l, 'rfid'))->count();
+        $workerPositions = collect($psAll)->filter(fn($l) => str_contains($l, 'positions'))->count();
+
+        $rfidStatus      = $workerRfid      > 0 ? "🟢 RUNNING ({$workerRfid} process)" : '🔴 MATI';
+        $positionsStatus = $workerPositions > 0 ? "🟢 RUNNING ({$workerPositions} process)" : '🔴 MATI';
 
         $output = implode("\n", [
-            "Worker status             : {$workerStatus}",
-            "Queue 'rfid' pending      : {$pending} jobs",
-            "Queue 'rfid' failed       : {$failed} jobs",
-            "Raw logs belum diproses   : {$unprocessed} records",
+            "═══════════════════════════════════",
+            "  WORKER STATUS",
+            "═══════════════════════════════════",
+            "  rfid worker      : {$rfidStatus}",
+            "  positions worker : {$positionsStatus}",
+            "",
+            "═══════════════════════════════════",
+            "  QUEUE PENDING",
+            "═══════════════════════════════════",
+            "  rfid             : {$pendingRfid} jobs",
+            "  positions        : {$pendingPositions} jobs",
+            "  default          : {$pendingDefault} jobs",
+            "",
+            "═══════════════════════════════════",
+            "  FAILED JOBS",
+            "═══════════════════════════════════",
+            "  rfid             : {$failedRfid} jobs",
+            "  positions        : {$failedPositions} jobs",
+            "",
+            "═══════════════════════════════════",
+            "  RAW LOGS belum diproses: {$unprocessed} records",
+            "═══════════════════════════════════",
         ]);
 
         return response()->json(['success' => true, 'output' => $output]);
     }
 
+    /**
+     * Start semua worker sekaligus:
+     * - 3x rfid worker (untuk 1300 peserta, supaya paralel)
+     * - 2x positions worker
+     *
+     * Masing-masing worker jalan sebagai background process terpisah.
+     */
     public function startWorker(Request $request)
     {
         if ($request->pin !== self::PIN) {
             return response()->json(['success' => false, 'output' => 'PIN salah.'], 403);
         }
 
-        exec("ps aux | grep 'queue:work' | grep -v grep", $psOutput);
-        if (!empty($psOutput)) {
-            return response()->json(['success' => true, 'output' => "Worker sudah jalan:\n" . implode("\n", $psOutput)]);
-        }
-
         $artisan = base_path('artisan');
         $log     = storage_path('logs/queue-worker.log');
 
-        exec("php {$artisan} queue:work --queue=rfid,default --tries=3 --sleep=3 >> {$log} 2>&1 &");
+        exec("ps aux | grep 'queue:work' | grep -v grep", $existing);
+        $hasRfid      = collect($existing)->filter(fn($l) => str_contains($l, 'rfid'))->count();
+        $hasPositions = collect($existing)->filter(fn($l) => str_contains($l, 'positions'))->count();
+
+        $started = [];
+
+        // ── rfid workers (3 process paralel) ────────────────────────────────
+        // 3 worker supaya 1300 peserta bisa diproses cepat tanpa antri panjang
+        $rfidTarget = 3;
+        for ($i = $hasRfid; $i < $rfidTarget; $i++) {
+            exec("php {$artisan} queue:work --queue=rfid,default --tries=3 --sleep=1 --max-jobs=500 >> {$log} 2>&1 &");
+            $started[] = "rfid worker #" . ($i + 1);
+        }
+
+        // ── positions workers (2 process paralel) ────────────────────────────
+        // positions job datang burst saat banyak peserta finish bersamaan
+        $positionsTarget = 2;
+        for ($i = $hasPositions; $i < $positionsTarget; $i++) {
+            exec("php {$artisan} queue:work --queue=positions,default --tries=3 --sleep=1 --max-jobs=200 >> {$log} 2>&1 &");
+            $started[] = "positions worker #" . ($i + 1);
+        }
 
         sleep(2);
 
         exec("ps aux | grep 'queue:work' | grep -v grep", $verify);
+        $verifyRfid      = collect($verify)->filter(fn($l) => str_contains($l, 'rfid'))->count();
+        $verifyPositions = collect($verify)->filter(fn($l) => str_contains($l, 'positions'))->count();
 
-        if (!empty($verify)) {
-            return response()->json(['success' => true, 'output' => "✓ Worker berhasil dijalankan!\nLog: {$log}\n\n" . implode("\n", $verify)]);
+        if (!empty($started)) {
+            $output = "✓ Worker dijalankan:\n  " . implode("\n  ", $started) . "\n\n";
+        } else {
+            $output = "ℹ Semua worker sudah jalan, tidak ada yang ditambah.\n\n";
         }
 
-        return response()->json(['success' => false, 'output' => 'Gagal start worker. Cek permission server.']);
+        $output .= implode("\n", [
+            "Status sekarang:",
+            "  rfid worker      : {$verifyRfid}/{$rfidTarget} process",
+            "  positions worker : {$verifyPositions}/{$positionsTarget} process",
+            "  Log              : {$log}",
+        ]);
+
+        $allOk = $verifyRfid >= $rfidTarget && $verifyPositions >= $positionsTarget;
+
+        return response()->json(['success' => $allOk, 'output' => $output]);
     }
 
     public function stopWorker(Request $request)
@@ -183,15 +231,16 @@ class ArtisanRunnerController extends Controller
             return response()->json(['success' => true, 'output' => 'Worker memang tidak jalan.']);
         }
 
+        $count = count($psOutput);
         exec("pkill -f 'queue:work'");
         sleep(1);
 
         exec("ps aux | grep 'queue:work' | grep -v grep", $verify);
 
         if (empty($verify)) {
-            return response()->json(['success' => true, 'output' => '✓ Worker berhasil dihentikan.']);
+            return response()->json(['success' => true, 'output' => "✓ {$count} worker berhasil dihentikan."]);
         }
 
-        return response()->json(['success' => false, 'output' => 'Gagal stop worker.']);
+        return response()->json(['success' => false, 'output' => 'Gagal stop beberapa worker. Coba lagi atau kill manual.']);
     }
 }
