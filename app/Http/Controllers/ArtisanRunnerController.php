@@ -184,7 +184,7 @@ class ArtisanRunnerController extends Controller
         // 3 worker supaya 1300 peserta bisa diproses cepat tanpa antri panjang
         $rfidTarget = 3;
         for ($i = $hasRfid; $i < $rfidTarget; $i++) {
-            exec("php {$artisan} queue:work --queue=rfid,default --tries=3 --sleep=1 --max-jobs=500 >> {$log} 2>&1 &");
+            exec("php {$artisan} queue:work --queue=rfid,default --tries=3 --sleep=1  >> {$log} 2>&1 &");
             $started[] = "rfid worker #" . ($i + 1);
         }
 
@@ -192,7 +192,7 @@ class ArtisanRunnerController extends Controller
         // positions job datang burst saat banyak peserta finish bersamaan
         $positionsTarget = 2;
         for ($i = $hasPositions; $i < $positionsTarget; $i++) {
-            exec("php {$artisan} queue:work --queue=positions,default --tries=3 --sleep=1 --max-jobs=200 >> {$log} 2>&1 &");
+            exec("php {$artisan} queue:work --queue=positions,default --tries=3 --sleep=1  >> {$log} 2>&1 &");
             $started[] = "positions worker #" . ($i + 1);
         }
 
