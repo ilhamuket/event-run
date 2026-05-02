@@ -40,16 +40,16 @@ class TransactionController extends Controller
 
    public function checkSingleStatus(string $tripayReference): JsonResponse
     {
+        // Matikan semua output buffering yang mungkin bocor
+        while (ob_get_level()) ob_end_clean();
+
         try {
             $status = $this->tripayService->checkStatus($tripayReference);
-
-            // Mismatch HANYA kalau DB masih UNPAID tapi di Tripay sudah PAID
-            $mismatch = $status === Transaction::STATUS_PAID;
 
             return response()->json([
                 'success'       => true,
                 'status_tripay' => $status,
-                'mismatch'      => $mismatch,
+                'mismatch'      => $status === Transaction::STATUS_PAID,
             ]);
 
         } catch (\Exception $e) {
