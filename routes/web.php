@@ -19,7 +19,7 @@ Route::get('/event/{event:slug}/live', [EventController::class, 'live'])
     ->name('event.live');
 
     // routes/web.php
-Route::get('/events/{event}/export-finish', ExportFinishController::class)
+Route::get('/events/{event:slug}/export-finish', ExportFinishController::class)
     ->name('event.export-finish');
 
 Route::get('/event/{event:slug}/live/partial', [EventController::class, 'livePartial'])
