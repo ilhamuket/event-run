@@ -2,24 +2,44 @@
     event/_live-section-finish.blade.php
     @param array $group       ['checkpoint' => object, 'participants' => Collection]
     @param bool  $hasGunTime  true kalau event ini pakai gun time
+    @param object $event
+    @param string|null $selectedCategory  slug kategori yang dipilih (dari filter)
 --}}
 <div class="mb-8">
-    <div class="flex items-center gap-3 mb-4">
-        <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
-            <svg class="w-5 h-5 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex items-center justify-between gap-3 mb-4">
+        {{-- Judul --}}
+        <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
+                <svg class="w-5 h-5 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">🏁 Finish</h2>
+                <p class="text-xs text-gray-500">
+                    {{ $group['participants']->count() }} peserta
+                    @if($hasGunTime)
+                        · Ranking by Gun Time
+                    @endif
+                </p>
+            </div>
+        </div>
+
+        {{-- Tombol Export Excel --}}
+        <a href="{{ route('event.export-finish', array_filter([
+                'event'     => $event->slug,
+                'category'  => $selectedCategory ?? null,
+            ])) }}"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition bg-green-600 rounded-lg shadow-sm hover:bg-green-700 active:scale-95"
+           title="Download hasil finish sebagai Excel">
+            {{-- Icon spreadsheet --}}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
             </svg>
-        </div>
-        <div>
-            <h2 class="text-lg font-bold text-gray-900">🏁 Finish</h2>
-            <p class="text-xs text-gray-500">
-                {{ $group['participants']->count() }} peserta
-                @if($hasGunTime)
-                    · Ranking by Gun Time
-                @endif
-            </p>
-        </div>
+            Export Excel
+        </a>
     </div>
 
     {{-- Desktop --}}
@@ -74,13 +94,11 @@
                     </td>
 
                     @if($hasGunTime)
-                        {{-- Gun time — angka utama --}}
                         <td class="px-6 py-4 text-center">
                             <div class="text-lg font-bold text-red-800">
                                 {{ $item['participant']->formatted_gun_elapsed_time ?? '-' }}
                             </div>
                         </td>
-                        {{-- Chip time — sekunder --}}
                         <td class="px-6 py-4 text-center">
                             <div class="text-base font-medium text-gray-400">
                                 {{ $item['validated_time']->formatted_elapsed_time

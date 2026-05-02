@@ -5,6 +5,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ArtisanRunnerController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ExportFinishController;
+
 
 
 
@@ -15,6 +17,10 @@ Route::get('/events/{event:slug}/results', [EventController::class, 'results'])-
 Route::get('/events/{event:slug}/participants', [EventController::class, 'participants'])->name('event.participants');
 Route::get('/event/{event:slug}/live', [EventController::class, 'live'])
     ->name('event.live');
+
+    // routes/web.php
+Route::get('/events/{event}/export-finish', ExportFinishController::class)
+    ->name('event.export-finish');
 
 Route::get('/event/{event:slug}/live/partial', [EventController::class, 'livePartial'])
     ->name('event.live.partial');
