@@ -86,7 +86,25 @@ class ProcessRfidScan implements ShouldQueue
                 [$checkpoint->id, $this->rawLogId]
             );
 
-            // ── 4. RAPID DUPLICATE ──────────────────────────────────────────
+            // ── 4. GUARD: scan START sebelum gun time → buang ───────────────
+            // Peserta sering scan sebelum race benar-benar mulai.
+            // Kalau gun_time sudah di-set dan scan terjadi sebelumnya → abaikan.
+            if ($this->checkpointType === 'start') {
+                $category = DB::selectOne(
+                    'SELECT gun_time FROM event_categories WHERE id = ? LIMIT 1',
+                    [$participant->event_category_id]
+                );
+
+                if ($category && $category->gun_time) {
+                    $gunTime = Carbon::parse($category->gun_time);
+                    if ($scannedAt->lt($gunTime)) {
+                        $this->markInvalid('before_gun_time', 'Scanned before race start (gun time)');
+                        return;
+                    }
+                }
+            }
+
+            // ── 5. RAPID DUPLICATE ──────────────────────────────────────────
             $duplicateThreshold = $scannedAt->copy()->subSeconds(10)->format('Y-m-d H:i:s');
             $recentScan = DB::selectOne(
                 'SELECT id FROM rfid_raw_logs
@@ -104,7 +122,12 @@ class ProcessRfidScan implements ShouldQueue
                 return;
             }
 
-            // ── 5. ALREADY VALIDATED ────────────────────────────────────────
+            // ── 6. ALREADY VALIDATED ────────────────────────────────────────
+            //
+            // START  → nimpa terus (last-write-wins), pakai scan paling akhir
+            //          supaya peserta yang masih antri di garis tidak salah start time
+            //
+            // FINISH / CHECKPOINT → ambil yang pertama, scan berikutnya diabaikan
             $alreadyValidated = DB::selectOne(
                 'SELECT id FROM rfid_validated_times
                  WHERE participant_id = ? AND rfid_checkpoint_id = ?
@@ -112,19 +135,44 @@ class ProcessRfidScan implements ShouldQueue
                  FOR UPDATE',
                 [$participant->id, $checkpoint->id]
             );
+
             if ($alreadyValidated) {
+                if ($this->checkpointType === 'start') {
+                    // Nimpa start time dengan scan terbaru
+                    DB::update(
+                        'UPDATE rfid_validated_times
+                         SET checkpoint_time = ?, rfid_raw_log_id = ?, updated_at = ?
+                         WHERE id = ?',
+                        [
+                            $scannedAt->format('Y-m-d H:i:s'),
+                            $this->rawLogId,
+                            now()->format('Y-m-d H:i:s'),
+                            $alreadyValidated->id,
+                        ]
+                    );
+
+                    Log::info('RFID start time updated (last-write-wins)', [
+                        'bib'       => $participant->bib,
+                        'new_start' => $scannedAt->toIso8601String(),
+                        'raw_log'   => $this->rawLogId,
+                    ]);
+
+                    return; // selesai, tidak perlu lanjut ke insert
+                }
+
+                // Finish & checkpoint: scan pertama yang menang
                 $this->markInvalid('already_validated', 'Already scanned at this checkpoint');
                 return;
             }
 
-            // ── 6. HITUNG ELAPSED & SPLIT ───────────────────────────────────
+            // ── 7. HITUNG ELAPSED & SPLIT ───────────────────────────────────
             [$elapsedTime, $splitTime] = $this->calculateTimes(
                 $participant,
                 $checkpoint,
                 $scannedAt
             );
 
-            // ── 7. HITUNG POSISI ────────────────────────────────────────────
+            // ── 8. HITUNG POSISI ────────────────────────────────────────────
             $positionRow = DB::selectOne(
                 'SELECT COUNT(*) as cnt FROM rfid_validated_times
                  WHERE rfid_checkpoint_id = ?',
@@ -132,7 +180,7 @@ class ProcessRfidScan implements ShouldQueue
             );
             $position = ($positionRow->cnt ?? 0) + 1;
 
-            // ── 8. INSERT VALIDATED TIME ────────────────────────────────────
+            // ── 9. INSERT VALIDATED TIME ────────────────────────────────────
             $now = now()->format('Y-m-d H:i:s');
             try {
                 DB::insert(
@@ -162,14 +210,11 @@ class ProcessRfidScan implements ShouldQueue
                 throw $e;
             }
 
-            // ── 9. FINISH ───────────────────────────────────────────────────
+            // ── 10. FINISH ──────────────────────────────────────────────────
             if ($this->checkpointType === 'finish') {
 
-                // Hitung gun elapsed time = finish RFID - gun_time kategori
-                // Gun time diambil dari event_categories, bukan dari validated start peserta.
-                // Ini yang membedakan gun time vs chip time:
-                // - Chip time (elapsed_time): finish - start RFID peserta ini
-                // - Gun time (gun_elapsed_time): finish - tembakan start resmi kategori
+                // Chip time  = finish RFID - start RFID peserta ini
+                // Gun time   = finish RFID - gun_time kategori (acuan resmi)
                 $gunElapsedTime = $this->calculateGunElapsedTime(
                     $participant->event_category_id,
                     $scannedAt
@@ -249,7 +294,6 @@ class ProcessRfidScan implements ShouldQueue
         );
 
         if (!$category || !$category->gun_time) {
-            // Gun time belum di-set untuk kategori ini, skip
             return null;
         }
 
