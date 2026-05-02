@@ -159,6 +159,14 @@ class ProcessRfidScan implements ShouldQueue
                 return;
             }
 
+            // ── 6b. FINISH: pastikan start time ada ─────────────────────────
+            // Kalau peserta tidak terdeteksi di garis start (tag miss),
+            // isi otomatis dengan rata-rata start time peserta lain
+            // sekategori supaya elapsed time tetap bisa dihitung.
+            if ($this->checkpointType === 'finish') {
+                $this->ensureStartTime($participant, $checkpoint->event_category_id);
+            }
+
             // ── 7. HITUNG ELAPSED & SPLIT ───────────────────────────────────
             [$elapsedTime, $splitTime] = $this->calculateTimes(
                 $participant,
@@ -268,6 +276,111 @@ class ProcessRfidScan implements ShouldQueue
             'raw_log_id' => $this->rawLogId,
             'rfid_tag'   => $this->rfidTag,
             'reason'     => $code,
+        ]);
+    }
+
+    /**
+     * Pastikan peserta punya start time sebelum finish diproses.
+     *
+     * Urutan fallback:
+     *   1. Sudah ada → tidak perlu apa-apa.
+     *   2. Belum ada → hitung AVG checkpoint_time dari rfid_validated_times
+     *      peserta sekategori yang sudah punya start.
+     *   3. Tidak ada satupun sekategori yang sudah start →
+     *      gunakan gun_time kategori sebagai last-resort.
+     *
+     * Start sintetis ini ditandai validation_status = 'synthetic_avg'
+     * supaya mudah diidentifikasi nanti.
+     */
+    private function ensureStartTime(object $participant, int $categoryId): void
+    {
+        // Cari start checkpoint untuk kategori ini
+        $startCheckpoint = DB::selectOne(
+            'SELECT id FROM rfid_checkpoints
+             WHERE event_category_id = ? AND checkpoint_type = "start" AND is_active = 1
+             LIMIT 1',
+            [$categoryId]
+        );
+
+        if (!$startCheckpoint) {
+            // Tidak ada start checkpoint terdefinisi, tidak bisa berbuat apa-apa
+            return;
+        }
+
+        // Cek apakah peserta sudah punya start time
+        $existing = DB::selectOne(
+            'SELECT id FROM rfid_validated_times
+             WHERE participant_id = ? AND rfid_checkpoint_id = ?
+             LIMIT 1',
+            [$participant->id, $startCheckpoint->id]
+        );
+
+        if ($existing) {
+            // Sudah ada, aman
+            return;
+        }
+
+        // ── Hitung rata-rata start time dari peserta sekategori ──────────────
+        $avgRow = DB::selectOne(
+            'SELECT AVG(UNIX_TIMESTAMP(vt.checkpoint_time)) AS avg_ts,
+                    COUNT(*) AS sample_count
+             FROM rfid_validated_times vt
+             WHERE vt.rfid_checkpoint_id = ?',
+            [$startCheckpoint->id]
+        );
+
+        $syntheticTime = null;
+        $source        = null;
+
+        if ($avgRow && $avgRow->avg_ts && $avgRow->sample_count > 0) {
+            $syntheticTime = Carbon::createFromTimestamp((int) round($avgRow->avg_ts));
+            $source        = "avg_of_{$avgRow->sample_count}_participants";
+        } else {
+            // Fallback: gunakan gun_time kategori
+            $category = DB::selectOne(
+                'SELECT gun_time FROM event_categories WHERE id = ? LIMIT 1',
+                [$categoryId]
+            );
+
+            if ($category && $category->gun_time) {
+                $syntheticTime = Carbon::parse($category->gun_time);
+                $source        = 'gun_time_fallback';
+            }
+        }
+
+        if (!$syntheticTime) {
+            Log::warning('ensureStartTime: tidak ada data untuk start sintetis', [
+                'participant_id' => $participant->id,
+                'bib'            => $participant->bib,
+                'category_id'    => $categoryId,
+            ]);
+            return;
+        }
+
+        $now = now()->format('Y-m-d H:i:s');
+
+        DB::insert(
+            'INSERT INTO rfid_validated_times
+                (participant_id, rfid_checkpoint_id, rfid_raw_log_id,
+                 checkpoint_time, elapsed_time, split_time,
+                 position_at_checkpoint, validation_status, created_at, updated_at)
+             VALUES (?, ?, NULL, ?, NULL, NULL, NULL, ?, ?, ?)',
+            [
+                $participant->id,
+                $startCheckpoint->id,
+                $syntheticTime->format('Y-m-d H:i:s'),
+                'synthetic_avg',
+                $now,
+                $now,
+            ]
+        );
+
+        Log::warning('Start time sintetis dibuat (tag miss saat start)', [
+            'participant_id' => $participant->id,
+            'bib'            => $participant->bib,
+            'category_id'    => $categoryId,
+            'synthetic_time' => $syntheticTime->toIso8601String(),
+            'source'         => $source,
         ]);
     }
 
