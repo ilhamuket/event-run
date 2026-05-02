@@ -22,7 +22,6 @@ class TransactionController extends Controller
     {
         $unpaidTransactions = Transaction::unpaid()
             ->whereNotNull('tripay_reference')
-            ->where('expired_at', '>', now()) // skip yang sudah expired
             ->with(['participant:id,name,email', 'event:id,name'])
             ->get(['id', 'participant_id', 'event_id', 'merchant_ref', 'tripay_reference', 'amount', 'total_amount', 'status', 'expired_at']);
 
