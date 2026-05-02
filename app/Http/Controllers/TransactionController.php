@@ -38,18 +38,18 @@ class TransactionController extends Controller
         return view('event.check-payment-status', compact('transactions'));
     }
 
-    /**
-     * API: cek 1 transaksi ke Tripay (dipanggil JS satu per satu)
-     */
-    public function checkSingleStatus(string $tripayReference): JsonResponse
+   public function checkSingleStatus(string $tripayReference): JsonResponse
     {
         try {
             $status = $this->tripayService->checkStatus($tripayReference);
 
+            // Mismatch HANYA kalau DB masih UNPAID tapi di Tripay sudah PAID
+            $mismatch = $status === Transaction::STATUS_PAID;
+
             return response()->json([
                 'success'       => true,
                 'status_tripay' => $status,
-                'mismatch'      => $status !== Transaction::STATUS_UNPAID,
+                'mismatch'      => $mismatch,
             ]);
 
         } catch (\Exception $e) {
