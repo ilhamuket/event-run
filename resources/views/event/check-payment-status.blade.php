@@ -201,7 +201,7 @@
 
 <script>
     const transactions = @json($transactions);
-    const baseUrl = '{{ url('/admin/transactions/check-single-status') }}';
+    const baseUrl = '{{ url('/transactions/check-single-status') }}';
 
     let checked = 0, mismatched = 0, errors = 0;
 
