@@ -29,11 +29,11 @@ Route::post('/dev/artisan/backfill-start', [ArtisanRunnerController::class, 'bac
     ->name('artisan.runner.backfill-start');
 
 
-// Atau kalau mau per-transaksi:
-Route::get('/transactions/{merchantRef}/check-payment-status', [TransactionController::class, 'checkSinglePaymentStatus']);
-// routes/web.php
 Route::get('/transactions/check-payment-status', [TransactionController::class, 'checkPaymentStatus'])
     ->name('transactions.check-payment-status');
+
+Route::get('/transactions/check-single-status/{tripayReference}', [TransactionController::class, 'checkSingleStatus'])
+    ->name('transactions.check-single-status');
 
 // Event Registration Routes
 Route::prefix('event/{event:slug}')->name('event.')->group(function () {
