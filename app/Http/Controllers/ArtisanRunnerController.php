@@ -102,6 +102,55 @@ class ArtisanRunnerController extends Controller
         }
     }
 
+    public function normalizeFinish(Request $request)
+    {
+        $request->validate([
+            'pin'         => 'required|string',
+            'event_id'    => 'required|integer',
+            'dry_run'     => 'required|boolean',
+            'force'       => 'nullable|boolean',
+            'category_id' => 'nullable|integer',
+        ]);
+
+        if ($request->pin !== self::PIN) {
+            return response()->json(['success' => false, 'output' => 'PIN salah.'], 403);
+        }
+
+        $eventId    = (int) $request->event_id;
+        $dryRun     = (bool) $request->dry_run;
+        $force      = (bool) ($request->force ?? false);
+        $categoryId = $request->category_id ? (int) $request->category_id : null;
+
+        $event = DB::selectOne(
+            'SELECT id, name FROM events WHERE id = ? AND is_published = 1 LIMIT 1',
+            [$eventId]
+        );
+        if (!$event) {
+            return response()->json(['success' => false, 'output' => "Event ID {$eventId} tidak ditemukan."], 422);
+        }
+
+        $params = ['event_id' => $eventId];
+
+        if ($dryRun)     $params['--dry-run']  = true;
+        if ($force)      $params['--force']     = true;
+        if ($categoryId) $params['--category']  = $categoryId;
+
+        try {
+            Artisan::call('rfid:normalize-finish', $params + ['--no-interaction' => true]);
+            $output = Artisan::output() ?: 'Command selesai (tidak ada output).';
+
+            $prefix = $dryRun ? '[DRY RUN] ' : '[EKSEKUSI] ';
+            $suffix = $force  ? ' [--force]'  : '';
+
+            return response()->json([
+                'success' => true,
+                'output'  => "{$prefix}Normalize Finish — Event: {$event->name}{$suffix}\n\n{$output}",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'output' => $e->getMessage()], 500);
+        }
+    }
+
     public function status(Request $request)
     {
         if ($request->pin !== self::PIN) {
@@ -181,7 +230,6 @@ class ArtisanRunnerController extends Controller
         $started = [];
 
         // ── rfid workers (3 process paralel) ────────────────────────────────
-        // 3 worker supaya 1300 peserta bisa diproses cepat tanpa antri panjang
         $rfidTarget = 3;
         for ($i = $hasRfid; $i < $rfidTarget; $i++) {
             exec("php {$artisan} queue:work --queue=rfid,default --tries=3 --sleep=1  >> {$log} 2>&1 &");
@@ -189,7 +237,6 @@ class ArtisanRunnerController extends Controller
         }
 
         // ── positions workers (2 process paralel) ────────────────────────────
-        // positions job datang burst saat banyak peserta finish bersamaan
         $positionsTarget = 2;
         for ($i = $hasPositions; $i < $positionsTarget; $i++) {
             exec("php {$artisan} queue:work --queue=positions,default --tries=3 --sleep=1  >> {$log} 2>&1 &");

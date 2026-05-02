@@ -41,18 +41,28 @@
                    cursor: pointer; letter-spacing: 1px; margin-bottom: 1.5rem; }
         .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Backfill section */
-        .backfill-box { background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
-                        padding: 1rem; margin-bottom: 1.5rem; }
-        .backfill-box .section-label { margin-bottom: 12px; color: #f5a623; }
-        .backfill-row { display: grid; grid-template-columns: 1fr 80px; gap: 8px; margin-bottom: 8px; }
-        .backfill-select, .backfill-input {
+        /* Tool box (shared style untuk backfill & normalize) */
+        .tool-box { background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
+                    padding: 1rem; margin-bottom: 1.5rem; }
+        .tool-box .section-label { margin-bottom: 12px; }
+        .tool-box .section-label.orange { color: #f5a623; }
+        .tool-box .section-label.blue   { color: #42b4f5; }
+        .tool-row { display: grid; gap: 8px; margin-bottom: 8px; }
+        .tool-row-2 { grid-template-columns: 1fr 80px; }
+        .tool-row-3 { grid-template-columns: 1fr 1fr 80px; }
+        .tool-select, .tool-input {
             background: #1a1a1a; border: 1px solid #333; color: #e0e0e0;
             font-family: 'Courier New', monospace; font-size: 13px; padding: 9px 12px;
             border-radius: 6px; width: 100%;
         }
-        .backfill-select:focus, .backfill-input:focus { outline: none; border-color: #f5a623; }
-        .backfill-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .tool-select:focus, .tool-input:focus { outline: none; }
+        .tool-select.orange:focus { border-color: #f5a623; }
+        .tool-select.blue:focus   { border-color: #42b4f5; }
+        .tool-hint { color: #555; font-size: 11px; margin-bottom: 8px; }
+        .tool-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .tool-btns.three { grid-template-columns: 1fr 1fr 1fr; }
+
+        /* Backfill buttons (orange) */
         .btn-dryrun {
             font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
             border-radius: 6px; cursor: pointer; text-align: center;
@@ -67,7 +77,33 @@
             font-weight: bold; transition: all 0.15s;
         }
         .btn-execute:hover { background: #223a15; }
-        .btn-dryrun:disabled, .btn-execute:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Normalize buttons (blue) */
+        .btn-norm-dry {
+            font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
+            border-radius: 6px; cursor: pointer; text-align: center;
+            background: #10181a; border: 1px solid #104a5a; color: #42b4f5;
+            transition: all 0.15s;
+        }
+        .btn-norm-dry:hover { background: #152225; }
+        .btn-norm-exec {
+            font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
+            border-radius: 6px; cursor: pointer; text-align: center;
+            background: #101a2a; border: 1px solid #103a6a; color: #42b4f5;
+            font-weight: bold; transition: all 0.15s;
+        }
+        .btn-norm-exec:hover { background: #152233; }
+        .btn-norm-force {
+            font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
+            border-radius: 6px; cursor: pointer; text-align: center;
+            background: #1a1020; border: 1px solid #4a1070; color: #c084fc;
+            transition: all 0.15s;
+        }
+        .btn-norm-force:hover { background: #221530; }
+
+        .btn-dryrun:disabled, .btn-execute:disabled,
+        .btn-norm-dry:disabled, .btn-norm-exec:disabled, .btn-norm-force:disabled
+            { opacity: 0.4; cursor: not-allowed; }
 
         /* Output */
         .output { background: #111; border: 1px solid #2a2a2a; border-radius: 6px; padding: 1rem;
@@ -75,6 +111,7 @@
         .output.success { border-color: #2a4a10; color: #c8f542; }
         .output.error   { border-color: #4a1010; color: #f54242; }
         .output.warn    { border-color: #4a3a10; color: #f5a623; }
+        .output.info    { border-color: #103a6a; color: #42b4f5; }
     </style>
 </head>
 <body>
@@ -87,34 +124,32 @@
     <div class="section-label">pin</div>
     <input class="pin-input" type="password" id="pin" placeholder="••••••••" maxlength="8" />
 
+    {{-- ── WORKER ──────────────────────────────────────────────────── --}}
     <div class="section-label">queue worker</div>
     <div class="worker-grid">
         <button class="worker-btn btn-status" onclick="checkStatus()">● cek status</button>
         <button class="worker-btn btn-start"  onclick="startWorker()">▶ start workers</button>
         <button class="worker-btn btn-stop"   onclick="stopWorker()">■ stop all</button>
     </div>
-    {{-- Hint jumlah worker yang akan dijalankan --}}
     <div class="worker-hint">
         start = 3× rfid worker + 2× positions worker (total 5 process, paralel)
     </div>
 
-    {{-- ── BACKFILL START SCANS ─────────────────────────────────── --}}
-    <div class="backfill-box">
-        <div class="section-label">⚠ backfill start scans (peserta tidak ter-detect)</div>
-        <div class="backfill-row">
-            <select class="backfill-select" id="backfillEvent">
+    {{-- ── BACKFILL START SCANS ────────────────────────────────────── --}}
+    <div class="tool-box">
+        <div class="section-label orange">⚠ backfill start scans (peserta tidak ter-detect)</div>
+        <div class="tool-row tool-row-2">
+            <select class="tool-select orange" id="backfillEvent">
                 <option value="">-- Pilih Event --</option>
                 @foreach($events as $ev)
                     <option value="{{ $ev->id }}">{{ $ev->name }}</option>
                 @endforeach
             </select>
-            <input class="backfill-input" type="number" id="backfillSpread"
+            <input class="tool-input" type="number" id="backfillSpread"
                    value="60" min="1" max="600" title="Spread waktu (detik)">
         </div>
-        <div style="color:#555; font-size:11px; margin-bottom:8px;">
-            spread = sebaran detik antar peserta yang di-backfill (default: 60)
-        </div>
-        <div class="backfill-btns">
+        <div class="tool-hint">spread = sebaran detik antar peserta yang di-backfill (default: 60)</div>
+        <div class="tool-btns">
             <button class="btn-dryrun" id="btnDryRun" onclick="runBackfill(true)">
                 🔍 dry run (preview)
             </button>
@@ -124,6 +159,39 @@
         </div>
     </div>
 
+    {{-- ── NORMALIZE FINISH TIMES ──────────────────────────────────── --}}
+    <div class="tool-box">
+        <div class="section-label blue">⏱ normalize finish times (chip & gun time kosong)</div>
+        <div class="tool-row tool-row-2">
+            <select class="tool-select blue" id="normEvent">
+                <option value="">-- Pilih Event --</option>
+                @foreach($events as $ev)
+                    <option value="{{ $ev->id }}">{{ $ev->name }}</option>
+                @endforeach
+            </select>
+            <input class="tool-input" type="number" id="normCategory"
+                   placeholder="cat ID" min="1" title="event_category_id (opsional)">
+        </div>
+        <div class="tool-hint">
+            category ID opsional — kosongkan untuk semua kategori dalam event
+        </div>
+        <div class="tool-btns three">
+            <button class="btn-norm-dry"  id="btnNormDry"   onclick="runNormalize(true, false)">
+                🔍 dry run
+            </button>
+            <button class="btn-norm-exec" id="btnNormExec"  onclick="runNormalize(false, false)">
+                ✓ eksekusi
+            </button>
+            <button class="btn-norm-force" id="btnNormForce" onclick="runNormalize(false, true)">
+                ⚡ force all
+            </button>
+        </div>
+        <div class="tool-hint" style="margin-top:8px; margin-bottom:0;">
+            <b>eksekusi</b> = hanya yang kosong &nbsp;|&nbsp; <b>force all</b> = timpa semua (recalculate ulang)
+        </div>
+    </div>
+
+    {{-- ── ARTISAN COMMANDS ────────────────────────────────────────── --}}
     <div class="section-label">artisan commands</div>
     <div class="cmd-grid">
         @foreach($commands as $cmd)
@@ -132,7 +200,6 @@
                     onclick="selectCmd(this)">{{ $cmd }}</button>
         @endforeach
     </div>
-
     <button class="run-btn" id="runBtn" onclick="runCommand()">RUN COMMAND</button>
 
     <div class="section-label">output</div>
@@ -164,6 +231,7 @@
         return res.json();
     }
 
+    // ── Artisan generic ────────────────────────────────────────────────────
     async function runCommand() {
         const p = pin(); if (!p) return;
         if (!selectedCmd) { flash('Pilih command dulu.', 'error'); return; }
@@ -182,6 +250,7 @@
         }
     }
 
+    // ── Backfill start ─────────────────────────────────────────────────────
     async function runBackfill(isDryRun) {
         const p = pin(); if (!p) return;
 
@@ -201,11 +270,7 @@
             if (!ok) return;
         }
 
-        const dryBtn = document.getElementById('btnDryRun');
-        const exeBtn = document.getElementById('btnExecute');
-        dryBtn.disabled = true;
-        exeBtn.disabled = true;
-
+        setBackfillBtns(true);
         flash(
             isDryRun
                 ? '⏳ Dry run backfill... (preview saja, tidak ada perubahan DB)'
@@ -215,20 +280,80 @@
 
         try {
             const data = await post('{{ route("artisan.runner.backfill-start") }}', {
-                pin:      p,
-                event_id: parseInt(eventId),
-                spread:   spread,
-                dry_run:  isDryRun,
+                pin: p, event_id: parseInt(eventId), spread, dry_run: isDryRun,
             });
             flash(data.output, data.success ? 'success' : 'error');
         } catch (e) {
             flash('Request gagal: ' + e.message, 'error');
         } finally {
-            dryBtn.disabled = false;
-            exeBtn.disabled = false;
+            setBackfillBtns(false);
         }
     }
 
+    function setBackfillBtns(disabled) {
+        ['btnDryRun', 'btnExecute'].forEach(id => document.getElementById(id).disabled = disabled);
+    }
+
+    // ── Normalize finish ───────────────────────────────────────────────────
+    async function runNormalize(isDryRun, isForce) {
+        const p = pin(); if (!p) return;
+
+        const eventId    = document.getElementById('normEvent').value;
+        const categoryId = document.getElementById('normCategory').value;
+
+        if (!eventId) { flash('Pilih event dulu.', 'error'); return; }
+
+        if (isForce) {
+            const ok = confirm(
+                '⚡ FORCE NORMALIZE\n\n' +
+                'Akan menghitung ulang chip_time & gun_time untuk SEMUA finisher\n' +
+                '(termasuk yang sudah ada nilainya).\n\n' +
+                'Lanjutkan?'
+            );
+            if (!ok) return;
+        } else if (!isDryRun) {
+            const ok = confirm(
+                '✓ EKSEKUSI NORMALIZE FINISH\n\n' +
+                'Akan mengisi elapsed_time & gun_elapsed_time yang masih kosong\n' +
+                'berdasarkan data start/finish dari rfid_validated_times.\n\n' +
+                'Lanjutkan?'
+            );
+            if (!ok) return;
+        }
+
+        setNormBtns(true);
+        flash(
+            isDryRun  ? '⏳ Dry run normalize finish... (preview, tidak ada perubahan DB)'
+            : isForce ? '⏳ Force normalize semua finisher...'
+                      : '⏳ Normalize finish times...',
+            'info'
+        );
+
+        try {
+            const body = {
+                pin:      p,
+                event_id: parseInt(eventId),
+                dry_run:  isDryRun,
+                force:    isForce,
+            };
+            if (categoryId) body.category_id = parseInt(categoryId);
+
+            const data = await post('{{ route("artisan.runner.normalize-finish") }}', body);
+            flash(data.output, data.success ? 'success' : 'error');
+        } catch (e) {
+            flash('Request gagal: ' + e.message, 'error');
+        } finally {
+            setNormBtns(false);
+        }
+    }
+
+    function setNormBtns(disabled) {
+        ['btnNormDry', 'btnNormExec', 'btnNormForce'].forEach(id =>
+            document.getElementById(id).disabled = disabled
+        );
+    }
+
+    // ── Worker controls ────────────────────────────────────────────────────
     async function checkStatus() {
         const p = pin(); if (!p) return;
         flash('⏳ Mengecek status...', '');

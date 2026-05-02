@@ -33,6 +33,8 @@ Route::post('/dev/artisan/start-worker', [ArtisanRunnerController::class, 'start
 Route::post('/dev/artisan/stop-worker', [ArtisanRunnerController::class, 'stopWorker'])->name('artisan.runner.stop-worker');
 Route::post('/dev/artisan/backfill-start', [ArtisanRunnerController::class, 'backfillStart'])
     ->name('artisan.runner.backfill-start');
+ Route::post('/dev/artisan/normalize-finish', [ArtisanRunnerController::class, 'normalizeFinish'])
+    ->name('artisan.runner.normalize-finish');
 
 
 Route::get('/transactions/check-payment-status', [TransactionController::class, 'checkPaymentStatus'])
