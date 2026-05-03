@@ -317,6 +317,15 @@
 
             body * { visibility: hidden; }
 
+            * {
+                -webkit-print-color-adjust: exact !important;  /* Chrome/Safari */
+                print-color-adjust: exact !important;           /* Firefox/standard */
+                color-adjust: exact !important;                 /* fallback lama */
+            }
+
+            .cert-name,
+            .cert-field { color: #FFFFFF !important; }
+
             #cert-screen,
             #cert-screen * { visibility: visible; }
 
