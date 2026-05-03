@@ -6,6 +6,8 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ArtisanRunnerController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ExportFinishController;
+use App\Http\Controllers\CertificateController;
+
 
 
 
@@ -24,6 +26,13 @@ Route::get('/events/{event:slug}/export-finish', ExportFinishController::class)
 
 Route::get('/event/{event:slug}/live/partial', [EventController::class, 'livePartial'])
     ->name('event.live.partial');
+
+Route::get('/certificate', [CertificateController::class, 'index'])
+    ->name('certificate.index');
+
+// Endpoint AJAX lookup by BIB
+Route::get('/certificate/lookup', [CertificateController::class, 'lookup'])
+    ->name('certificate.lookup');
 
 // Artisan Runner (PIN protected)
 Route::get('/dev/artisan', [ArtisanRunnerController::class, 'index'])->name('artisan.runner');
