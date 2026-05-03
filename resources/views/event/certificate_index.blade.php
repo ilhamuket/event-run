@@ -238,7 +238,7 @@
         /* Nama peserta — area merah gelap di tengah */
         .cert-name {
             position: absolute;
-            top: 30%;           /* ✅ sudah pas — dikalibrasi user */
+            top: 39%;           /* ✅ sudah pas — dikalibrasi user */
             left: 5%;
             width: 90%;
             height: 10%;
@@ -248,7 +248,7 @@
             text-align: center;
 
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(1rem, 5vw, 2.8rem);
+            font-size: clamp(1rem, 5vw, 4rem);
             color: var(--white);
             letter-spacing: .08em;
             line-height: 1.1;
@@ -291,10 +291,10 @@
         }
 
         /* ── Top tiap field (% dari tinggi cert-container) ── */
-        #cert-bib      { top: 63%;   }   /* No. BIB      */
-        #cert-category { top: 69.7%; }   /* Kategori     */
-        #cert-time     { top: 76.4%; }   /* Waktu Finish */
-        #cert-position { top: 83.1%; }   /* Posisi       */
+        #cert-bib      { top: 61.7%;   }   /* No. BIB      */
+        #cert-category { top: 67%; }   /* Kategori     */
+        #cert-time     { top: 72%; }   /* Waktu Finish */
+        #cert-position { top: 77.3%; }   /* Posisi       */
 
         /* ─── Loading Spinner ────────────────────────────────────────── */
         .spinner {
