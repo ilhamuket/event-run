@@ -2,6 +2,10 @@
     certificate/index.blade.php
     Halaman pengambilan sertifikat finisher Scoutrun 2026.
     User input No. BIB → data ditarik via AJAX → overlay sertifikat → tombol Print PDF
+
+    FIXES:
+    - Mobile PDF/Print: gunakan html2canvas → download PNG (bukan window.print yang kepotong)
+    - Story download: export JPEG (bukan PNG) + scale max 1080px + Blob URL supaya tidak crash di mobile
 --}}
 <!DOCTYPE html>
 <html lang="id">
@@ -205,6 +209,7 @@
 
         .btn-print:hover  { background: var(--maroon-dark); }
         .btn-print:active { transform: scale(.97); }
+        .btn-print:disabled { opacity: .6; cursor: not-allowed; }
 
         /* ─── Story Button ───────────────────────────────────────── */
         .btn-story {
@@ -426,7 +431,7 @@
         .btn-story-dl:hover { background: var(--maroon-dark); }
         .btn-story-dl:disabled { opacity: .5; cursor: not-allowed; }
 
-        /* ─── PRINT styles ───────────────────────────────────────────── */
+        /* ─── PRINT styles (desktop only) ───────────────────────────── */
         @media print {
             @page {
                 size: A4 portrait;
@@ -529,17 +534,18 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
             </svg>
-            Download / Print PDF
+            <span id="btn-print-label">Download / Print</span>
         </button>
     </div>
 
     <div class="cert-wrapper">
-        <div class="cert-container">
+        <div class="cert-container" id="cert-container">
             {{-- Background gambar sertifikat --}}
             <img
                 class="cert-bg"
                 src="{{ asset('assets/images/serti.png') }}"
                 alt="Sertifikat Finisher Scoutrun 2026"
+                crossorigin="anonymous"
             >
 
             {{-- Overlay: Nama peserta --}}
@@ -588,12 +594,16 @@
 
 <script>
 (function () {
+    /* ─── Deteksi mobile ─────────────────────────────────── */
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     const searchScreen = document.getElementById('search-screen');
     const certScreen   = document.getElementById('cert-screen');
     const bibInput     = document.getElementById('bib-input');
     const btnSearch    = document.getElementById('btn-search');
     const btnBack      = document.getElementById('btn-back');
     const btnPrint     = document.getElementById('btn-print');
+    const btnPrintLabel= document.getElementById('btn-print-label');
     const errorMsg     = document.getElementById('error-msg');
 
     const certName     = document.getElementById('cert-name');
@@ -601,6 +611,11 @@
     const certCategory = document.getElementById('cert-category');
     const certTime     = document.getElementById('cert-time');
     const certPosition = document.getElementById('cert-position');
+
+    /* Update label tombol print sesuai device */
+    if (btnPrintLabel) {
+        btnPrintLabel.textContent = isMobile ? 'Download PNG' : 'Download / Print PDF';
+    }
 
     /* ── Helpers ── */
     function showError(msg) {
@@ -681,10 +696,8 @@
 
     /* ── Auto-fit nama ── */
     function autoFitName() {
-        const el = certName;
-        const name = el.textContent;
-        const len  = name.length;
-
+        const el  = certName;
+        const len = el.textContent.length;
         if (len > 30) {
             el.style.fontSize = 'clamp(.8rem, 3.2vw, 1.8rem)';
         } else if (len > 20) {
@@ -694,9 +707,62 @@
         }
     }
 
-    /* ── Print ── */
-    function doPrint() {
-        window.print();
+    /* ── Print / Download ── */
+    /* FIX: Mobile pakai html2canvas → download PNG
+             Desktop tetap window.print() */
+    async function doPrint() {
+        if (isMobile) {
+            /* ── Mobile: render ke canvas → download PNG ── */
+            btnPrint.disabled   = true;
+            btnPrint.innerHTML  = '<span class="spinner"></span> Menyiapkan…';
+
+            try {
+                const container = document.getElementById('cert-container');
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false,
+                    backgroundColor: null,
+                    logging: false,
+                });
+
+                /* Export JPEG 92% — lebih kecil dari PNG */
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+                /* Pakai Blob supaya tidak crash di mobile */
+                const byteStr = atob(dataUrl.split(',')[1]);
+                const arr     = new Uint8Array(byteStr.length);
+                for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
+                const blob  = new Blob([arr], { type: 'image/jpeg' });
+                const url   = URL.createObjectURL(blob);
+
+                const name  = ((currentParticipant && currentParticipant.display_name) || 'finisher')
+                                .replace(/\s+/g, '_');
+                const link  = document.createElement('a');
+                link.download = 'sertifikat_scoutrun2026_' + name + '.jpg';
+                link.href   = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+            } catch (err) {
+                alert('Gagal membuat gambar. Silakan screenshot manual.');
+                console.error(err);
+            } finally {
+                btnPrint.disabled  = false;
+                btnPrint.innerHTML = `
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    <span id="btn-print-label">Download PNG</span>`;
+            }
+        } else {
+            /* ── Desktop: print dialog biasa ── */
+            window.print();
+        }
     }
 
     /* ── Back ── */
@@ -758,10 +824,38 @@
     storyFileInput.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) { renderStory(e.target.result); };
-        reader.readAsDataURL(file);
+
+        /* FIX: Compress foto input sebelum render kalau resolusinya raksasa */
+        compressInput(file, function(dataUrl) {
+            renderStory(dataUrl);
+        });
     });
+
+    /* ── Compress input image sebelum render ──
+       Scale down ke max 2160px agar tidak OOM saat di-draw ke canvas */
+    function compressInput(file, callback) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+                const MAX_INPUT = 2160;
+                if (img.width <= MAX_INPUT && img.height <= MAX_INPUT) {
+                    /* Tidak perlu compress, langsung pakai */
+                    callback(e.target.result);
+                    return;
+                }
+                /* Scale down */
+                const scale  = MAX_INPUT / Math.max(img.width, img.height);
+                const tmpC   = document.createElement('canvas');
+                tmpC.width   = Math.round(img.width  * scale);
+                tmpC.height  = Math.round(img.height * scale);
+                tmpC.getContext('2d').drawImage(img, 0, 0, tmpC.width, tmpC.height);
+                callback(tmpC.toDataURL('image/jpeg', 0.88));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 
     /* ── Core: render canvas 1080×1920 ── */
     async function renderStory(photoDataUrl) {
@@ -780,7 +874,7 @@
         const photo = await loadImage(photoDataUrl);
 
         /* Cover fit — foto isi penuh 9:16 */
-        const photoRatio = photo.width / photo.height;
+        const photoRatio  = photo.width / photo.height;
         const canvasRatio = W / H;
         let sx, sy, sw, sh;
         if (photoRatio > canvasRatio) {
@@ -808,7 +902,6 @@
         try {
             const logoUrl = "{{ asset('assets/images/logo/logo.png') }}";
             const logo = await loadImage(logoUrl);
-            /* Gambar logo ke temp canvas untuk tint putih */
             const tmpC = document.createElement('canvas');
             tmpC.width  = logo.width;
             tmpC.height = logo.height;
@@ -845,10 +938,10 @@
 
         /* 5 — Nama peserta */
         const name = (p.display_name || '-').toUpperCase();
-        ctx.fillStyle   = '#FFFFFF';
+        ctx.fillStyle    = '#FFFFFF';
         ctx.textBaseline = 'top';
-        const nameSize  = name.length > 18 ? 72 : name.length > 12 ? 88 : 104;
-        ctx.font        = `900 ${nameSize}px "Inter", sans-serif`;
+        const nameSize   = name.length > 18 ? 72 : name.length > 12 ? 88 : 104;
+        ctx.font         = `900 ${nameSize}px "Inter", sans-serif`;
         ctx.fillText(truncateCanvas(ctx, name, W - 160), 80, badgeY + bh + 28);
 
         /* 6 — Garis separator */
@@ -862,25 +955,23 @@
 
         /* 7 — 4 stat dalam 1 baris */
         const stats = [
-            { label: 'BIB',       value: p.bib                 || '-' },
-            { label: 'KATEGORI',  value: shortenCategory(p.category || '-') },
-            { label: 'FINISH TIME', value: p.finish_time        || '-' },
-            { label: 'POSISI',    value: (p.general_position || '-') },
+            { label: 'BIB',         value: p.bib                    || '-' },
+            { label: 'KATEGORI',    value: shortenCategory(p.category || '-') },
+            { label: 'FINISH TIME', value: p.finish_time             || '-' },
+            { label: 'POSISI',      value: (p.general_position       || '-') },
         ];
 
-        const statY   = sepY + 28;
-        const colW    = (W - 160) / stats.length;
+        const statY = sepY + 28;
+        const colW  = (W - 160) / stats.length;
 
         stats.forEach(function (s, i) {
             const cx = 80 + i * colW;
 
-            /* label kecil */
             ctx.font        = '400 28px "Inter", sans-serif';
             ctx.fillStyle   = 'rgba(255,255,255,0.48)';
             ctx.textBaseline = 'top';
             ctx.fillText(s.label, cx, statY);
 
-            /* value besar — auto-shrink font supaya muat di kolom */
             ctx.fillStyle = '#FFFFFF';
             let fontSize = 44;
             ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
@@ -890,7 +981,6 @@
             }
             ctx.fillText(s.value, cx, statY + 36);
 
-            /* divider vertikal */
             if (i > 0) {
                 ctx.strokeStyle = 'rgba(255,255,255,0.15)';
                 ctx.lineWidth   = 1;
@@ -904,25 +994,70 @@
         /* Selesai — tampilkan di preview */
         renderedCanvas = offCanvas;
 
-        /* Gambar ke preview canvas (scaled) */
         storyCanvas.width  = W;
         storyCanvas.height = H;
-        const previewCtx = storyCanvas.getContext('2d');
-        previewCtx.drawImage(offCanvas, 0, 0);
+        storyCanvas.getContext('2d').drawImage(offCanvas, 0, 0);
 
         previewWrap.style.display = 'block';
         btnStoryDl.disabled       = false;
     }
 
-    /* ── Download ── */
-    btnStoryDl.addEventListener('click', function () {
+    /* ── Download story (FIX: JPEG + Blob supaya tidak crash di mobile) ── */
+    btnStoryDl.addEventListener('click', async function () {
         if (!renderedCanvas) return;
-        const name = ((currentParticipant && currentParticipant.display_name) || 'finisher')
-                        .replace(/\s+/g, '_');
-        const link = document.createElement('a');
-        link.download = 'scoutrun2026_story_' + name + '.png';
-        link.href = renderedCanvas.toDataURL('image/png');
-        link.click();
+
+        btnStoryDl.disabled  = true;
+        btnStoryDl.innerHTML = '<span class="spinner"></span> Menyiapkan…';
+
+        try {
+            /* Scale down kalau resolusi canvas melebihi 1080px
+               (seharusnya tidak, tapi sebagai safety net) */
+            const MAX_W      = 1080;
+            let exportCanvas = renderedCanvas;
+
+            if (renderedCanvas.width > MAX_W) {
+                const scale  = MAX_W / renderedCanvas.width;
+                const scaled = document.createElement('canvas');
+                scaled.width  = MAX_W;
+                scaled.height = Math.round(renderedCanvas.height * scale);
+                scaled.getContext('2d').drawImage(renderedCanvas, 0, 0, scaled.width, scaled.height);
+                exportCanvas = scaled;
+            }
+
+            /* Export JPEG 82% — jauh lebih kecil dari PNG */
+            const dataUrl = exportCanvas.toDataURL('image/jpeg', 0.82);
+
+            /* Konversi ke Blob untuk menghindari crash di mobile
+               (data URI panjang bisa crash di beberapa browser mobile) */
+            const byteStr = atob(dataUrl.split(',')[1]);
+            const arr     = new Uint8Array(byteStr.length);
+            for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
+            const blob = new Blob([arr], { type: 'image/jpeg' });
+            const url  = URL.createObjectURL(blob);
+
+            const participantName = ((currentParticipant && currentParticipant.display_name) || 'finisher')
+                                       .replace(/\s+/g, '_');
+            const link      = document.createElement('a');
+            link.download   = 'scoutrun2026_story_' + participantName + '.jpg';
+            link.href       = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            /* Bebaskan object URL setelah beberapa detik */
+            setTimeout(() => URL.revokeObjectURL(url), 8000);
+
+        } catch (err) {
+            alert('Gagal mengunduh. Coba screenshot layar secara manual.');
+            console.error(err);
+        } finally {
+            btnStoryDl.disabled  = false;
+            btnStoryDl.innerHTML = `
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download`;
+        }
     });
 
     /* ── Utilities ── */
@@ -959,9 +1094,7 @@
     }
 
     function shortenCategory(cat) {
-        // Buang keterangan kurung "(UMUR ...)" atau "(...)
         cat = cat.replace(/\s*\(.*?\)/g, '').trim();
-        // Buang kata-kata panjang tidak penting
         cat = cat.replace(/\bUMUR\b/gi, '').trim();
         return cat;
     }
