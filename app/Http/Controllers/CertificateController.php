@@ -64,13 +64,11 @@ class CertificateController extends Controller
                 return null;
             }
 
-            // Gunakan gun_elapsed_time kalau kategori pakai gun time, fallback ke chip time
-            $useGunTime  = $participant->category_gun_time !== null && $participant->gun_elapsed_time !== null;
-            $finishTime  = $useGunTime
+         $finishTime = $participant->elapsed_time
+            ? \Carbon\Carbon::parse($participant->elapsed_time)->format('H:i:s')
+            : ($participant->gun_elapsed_time
                 ? \Carbon\Carbon::parse($participant->gun_elapsed_time)->format('H:i:s')
-                : ($participant->elapsed_time
-                    ? \Carbon\Carbon::parse($participant->elapsed_time)->format('H:i:s')
-                    : null);
+                : null);
 
             // Potong nama panjang agar aman di sertifikat (maks 40 karakter tampilan)
             $displayName = mb_strtoupper(trim($participant->display_name));
