@@ -881,9 +881,9 @@
             ctx.fillText(s.label, cx, statY);
 
             /* value besar */
-            ctx.font        = '700 58px "Inter", sans-serif';
+            ctx.font        = '700 44px "Inter", sans-serif';
             ctx.fillStyle   = '#FFFFFF';
-            ctx.fillText(truncateCanvas(ctx, s.value, colW - 20), cx, statY + 36);
+            ctx.fillText(truncateCanvas(ctx, s.value, colW - 24), cx, statY + 36);
 
             /* divider vertikal */
             if (i > 0) {
