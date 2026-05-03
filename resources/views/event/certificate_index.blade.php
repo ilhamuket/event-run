@@ -863,9 +863,9 @@
         /* 7 — 4 stat dalam 1 baris */
         const stats = [
             { label: 'BIB',       value: p.bib                 || '-' },
-            { label: 'KATEGORI',  value: (p.category           || '-').substring(0, 10) },
+            { label: 'KATEGORI',  value: shortenCategory(p.category || '-') },
             { label: 'FINISH TIME', value: p.finish_time        || '-' },
-            { label: 'POSISI',    value: '#' + (p.general_position || '-') },
+            { label: 'POSISI',    value: (p.general_position || '-') },
         ];
 
         const statY   = sepY + 28;
@@ -951,6 +951,14 @@
             text = text.slice(0, -1);
         }
         return text + '…';
+    }
+
+    function shortenCategory(cat) {
+        // Buang keterangan kurung "(UMUR ...)" atau "(...)
+        cat = cat.replace(/\s*\(.*?\)/g, '').trim();
+        // Buang kata-kata panjang tidak penting
+        cat = cat.replace(/\bUMUR\b/gi, '').trim();
+        return cat;
     }
 
 })();
