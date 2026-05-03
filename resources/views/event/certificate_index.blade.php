@@ -880,10 +880,15 @@
             ctx.textBaseline = 'top';
             ctx.fillText(s.label, cx, statY);
 
-            /* value besar */
-            ctx.font        = '700 44px "Inter", sans-serif';
-            ctx.fillStyle   = '#FFFFFF';
-            ctx.fillText(truncateCanvas(ctx, s.value, colW - 24), cx, statY + 36);
+            /* value besar — auto-shrink font supaya muat di kolom */
+            ctx.fillStyle = '#FFFFFF';
+            let fontSize = 44;
+            ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
+            while (fontSize > 24 && ctx.measureText(s.value).width > colW - 20) {
+                fontSize -= 2;
+                ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
+            }
+            ctx.fillText(s.value, cx, statY + 36);
 
             /* divider vertikal */
             if (i > 0) {
