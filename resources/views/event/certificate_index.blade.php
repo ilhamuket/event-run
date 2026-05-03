@@ -406,7 +406,7 @@
             {{-- Background gambar sertifikat --}}
             <img
                 class="cert-bg"
-                src="{{ asset('images/seritifikat.png') }}"
+                src="{{ asset('assets/images/serti.png') }}"
                 alt="Sertifikat Finisher Scoutrun 2026"
             >
 
