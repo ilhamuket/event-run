@@ -238,8 +238,7 @@
         /* Nama peserta — area merah gelap di tengah */
         .cert-name {
             position: absolute;
-            /* Sesuaikan top/left/width ini dengan posisi kotak merah di sertifikat */
-            top: 26.5%;
+            top: 30%;           /* ✅ sudah pas — dikalibrasi user */
             left: 5%;
             width: 90%;
             height: 10%;
@@ -254,31 +253,35 @@
             letter-spacing: .08em;
             line-height: 1.1;
 
-            /* Safety: jangan overflow */
             overflow: hidden;
             word-break: break-word;
             padding: 0 1rem;
         }
 
-        /* 4 field data di bawah */
+        /*
+         * ─── 4 Field data — masing-masing absolute ───────────────────
+         * Tiap field punya top sendiri sehingga tidak bergantung satu sama lain.
+         * Jarak antar field di sertifikat ≈ 6.7%
+         * → Kalau mau geser semua sekaligus, cukup tambah/kurangi semua top sama rata.
+         */
         .cert-fields {
             position: absolute;
-            top: 55%;           /* mulai dari row pertama field */
-            left: 47%;          /* kolom kanan (setelah label) */
-            width: 47%;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
+            inset: 0;
+            pointer-events: none;
         }
 
         .cert-field {
-            height: 7%;          /* tinggi tiap baris field */
+            position: absolute;
+            left: 47%;
+            width: 47%;
+            height: 5.5%;
+
             display: flex;
             align-items: center;
             justify-content: center;
 
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(.75rem, 3vw, 1.6rem);
+            font-size: clamp(.75rem, 2.8vw, 1.55rem);
             color: var(--white);
             letter-spacing: .06em;
             overflow: hidden;
@@ -287,10 +290,11 @@
             padding: 0 .75rem;
         }
 
-        /* gap antar field — sesuaikan dengan jarak baris di gambar */
-        .cert-field:not(:last-child) {
-            margin-bottom: 1.2%;
-        }
+        /* ── Top tiap field (% dari tinggi cert-container) ── */
+        #cert-bib      { top: 63%;   }   /* No. BIB      */
+        #cert-category { top: 69.7%; }   /* Kategori     */
+        #cert-time     { top: 76.4%; }   /* Waktu Finish */
+        #cert-position { top: 83.1%; }   /* Posisi       */
 
         /* ─── Loading Spinner ────────────────────────────────────────── */
         .spinner {
@@ -402,7 +406,7 @@
             {{-- Background gambar sertifikat --}}
             <img
                 class="cert-bg"
-                src="{{ asset('assets/images/serti.png') }}"
+                src="{{ asset('images/seritifikat.png') }}"
                 alt="Sertifikat Finisher Scoutrun 2026"
             >
 
