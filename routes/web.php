@@ -7,6 +7,7 @@ use App\Http\Controllers\ArtisanRunnerController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ExportFinishController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\FinishTimeController;
 
 
 
@@ -33,6 +34,9 @@ Route::get('/certificate', [CertificateController::class, 'index'])
 // Endpoint AJAX lookup by BIB
 Route::get('/certificate/lookup', [CertificateController::class, 'lookup'])
     ->name('certificate.lookup');
+
+Route::post('/admin/finish-time', [FinishTimeController::class, 'update'])
+    ->name('admin.finish-time.update');
 
 // Artisan Runner (PIN protected)
 Route::get('/dev/artisan', [ArtisanRunnerController::class, 'index'])->name('artisan.runner');
