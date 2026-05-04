@@ -227,7 +227,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <button
-                            onclick="openPinModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
+                           onclick="openEditModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
                             class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -354,7 +354,7 @@
                         </td>
                         <td class="px-5 py-3 text-center">
                             <button
-                                onclick="openPinModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
+                                onclick="openEditModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
                                 class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition active:scale-95">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -385,7 +385,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <button
-                            onclick="openPinModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
+                            onclick="openEditModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
                             class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -442,6 +442,7 @@
     function showModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
     function hideModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
+    // ── EDIT MODAL ────────────────────────────────────────────
     window.openEditModal = function (bib, name) {
         pendingBib  = bib;
         pendingName = name;
@@ -455,24 +456,34 @@
 
     window.closeEditModal = function () { hideModal('edit-modal'); };
 
+    // ── Input: cukup ketik 6 digit, otomatis jadi HH:MM:SS ───
     const elapsedInput = document.getElementById('edit-elapsed');
 
     elapsedInput?.addEventListener('keydown', function (e) {
+        // Jangan sampai bubble ke parent/document
+        e.stopPropagation();
+
         if (e.key === 'Enter') {
             e.preventDefault();
             window.submitEditTime();
             return;
         }
+        // Blokir semua kecuali digit dan tombol navigasi/edit
         const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
         if (!/^\d$/.test(e.key) && !allowed.includes(e.key) && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
         }
     });
 
+    elapsedInput?.addEventListener('keyup',  e => e.stopPropagation());
+    elapsedInput?.addEventListener('keypress', e => e.stopPropagation());
+
     elapsedInput?.addEventListener('input', function () {
-        const pos    = this.selectionStart ?? 0;
+        // Ambil hanya digit, max 6
         const digits = this.value.replace(/\D/g, '').slice(0, 6);
 
+        // Pad kiri dengan 0 supaya selalu 6 digit saat format
+        // tapi hanya format kalau sudah >= 1 digit
         let formatted = digits;
         if (digits.length > 4) {
             formatted = digits.slice(0, 2) + ':' + digits.slice(2, 4) + ':' + digits.slice(4);
@@ -482,11 +493,12 @@
 
         this.value = formatted;
 
-        let newPos = pos;
-        if (pos === 2 || pos === 5) newPos = pos + 1;
-        try { this.setSelectionRange(newPos, newPos); } catch (_) {}
+        // Tempatkan cursor di akhir
+        const len = formatted.length;
+        try { this.setSelectionRange(len, len); } catch (_) {}
     });
 
+    // ── Validasi & submit ─────────────────────────────────────
     function parseTime(str) {
         const match = str.trim().match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
         if (!match) return null;
@@ -504,7 +516,7 @@
         errEl.classList.add('hidden');
 
         if (!parseTime(elapsed)) {
-            errEl.textContent = 'Format tidak valid. Gunakan HH:MM:SS, contoh: 00:17:00';
+            errEl.textContent = 'Format tidak valid. Gunakan 6 digit, contoh: 001700 → 00:17:00';
             errEl.classList.remove('hidden');
             return;
         }
@@ -541,14 +553,15 @@
         });
     };
 
-    // Backdrop click — hanya tutup kalau klik tepat di overlay, bukan di dalam box
+    // ── Backdrop: tutup hanya kalau klik tepat di overlay ─────
     document.getElementById('edit-modal')?.addEventListener('click', function (e) {
         if (e.target === this) window.closeEditModal();
     });
 
-    // Cegah klik dalam box bubble ke overlay
-    document.getElementById('edit-modal-box')?.addEventListener('click', function (e) {
-        e.stopPropagation();
+    // ── Box: cegah semua event bubble ke overlay ──────────────
+    const box = document.getElementById('edit-modal-box');
+    ['click', 'keydown', 'keyup', 'keypress'].forEach(ev => {
+        box?.addEventListener(ev, e => e.stopPropagation());
     });
 
 })();
