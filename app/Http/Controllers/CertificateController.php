@@ -9,19 +9,11 @@ use Illuminate\Support\Facades\DB;
 
 class CertificateController extends Controller
 {
-    /**
-     * Halaman pencarian sertifikat — user input BIB number
-     * GET /certificate
-     */
     public function index()
     {
         return view('event.certificate_index');
     }
 
-    /**
-     * Lookup peserta berdasarkan BIB — dipanggil via AJAX
-     * GET /certificate/lookup?bib=1234
-     */
     public function lookup(Request $request)
     {
         $bib = trim($request->query('bib', ''));
@@ -33,7 +25,6 @@ class CertificateController extends Controller
             ], 400);
         }
 
-        // Cache 60 detik per BIB — kurangi hit DB saat banyak yang akses
         $cacheKey = "certificate:bib:{$bib}";
 
         $data = Cache::remember($cacheKey, 60, function () use ($bib) {
@@ -47,7 +38,8 @@ class CertificateController extends Controller
                     p.gun_elapsed_time,
                     p.general_position,
                     p.category_position,
-                    ec.name  AS category_name,
+                    p.event_category_id,
+                    ec.name AS category_name,
                     ec.gun_time AS category_gun_time
                 FROM participants p
                 LEFT JOIN event_categories ec ON ec.id = p.event_category_id
@@ -64,16 +56,44 @@ class CertificateController extends Controller
                 return null;
             }
 
-         $finishTime = $participant->elapsed_time
-            ? \Carbon\Carbon::parse($participant->elapsed_time)->format('H:i:s')
-            : ($participant->gun_elapsed_time
-                ? \Carbon\Carbon::parse($participant->gun_elapsed_time)->format('H:i:s')
-                : null);
+            // Hitung total finisher overall
+            $totalOverall = Cache::remember('certificate:total_overall', 300, function () {
+                return DB::table('participants')
+                    ->whereNotNull('general_position')
+                    ->whereExists(function ($q) {
+                        $q->from('transactions')
+                          ->whereColumn('transactions.participant_id', 'participants.id')
+                          ->where('transactions.status', 'PAID');
+                    })
+                    ->count();
+            });
 
-            // Potong nama panjang agar aman di sertifikat (maks 40 karakter tampilan)
+            // Hitung total finisher kategori yang sama
+            $totalCategory = Cache::remember(
+                'certificate:total_category:' . $participant->event_category_id,
+                300,
+                function () use ($participant) {
+                    return DB::table('participants')
+                        ->where('event_category_id', $participant->event_category_id)
+                        ->whereNotNull('category_position')
+                        ->whereExists(function ($q) {
+                            $q->from('transactions')
+                              ->whereColumn('transactions.participant_id', 'participants.id')
+                              ->where('transactions.status', 'PAID');
+                        })
+                        ->count();
+                }
+            );
+
+            $finishTime = $participant->elapsed_time
+                ? \Carbon\Carbon::parse($participant->elapsed_time)->format('H:i:s')
+                : ($participant->gun_elapsed_time
+                    ? \Carbon\Carbon::parse($participant->gun_elapsed_time)->format('H:i:s')
+                    : null);
+
             $displayName = mb_strtoupper(trim($participant->display_name));
             if (mb_strlen($displayName) > 40) {
-                $displayName = mb_substr($displayName, 0, 40) . '…';
+                $displayName = mb_substr($displayName, 0, 40) . '...';
             }
 
             return [
@@ -82,10 +102,10 @@ class CertificateController extends Controller
                 'category'          => $participant->category_name ?? '-',
                 'finish_time'       => $finishTime ?? '-',
                 'general_position'  => $participant->general_position
-                                        ? '#' . $participant->general_position
+                                        ? $participant->general_position . ' / ' . $totalOverall
                                         : '-',
                 'category_position' => $participant->category_position
-                                        ? '#' . $participant->category_position
+                                        ? $participant->category_position . ' / ' . $totalCategory
                                         : '-',
             ];
         });

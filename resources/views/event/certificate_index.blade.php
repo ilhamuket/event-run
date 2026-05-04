@@ -7,6 +7,7 @@
     - Mobile PDF/Print: gunakan html2canvas → download PNG (bukan window.print yang kepotong)
     - Story download: export JPEG (bukan PNG) + scale max 1080px + Blob URL supaya tidak crash di mobile
     - Added: cert-cat-position field (CATEGORY POSITION) sesuai desain sertifikat
+    - Format posisi: "1 / 200" (overall & category position)
 --}}
 <!DOCTYPE html>
 <html lang="id">
@@ -297,9 +298,10 @@
             justify-content: center;
 
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(.75rem, 2.8vw, 1.55rem);
+            /* Sedikit diperkecil agar "1 / 200" muat tanpa ellipsis */
+            font-size: clamp(.65rem, 2.4vw, 1.35rem);
             color: var(--white);
-            letter-spacing: .06em;
+            letter-spacing: .04em;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -641,6 +643,7 @@
         }
     }
 
+    /* safeText: untuk posisi tidak perlu maxLen ketat karena format "1 / 200" sudah pendek */
     function safeText(text, maxLen = 30) {
         if (!text || text === '-') return '-';
         text = String(text).trim();
@@ -671,12 +674,13 @@
 
             const p = json.participant;
 
-            /* Isi overlay sertifikat — 4 field sesuai desain */
-            certName.textContent        = p.display_name        || '-';
+            /* Isi overlay sertifikat — 4 field sesuai desain
+               general_position & category_position sudah berformat "1 / 200" dari server */
+            certName.textContent        = p.display_name     || '-';
             certCategory.textContent    = safeText(p.category, 25);
-            certTime.textContent        = p.finish_time          || '-';
-            certPosition.textContent    = p.general_position     || '-';
-            certCatPosition.textContent = p.category_position    || '-';
+            certTime.textContent        = p.finish_time       || '-';
+            certPosition.textContent    = p.general_position  || '-';
+            certCatPosition.textContent = p.category_position || '-';
 
             /* Simpan untuk story */
             currentParticipant = p;
@@ -711,11 +715,8 @@
     }
 
     /* ── Print / Download ── */
-    /* FIX: Mobile pakai html2canvas → download PNG
-             Desktop tetap window.print() */
     async function doPrint() {
         if (isMobile) {
-            /* ── Mobile: render ke canvas → download PNG ── */
             btnPrint.disabled  = true;
             btnPrint.innerHTML = '<span class="spinner"></span> Menyiapkan…';
 
@@ -729,10 +730,8 @@
                     logging: false,
                 });
 
-                /* Export JPEG 92% — lebih kecil dari PNG */
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
-                /* Pakai Blob supaya tidak crash di mobile */
                 const byteStr = atob(dataUrl.split(',')[1]);
                 const arr     = new Uint8Array(byteStr.length);
                 for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
@@ -763,7 +762,6 @@
                     <span id="btn-print-label">Download PNG</span>`;
             }
         } else {
-            /* ── Desktop: print dialog biasa ── */
             window.print();
         }
     }
@@ -777,7 +775,7 @@
         bibInput.focus();
     }
 
-    /* ── Events (sertifikat) ── */
+    /* ── Events ── */
     btnSearch.addEventListener('click', doSearch);
     btnBack.addEventListener('click', doBack);
     btnPrint.addEventListener('click', doPrint);
@@ -791,13 +789,11 @@
     });
 
     /* ════════════════════════════════════════════════
-       STORY IG — Canvas overlay langsung (tanpa html2canvas)
-       Gambar peserta jadi background,
-       overlay data + logo digambar via Canvas 2D API.
+       STORY IG
     ════════════════════════════════════════════════ */
 
     let currentParticipant = null;
-    let renderedCanvas     = null;   // hasil render siap download
+    let renderedCanvas     = null;
 
     const storyModal     = document.getElementById('story-modal');
     const storyFileInput = document.getElementById('story-file-input');
@@ -807,7 +803,6 @@
     const btnStoryCancel = document.getElementById('btn-story-cancel');
     const btnStoryDl     = document.getElementById('btn-story-dl');
 
-    /* Buka modal */
     btnStory.addEventListener('click', function () {
         storyModal.classList.add('open');
         storyFileInput.value      = '';
@@ -816,26 +811,20 @@
         renderedCanvas            = null;
     });
 
-    /* Tutup modal */
     btnStoryCancel.addEventListener('click', closeModal);
     storyModal.addEventListener('click', function (e) {
         if (e.target === storyModal) closeModal();
     });
     function closeModal() { storyModal.classList.remove('open'); }
 
-    /* Pilih foto → render langsung */
     storyFileInput.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
-
-        /* FIX: Compress foto input sebelum render kalau resolusinya raksasa */
         compressInput(file, function(dataUrl) {
             renderStory(dataUrl);
         });
     });
 
-    /* ── Compress input image sebelum render ──
-       Scale down ke max 2160px agar tidak OOM saat di-draw ke canvas */
     function compressInput(file, callback) {
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -843,11 +832,9 @@
             img.onload = function () {
                 const MAX_INPUT = 2160;
                 if (img.width <= MAX_INPUT && img.height <= MAX_INPUT) {
-                    /* Tidak perlu compress, langsung pakai */
                     callback(e.target.result);
                     return;
                 }
-                /* Scale down */
                 const scale  = MAX_INPUT / Math.max(img.width, img.height);
                 const tmpC   = document.createElement('canvas');
                 tmpC.width   = Math.round(img.width  * scale);
@@ -860,23 +847,19 @@
         reader.readAsDataURL(file);
     }
 
-    /* ── Core: render canvas 1080×1920 ── */
     async function renderStory(photoDataUrl) {
         if (!currentParticipant) return;
 
         const W = 1080, H = 1920;
         const p = currentParticipant;
 
-        /* Buat canvas off-screen resolusi penuh */
         const offCanvas  = document.createElement('canvas');
         offCanvas.width  = W;
         offCanvas.height = H;
         const ctx = offCanvas.getContext('2d');
 
-        /* 1 — Load foto peserta */
         const photo = await loadImage(photoDataUrl);
 
-        /* Cover fit — foto isi penuh 9:16 */
         const photoRatio  = photo.width / photo.height;
         const canvasRatio = W / H;
         let sx, sy, sw, sh;
@@ -893,7 +876,6 @@
         }
         ctx.drawImage(photo, sx, sy, sw, sh, 0, 0, W, H);
 
-        /* 2 — Gradient gelap di bawah biar teks terbaca */
         const grad = ctx.createLinearGradient(0, H * 0.45, 0, H);
         grad.addColorStop(0,   'rgba(0,0,0,0)');
         grad.addColorStop(0.4, 'rgba(0,0,0,0.55)');
@@ -901,7 +883,6 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H);
 
-        /* 3 — Logo (putih, sudut kiri bawah) */
         try {
             const logoUrl = "{{ asset('assets/images/logo/logo.png') }}";
             const logo = await loadImage(logoUrl);
@@ -921,9 +902,8 @@
             ctx.globalAlpha = 0.88;
             ctx.drawImage(tmpC, logoX, logoY, logoW, logoH);
             ctx.globalAlpha = 1;
-        } catch (_) { /* logo gagal load — skip */ }
+        } catch (_) {}
 
-        /* 4 — Badge FINISHER */
         const badgeY = H - 390;
         ctx.font      = 'bold 38px "Inter", sans-serif';
         ctx.fillStyle = '#C9A84C';
@@ -939,7 +919,6 @@
         ctx.textBaseline = 'middle';
         ctx.fillText(badgeLabel, bx + padX, badgeY + bh / 2);
 
-        /* 5 — Nama peserta */
         const name = (p.display_name || '-').toUpperCase();
         ctx.fillStyle    = '#FFFFFF';
         ctx.textBaseline = 'top';
@@ -947,7 +926,6 @@
         ctx.font         = `900 ${nameSize}px "Inter", sans-serif`;
         ctx.fillText(truncateCanvas(ctx, name, W - 160), 80, badgeY + bh + 28);
 
-        /* 6 — Garis separator */
         const sepY = badgeY + bh + 28 + nameSize + 32;
         ctx.strokeStyle = 'rgba(255,255,255,0.25)';
         ctx.lineWidth   = 1.5;
@@ -956,7 +934,7 @@
         ctx.lineTo(W - 80, sepY);
         ctx.stroke();
 
-        /* 7 — 4 stat dalam 1 baris (termasuk category position) */
+        /* Stats — general_position & category_position sudah "1 / 200" dari server */
         const stats = [
             { label: 'KATEGORI',    value: shortenCategory(p.category  || '-') },
             { label: 'FINISH TIME', value: p.finish_time                || '-'  },
@@ -978,7 +956,8 @@
             ctx.fillStyle = '#FFFFFF';
             let fontSize = 44;
             ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
-            while (fontSize > 24 && ctx.measureText(s.value).width > colW - 20) {
+            /* Auto shrink — penting untuk format "1 / 200" yang lebih lebar */
+            while (fontSize > 20 && ctx.measureText(s.value).width > colW - 20) {
                 fontSize -= 2;
                 ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
             }
@@ -994,7 +973,6 @@
             }
         });
 
-        /* Selesai — tampilkan di preview */
         renderedCanvas = offCanvas;
 
         storyCanvas.width  = W;
@@ -1005,7 +983,6 @@
         btnStoryDl.disabled       = false;
     }
 
-    /* ── Download story (FIX: JPEG + Blob supaya tidak crash di mobile) ── */
     btnStoryDl.addEventListener('click', async function () {
         if (!renderedCanvas) return;
 
@@ -1013,8 +990,6 @@
         btnStoryDl.innerHTML = '<span class="spinner"></span> Menyiapkan…';
 
         try {
-            /* Scale down kalau resolusi canvas melebihi 1080px
-               (seharusnya tidak, tapi sebagai safety net) */
             const MAX_W      = 1080;
             let exportCanvas = renderedCanvas;
 
@@ -1027,11 +1002,8 @@
                 exportCanvas = scaled;
             }
 
-            /* Export JPEG 82% — jauh lebih kecil dari PNG */
             const dataUrl = exportCanvas.toDataURL('image/jpeg', 0.82);
 
-            /* Konversi ke Blob untuk menghindari crash di mobile
-               (data URI panjang bisa crash di beberapa browser mobile) */
             const byteStr = atob(dataUrl.split(',')[1]);
             const arr     = new Uint8Array(byteStr.length);
             for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
@@ -1047,7 +1019,6 @@
             link.click();
             document.body.removeChild(link);
 
-            /* Bebaskan object URL setelah beberapa detik */
             setTimeout(() => URL.revokeObjectURL(url), 8000);
 
         } catch (err) {
