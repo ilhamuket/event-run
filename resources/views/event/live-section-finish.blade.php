@@ -175,12 +175,12 @@
                         </td>
                         @if($hasGunTime)
                             <td class="px-5 py-3 text-center">
-                                <div class="font-mono text-base font-bold text-red-800">
+                                <div class="font-mono text-base font-medium text-gray-400">
                                     {{ $item['participant']->formatted_gun_elapsed_time ?? '-' }}
                                 </div>
                             </td>
                             <td class="px-5 py-3 text-center">
-                                <div class="font-mono text-sm font-medium text-gray-400">
+                                <div class="font-mono text-sm font-bold text-red-800">
                                     {{ $item['validated_time']->formatted_elapsed_time ?? $item['participant']->formatted_elapsed_time ?? '-' }}
                                 </div>
                             </td>
