@@ -6,6 +6,7 @@
     FIXES:
     - Mobile PDF/Print: gunakan html2canvas → download PNG (bukan window.print yang kepotong)
     - Story download: export JPEG (bukan PNG) + scale max 1080px + Blob URL supaya tidak crash di mobile
+    - Added: cert-cat-position field (CATEGORY POSITION) sesuai desain sertifikat
 --}}
 <!DOCTYPE html>
 <html lang="id">
@@ -305,10 +306,11 @@
             padding: 0 .75rem;
         }
 
-        #cert-bib      { top: 61.7%;   }
-        #cert-category { top: 67%;     }
-        #cert-time     { top: 72%;     }
-        #cert-position { top: 77.3%;   }
+        /* 4 field sesuai desain: COURSE, FINISH TIME, OVERALL POSITION, CATEGORY POSITION */
+        #cert-category     { top: 61.7%; }
+        #cert-time         { top: 67%;   }
+        #cert-position     { top: 72%;   }
+        #cert-cat-position { top: 77.3%; }
 
         /* ─── Loading Spinner ────────────────────────────────────────── */
         .spinner {
@@ -543,7 +545,7 @@
             {{-- Background gambar sertifikat --}}
             <img
                 class="cert-bg"
-                src="{{ asset('assets/images/serti.png') }}"
+                src="{{ asset('assets/images/serti2.png') }}"
                 alt="Sertifikat Finisher Scoutrun 2026"
                 crossorigin="anonymous"
             >
@@ -551,12 +553,13 @@
             {{-- Overlay: Nama peserta --}}
             <div class="cert-name" id="cert-name">-</div>
 
-            {{-- Overlay: 4 field data --}}
+            {{-- Overlay: 4 field data sesuai desain sertifikat --}}
+            {{-- COURSE | FINISH TIME | OVERALL POSITION | CATEGORY POSITION --}}
             <div class="cert-fields">
-                <div class="cert-field" id="cert-bib">-</div>
                 <div class="cert-field" id="cert-category">-</div>
                 <div class="cert-field" id="cert-time">-</div>
                 <div class="cert-field" id="cert-position">-</div>
+                <div class="cert-field" id="cert-cat-position">-</div>
             </div>
         </div>
     </div>
@@ -597,20 +600,20 @@
     /* ─── Deteksi mobile ─────────────────────────────────── */
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    const searchScreen = document.getElementById('search-screen');
-    const certScreen   = document.getElementById('cert-screen');
-    const bibInput     = document.getElementById('bib-input');
-    const btnSearch    = document.getElementById('btn-search');
-    const btnBack      = document.getElementById('btn-back');
-    const btnPrint     = document.getElementById('btn-print');
-    const btnPrintLabel= document.getElementById('btn-print-label');
-    const errorMsg     = document.getElementById('error-msg');
+    const searchScreen    = document.getElementById('search-screen');
+    const certScreen      = document.getElementById('cert-screen');
+    const bibInput        = document.getElementById('bib-input');
+    const btnSearch       = document.getElementById('btn-search');
+    const btnBack         = document.getElementById('btn-back');
+    const btnPrint        = document.getElementById('btn-print');
+    const btnPrintLabel   = document.getElementById('btn-print-label');
+    const errorMsg        = document.getElementById('error-msg');
 
-    const certName     = document.getElementById('cert-name');
-    const certBib      = document.getElementById('cert-bib');
-    const certCategory = document.getElementById('cert-category');
-    const certTime     = document.getElementById('cert-time');
-    const certPosition = document.getElementById('cert-position');
+    const certName        = document.getElementById('cert-name');
+    const certCategory    = document.getElementById('cert-category');
+    const certTime        = document.getElementById('cert-time');
+    const certPosition    = document.getElementById('cert-position');
+    const certCatPosition = document.getElementById('cert-cat-position');
 
     /* Update label tombol print sesuai device */
     if (btnPrintLabel) {
@@ -619,7 +622,7 @@
 
     /* ── Helpers ── */
     function showError(msg) {
-        errorMsg.textContent = msg;
+        errorMsg.textContent   = msg;
         errorMsg.style.display = 'block';
     }
 
@@ -630,8 +633,8 @@
 
     function setLoading(loading) {
         if (loading) {
-            btnSearch.disabled    = true;
-            btnSearch.innerHTML   = '<span class="spinner"></span>';
+            btnSearch.disabled  = true;
+            btnSearch.innerHTML = '<span class="spinner"></span>';
         } else {
             btnSearch.disabled    = false;
             btnSearch.textContent = 'Cari';
@@ -668,12 +671,12 @@
 
             const p = json.participant;
 
-            /* Isi overlay sertifikat */
-            certName.textContent     = p.display_name || '-';
-            certBib.textContent      = p.bib           || '-';
-            certCategory.textContent = safeText(p.category, 25);
-            certTime.textContent     = p.finish_time   || '-';
-            certPosition.textContent = p.general_position || '-';
+            /* Isi overlay sertifikat — 4 field sesuai desain */
+            certName.textContent        = p.display_name        || '-';
+            certCategory.textContent    = safeText(p.category, 25);
+            certTime.textContent        = p.finish_time          || '-';
+            certPosition.textContent    = p.general_position     || '-';
+            certCatPosition.textContent = p.category_position    || '-';
 
             /* Simpan untuk story */
             currentParticipant = p;
@@ -713,8 +716,8 @@
     async function doPrint() {
         if (isMobile) {
             /* ── Mobile: render ke canvas → download PNG ── */
-            btnPrint.disabled   = true;
-            btnPrint.innerHTML  = '<span class="spinner"></span> Menyiapkan…';
+            btnPrint.disabled  = true;
+            btnPrint.innerHTML = '<span class="spinner"></span> Menyiapkan…';
 
             try {
                 const container = document.getElementById('cert-container');
@@ -807,10 +810,10 @@
     /* Buka modal */
     btnStory.addEventListener('click', function () {
         storyModal.classList.add('open');
-        storyFileInput.value = '';
+        storyFileInput.value      = '';
         previewWrap.style.display = 'none';
-        btnStoryDl.disabled = true;
-        renderedCanvas = null;
+        btnStoryDl.disabled       = true;
+        renderedCanvas            = null;
     });
 
     /* Tutup modal */
@@ -865,7 +868,7 @@
         const p = currentParticipant;
 
         /* Buat canvas off-screen resolusi penuh */
-        const offCanvas = document.createElement('canvas');
+        const offCanvas  = document.createElement('canvas');
         offCanvas.width  = W;
         offCanvas.height = H;
         const ctx = offCanvas.getContext('2d');
@@ -953,12 +956,12 @@
         ctx.lineTo(W - 80, sepY);
         ctx.stroke();
 
-        /* 7 — 4 stat dalam 1 baris */
+        /* 7 — 4 stat dalam 1 baris (termasuk category position) */
         const stats = [
-            { label: 'BIB',         value: p.bib                    || '-' },
-            { label: 'KATEGORI',    value: shortenCategory(p.category || '-') },
-            { label: 'FINISH TIME', value: p.finish_time             || '-' },
-            { label: 'POSISI',      value: (p.general_position       || '-') },
+            { label: 'KATEGORI',    value: shortenCategory(p.category  || '-') },
+            { label: 'FINISH TIME', value: p.finish_time                || '-'  },
+            { label: 'OVERALL',     value: p.general_position           || '-'  },
+            { label: 'CAT. POS',    value: p.category_position          || '-'  },
         ];
 
         const statY = sepY + 28;
@@ -967,8 +970,8 @@
         stats.forEach(function (s, i) {
             const cx = 80 + i * colW;
 
-            ctx.font        = '400 28px "Inter", sans-serif';
-            ctx.fillStyle   = 'rgba(255,255,255,0.48)';
+            ctx.font         = '400 28px "Inter", sans-serif';
+            ctx.fillStyle    = 'rgba(255,255,255,0.48)';
             ctx.textBaseline = 'top';
             ctx.fillText(s.label, cx, statY);
 
@@ -1037,9 +1040,9 @@
 
             const participantName = ((currentParticipant && currentParticipant.display_name) || 'finisher')
                                        .replace(/\s+/g, '_');
-            const link      = document.createElement('a');
-            link.download   = 'scoutrun2026_story_' + participantName + '.jpg';
-            link.href       = url;
+            const link    = document.createElement('a');
+            link.download = 'scoutrun2026_story_' + participantName + '.jpg';
+            link.href     = url;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
