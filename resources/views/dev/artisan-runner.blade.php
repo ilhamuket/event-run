@@ -238,6 +238,34 @@
         </div>
     </div>
 
+    {{-- ── NORMALIZE POSITIONS ────────────────────────────────────── --}}
+    <div class="tool-box">
+        <div class="section-label" style="color:#f59342;">🏅 normalize positions (category & general position)</div>
+        <div class="tool-row tool-row-2">
+            <select class="tool-select" id="normPosEvent" style="border-color:#333;">
+                <option value="">-- Pilih Event --</option>
+                @foreach($events as $ev)
+                    <option value="{{ $ev->id }}">{{ $ev->name }}</option>
+                @endforeach
+            </select>
+            <input class="tool-input" type="number" id="normPosCategory"
+                placeholder="cat ID" min="1" title="event_category_id (opsional)">
+        </div>
+        <div class="tool-hint">
+            Menghitung ulang category_position &amp; general_position dari chip time
+            (validated finish − validated start). NULL chip time → posisi paling belakang.
+            Aman dijalankan berkali-kali.
+        </div>
+        <div class="tool-btns">
+            <button class="btn-dryrun" id="btnNormPosDry" onclick="runNormalizePositions(true)">
+                🔍 dry run (preview)
+            </button>
+            <button class="btn-execute" id="btnNormPosExec" onclick="runNormalizePositions(false)">
+                ✓ eksekusi
+            </button>
+        </div>
+    </div>
+
     {{-- ── ARTISAN COMMANDS ────────────────────────────────────────── --}}
     <div class="section-label">artisan commands</div>
     <div class="cmd-grid">
@@ -477,6 +505,59 @@
         const el = document.getElementById('output');
         el.className = 'output' + (type ? ' ' + type : '');
         el.textContent = text;
+    }
+
+        // ── Normalize positions ────────────────────────────────────────────────
+    async function runNormalizePositions(isDryRun) {
+        const p = pin(); if (!p) return;
+
+        const eventId    = document.getElementById('normPosEvent').value;
+        const categoryId = document.getElementById('normPosCategory').value;
+
+        if (!eventId) { flash('Pilih event dulu.', 'error'); return; }
+
+        if (!isDryRun) {
+            const ok = confirm(
+                '🏅 EKSEKUSI NORMALIZE POSITIONS\n\n' +
+                'Akan menghitung ulang category_position & general_position\n' +
+                'untuk semua peserta yang punya validated finish time,\n' +
+                'berdasarkan chip time (finish rfid − start rfid).\n\n' +
+                'Peserta tanpa scan start → posisi paling belakang.\n\n' +
+                'Pastikan sudah dry run dulu dan hasilnya sesuai.\n\n' +
+                'Lanjutkan?'
+            );
+            if (!ok) return;
+        }
+
+        setNormPosBtns(true);
+        flash(
+            isDryRun
+                ? '⏳ Dry run normalize positions... (preview, tidak ada perubahan DB)'
+                : '⏳ Eksekusi normalize positions... mohon tunggu',
+            'warn'
+        );
+
+        try {
+            const body = {
+                pin:      p,
+                event_id: parseInt(eventId),
+                dry_run:  isDryRun,
+            };
+            if (categoryId) body.category_id = parseInt(categoryId);
+
+            const data = await post('{{ route("artisan.runner.normalize-positions") }}', body);
+            flash(data.output, data.success ? 'success' : 'error');
+        } catch (e) {
+            flash('Request gagal: ' + e.message, 'error');
+        } finally {
+            setNormPosBtns(false);
+        }
+    }
+
+    function setNormPosBtns(disabled) {
+        ['btnNormPosDry', 'btnNormPosExec'].forEach(id =>
+            document.getElementById(id).disabled = disabled
+        );
     }
 </script>
 </body>

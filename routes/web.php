@@ -50,6 +50,7 @@ Route::post('/dev/artisan/backfill-start', [ArtisanRunnerController::class, 'bac
     ->name('artisan.runner.normalize-finish');
 Route::post('/artisan-runner/backfill-finish', [ArtisanRunnerController::class, 'backfillFinish'])
     ->name('artisan.runner.backfill-finish');
+Route::post('/artisan-runner/normalize-positions', [ArtisanRunnerController::class, 'normalizePositions'])->name('artisan.runner.normalize-positions');
 
 
 Route::get('/transactions/check-payment-status', [TransactionController::class, 'checkPaymentStatus'])
