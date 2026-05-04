@@ -584,17 +584,12 @@ class EventController extends Controller
             }
         }
 
-        // ── 7. Sort each group ───────────────────────────────
+         // ── 7. Sort each group ───────────────────────────────
         foreach ($groups as $key => &$group) {
             if ($key === 'finish') {
-                // Sort finish by gun_elapsed_time kalau ada, fallback ke chip elapsed
-                usort($group['participants'], function ($a, $b) use ($hasGunTime) {
-                    $aTime = $hasGunTime
-                        ? ($a['participant']->gun_elapsed_time ?? $a['validated_time']->elapsed_time ?? '99:99:99')
-                        : ($a['validated_time']->elapsed_time ?? '99:99:99');
-                    $bTime = $hasGunTime
-                        ? ($b['participant']->gun_elapsed_time ?? $b['validated_time']->elapsed_time ?? '99:99:99')
-                        : ($b['validated_time']->elapsed_time ?? '99:99:99');
+                usort($group['participants'], function ($a, $b) {
+                    $aTime = $a['validated_time']->elapsed_time ?? '99:99:99';
+                    $bTime = $b['validated_time']->elapsed_time ?? '99:99:99';
                     return strcmp($aTime, $bTime);
                 });
             } else {
@@ -606,7 +601,6 @@ class EventController extends Controller
             }
         }
         unset($group);
-
         usort($notStarted, fn ($a, $b) => $a->bib <=> $b->bib);
 
         return [
