@@ -74,6 +74,7 @@ class CertificateController extends Controller
                 function () use ($participant) {
                     return DB::table('participants')
                         ->where('event_category_id', $participant->event_category_id)
+                        ->where('gender', $participant->gender)
                         ->whereExists(function ($q) {
                             $q->from('transactions')
                               ->whereColumn('transactions.participant_id', 'participants.id')
