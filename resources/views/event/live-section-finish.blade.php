@@ -459,21 +459,24 @@
     // ── Input: cukup ketik 6 digit, otomatis jadi HH:MM:SS ───
     const elapsedInput = document.getElementById('edit-elapsed');
 
-    elapsedInput?.addEventListener('keydown', function (e) {
-        // Jangan sampai bubble ke parent/document
-        e.stopPropagation();
+    elapsedInput?.addEventListener('input', function () {
+    // Ambil hanya digit, max 6
+    const digits = this.value.replace(/\D/g, '').slice(0, 6);
 
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            window.submitEditTime();
-            return;
-        }
-        // Blokir semua kecuali digit dan tombol navigasi/edit
-        const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
-        if (!/^\d$/.test(e.key) && !allowed.includes(e.key) && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-        }
-    });
+    if (digits.length === 0) {
+        this.value = '';
+        return;
+    }
+
+    // Pad kiri dulu ke 6 digit, baru format
+    const padded = digits.padStart(6, '0');
+    const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ':' + padded.slice(4, 6);
+
+    this.value = formatted;
+
+    const len = formatted.length;
+    try { this.setSelectionRange(len, len); } catch (_) {}
+});
 
     elapsedInput?.addEventListener('keyup',  e => e.stopPropagation());
     elapsedInput?.addEventListener('keypress', e => e.stopPropagation());
