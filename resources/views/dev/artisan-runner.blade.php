@@ -46,6 +46,7 @@
                     padding: 1rem; margin-bottom: 1.5rem; }
         .tool-box .section-label { margin-bottom: 12px; }
         .tool-box .section-label.orange { color: #f5a623; }
+        .tool-box .section-label.green  { color: #42f5a1; }
         .tool-box .section-label.blue   { color: #42b4f5; }
         .tool-row { display: grid; gap: 8px; margin-bottom: 8px; }
         .tool-row-2 { grid-template-columns: 1fr 80px; }
@@ -57,12 +58,13 @@
         }
         .tool-select:focus, .tool-input:focus { outline: none; }
         .tool-select.orange:focus { border-color: #f5a623; }
+        .tool-select.green:focus  { border-color: #42f5a1; }
         .tool-select.blue:focus   { border-color: #42b4f5; }
         .tool-hint { color: #555; font-size: 11px; margin-bottom: 8px; }
         .tool-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
         .tool-btns.three { grid-template-columns: 1fr 1fr 1fr; }
 
-        /* Backfill buttons (orange) */
+        /* Backfill START buttons (orange) */
         .btn-dryrun {
             font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
             border-radius: 6px; cursor: pointer; text-align: center;
@@ -77,6 +79,22 @@
             font-weight: bold; transition: all 0.15s;
         }
         .btn-execute:hover { background: #223a15; }
+
+        /* Backfill FINISH buttons (green) */
+        .btn-finish-dry {
+            font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
+            border-radius: 6px; cursor: pointer; text-align: center;
+            background: #101a15; border: 1px solid #104a30; color: #42f5a1;
+            transition: all 0.15s;
+        }
+        .btn-finish-dry:hover { background: #15251e; }
+        .btn-finish-exec {
+            font-family: 'Courier New', monospace; font-size: 12px; padding: 10px;
+            border-radius: 6px; cursor: pointer; text-align: center;
+            background: #102015; border: 1px solid #206a40; color: #42f5a1;
+            font-weight: bold; transition: all 0.15s;
+        }
+        .btn-finish-exec:hover { background: #153025; }
 
         /* Normalize buttons (blue) */
         .btn-norm-dry {
@@ -102,6 +120,7 @@
         .btn-norm-force:hover { background: #221530; }
 
         .btn-dryrun:disabled, .btn-execute:disabled,
+        .btn-finish-dry:disabled, .btn-finish-exec:disabled,
         .btn-norm-dry:disabled, .btn-norm-exec:disabled, .btn-norm-force:disabled
             { opacity: 0.4; cursor: not-allowed; }
 
@@ -112,6 +131,7 @@
         .output.error   { border-color: #4a1010; color: #f54242; }
         .output.warn    { border-color: #4a3a10; color: #f5a623; }
         .output.info    { border-color: #103a6a; color: #42b4f5; }
+        .output.teal    { border-color: #104a30; color: #42f5a1; }
     </style>
 </head>
 <body>
@@ -155,6 +175,33 @@
             </button>
             <button class="btn-execute" id="btnExecute" onclick="runBackfill(false)">
                 ✓ eksekusi backfill
+            </button>
+        </div>
+    </div>
+
+    {{-- ── BACKFILL FINISH SCANS ───────────────────────────────────── --}}
+    <div class="tool-box">
+        <div class="section-label green">🏁 backfill finish scans (peserta belum ter-detect di finish)</div>
+        <div class="tool-row tool-row-2">
+            <select class="tool-select green" id="backfillFinishEvent">
+                <option value="">-- Pilih Event --</option>
+                @foreach($events as $ev)
+                    <option value="{{ $ev->id }}">{{ $ev->name }}</option>
+                @endforeach
+            </select>
+            <input class="tool-input" type="number" id="backfillFinishCategory"
+                   placeholder="cat ID" min="1" title="event_category_id (opsional)">
+        </div>
+        <div class="tool-hint">
+            category ID opsional — kosongkan untuk semua kategori dalam event.
+            finish time synthetic = rata-rata 25% peserta paling lambat di kategori.
+        </div>
+        <div class="tool-btns">
+            <button class="btn-finish-dry" id="btnFinishDry" onclick="runBackfillFinish(true)">
+                🔍 dry run (preview)
+            </button>
+            <button class="btn-finish-exec" id="btnFinishExec" onclick="runBackfillFinish(false)">
+                ✓ eksekusi backfill finish
             </button>
         </div>
     </div>
@@ -292,6 +339,57 @@
 
     function setBackfillBtns(disabled) {
         ['btnDryRun', 'btnExecute'].forEach(id => document.getElementById(id).disabled = disabled);
+    }
+
+    // ── Backfill finish ────────────────────────────────────────────────────
+    async function runBackfillFinish(isDryRun) {
+        const p = pin(); if (!p) return;
+
+        const eventId    = document.getElementById('backfillFinishEvent').value;
+        const categoryId = document.getElementById('backfillFinishCategory').value;
+
+        if (!eventId) { flash('Pilih event dulu.', 'error'); return; }
+
+        if (!isDryRun) {
+            const ok = confirm(
+                '🏁 EKSEKUSI BACKFILL FINISH\n\n' +
+                'Ini akan membuat raw log + validated time finish untuk semua\n' +
+                'peserta yang belum ter-detect di checkpoint FINISH.\n\n' +
+                'Finish time synthetic = rata-rata 25% peserta paling lambat\n' +
+                'di kategori yang sama (+1 detik per peserta).\n\n' +
+                'Pastikan sudah dry run dulu dan hasilnya sesuai.\n\n' +
+                'Lanjutkan?'
+            );
+            if (!ok) return;
+        }
+
+        setBackfillFinishBtns(true);
+        flash(
+            isDryRun
+                ? '⏳ Dry run backfill finish... (preview saja, tidak ada perubahan DB)'
+                : '⏳ Eksekusi backfill finish... mohon tunggu',
+            'teal'
+        );
+
+        try {
+            const body = {
+                pin:      p,
+                event_id: parseInt(eventId),
+                dry_run:  isDryRun,
+            };
+            if (categoryId) body.category_id = parseInt(categoryId);
+
+            const data = await post('{{ route("artisan.runner.backfill-finish") }}', body);
+            flash(data.output, data.success ? 'teal' : 'error');
+        } catch (e) {
+            flash('Request gagal: ' + e.message, 'error');
+        } finally {
+            setBackfillFinishBtns(false);
+        }
+    }
+
+    function setBackfillFinishBtns(disabled) {
+        ['btnFinishDry', 'btnFinishExec'].forEach(id => document.getElementById(id).disabled = disabled);
     }
 
     // ── Normalize finish ───────────────────────────────────────────────────

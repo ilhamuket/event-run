@@ -102,6 +102,51 @@ class ArtisanRunnerController extends Controller
         }
     }
 
+    public function backfillFinish(Request $request)
+    {
+        $request->validate([
+            'pin'         => 'required|string',
+            'event_id'    => 'required|integer',
+            'dry_run'     => 'required|boolean',
+            'category_id' => 'nullable|integer',
+        ]);
+
+        if ($request->pin !== self::PIN) {
+            return response()->json(['success' => false, 'output' => 'PIN salah.'], 403);
+        }
+
+        $eventId    = (int) $request->event_id;
+        $dryRun     = (bool) $request->dry_run;
+        $categoryId = $request->category_id ? (int) $request->category_id : null;
+
+        $event = DB::selectOne(
+            'SELECT id, name FROM events WHERE id = ? AND is_published = 1 LIMIT 1',
+            [$eventId]
+        );
+        if (!$event) {
+            return response()->json(['success' => false, 'output' => "Event ID {$eventId} tidak ditemukan."], 422);
+        }
+
+        $params = ['event_id' => $eventId];
+
+        if ($dryRun)     $params['--dry-run']  = true;
+        if ($categoryId) $params['--category']  = $categoryId;
+
+        try {
+            Artisan::call('rfid:backfill-finish', $params + ['--no-interaction' => true]);
+            $output = Artisan::output() ?: 'Command selesai (tidak ada output).';
+
+            $prefix = $dryRun ? '[DRY RUN] ' : '[EKSEKUSI] ';
+
+            return response()->json([
+                'success' => true,
+                'output'  => "{$prefix}Backfill Finish — Event: {$event->name}\n\n{$output}",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'output' => $e->getMessage()], 500);
+        }
+    }
+
     public function normalizeFinish(Request $request)
     {
         $request->validate([
