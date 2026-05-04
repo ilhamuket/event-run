@@ -9,11 +9,9 @@
 @php
     $allParticipants = $group['participants'];
 
-    // Split Male / Female
     $males   = $allParticipants->filter(fn ($item) => ($item['participant']->gender ?? '') === 'M')->values();
     $females = $allParticipants->filter(fn ($item) => ($item['participant']->gender ?? '') === 'F')->values();
 
-    // Helper: render rank badge
     $rankBadge = fn (int $rank) => ($rank <= 3)
         ? 'bg-red-100 text-red-800'
         : 'bg-gray-100 text-gray-700';
@@ -30,37 +28,13 @@
             <p class="mt-1 text-xs text-gray-500">PIN diperlukan untuk mengedit waktu peserta</p>
         </div>
         <div class="px-6 py-5 space-y-4">
-            {{-- Kotak digit visual --}}
-            <div id="pin-digits" class="flex justify-center gap-2">
+            <div id="pin-digits" class="flex justify-center gap-2 cursor-text" onclick="focusPinInput()">
                 @for($d = 0; $d < 8; $d++)
                 <div data-idx="{{ $d }}"
                      class="flex items-center justify-center w-10 h-12 font-mono text-xl font-bold text-gray-800 transition-all duration-100 border-2 border-gray-200 select-none pin-box rounded-xl bg-gray-50">
                 </div>
                 @endfor
             </div>
-            {{-- Input tersembunyi — type="text" supaya tidak trigger save-password --}}
-            <input
-                id="pin-input"
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="off"
-                spellcheck="false"
-                data-lpignore="true"
-                data-form-type="other"
-                maxlength="8"
-                class="absolute w-0 h-0 opacity-0 pointer-events-none"
-                tabindex="-1"
-                aria-hidden="true"
-            >
-            {{-- Tombol ketuk untuk fokus input di mobile --}}
-            <button type="button"
-                    onclick="document.getElementById('pin-hidden-trigger').focus()"
-                    id="pin-tap-area"
-                    class="hidden w-full py-2 text-xs text-center text-gray-400 border border-gray-300 border-dashed rounded-lg">
-                Ketuk di sini lalu ketik PIN
-            </button>
             <p id="pin-error" class="hidden text-xs font-medium text-center text-red-600">
                 PIN salah, coba lagi.
             </p>
@@ -106,9 +80,10 @@
                 <input
                     id="edit-elapsed"
                     type="text"
-                    inputmode="numeric"
+                    inputmode="decimal"
                     autocomplete="off"
                     autocorrect="off"
+                    autocapitalize="off"
                     spellcheck="false"
                     data-lpignore="true"
                     data-form-type="other"
@@ -138,7 +113,6 @@
 {{-- ══════════════════════════════════════════════════════ --}}
 <div class="mb-8">
 
-    {{-- Section header --}}
     <div class="flex items-center justify-between gap-3 mb-6">
         <div class="flex items-center gap-3">
             <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
@@ -157,7 +131,6 @@
             </div>
         </div>
 
-        {{-- Export --}}
         <a href="{{ route('event.export-finish', array_filter([
                 'event'    => $event->slug,
                 'category' => $selectedCategory ?? null,
@@ -211,8 +184,7 @@
                     @foreach($males as $i => $item)
                     <tr class="transition hover:bg-gray-50">
                         <td class="px-5 py-3 text-center">
-                            <div class="inline-flex items-center justify-center w-9 h-9 font-bold rounded-xl text-sm
-                                {{ $rankBadge($i + 1) }}">
+                            <div class="inline-flex items-center justify-center w-9 h-9 font-bold rounded-xl text-sm {{ $rankBadge($i + 1) }}">
                                 {{ $i + 1 }}
                             </div>
                         </td>
@@ -232,7 +204,6 @@
                         <td class="px-5 py-3 text-sm text-gray-700">
                             {{ $item['participant']->category?->name ?? '-' }}
                         </td>
-
                         @if($hasGunTime)
                             <td class="px-5 py-3 text-center">
                                 <div class="font-mono text-base font-bold text-red-800">
@@ -251,7 +222,6 @@
                                 </div>
                             </td>
                         @endif
-
                         <td class="px-5 py-3 font-mono text-xs text-center text-gray-500">
                             {{ $item['validated_time']->checkpoint_time?->format('H:i:s') ?? '-' }}
                         </td>
@@ -372,8 +342,7 @@
                     @foreach($females as $i => $item)
                     <tr class="transition hover:bg-gray-50">
                         <td class="px-5 py-3 text-center">
-                            <div class="inline-flex items-center justify-center w-9 h-9 font-bold rounded-xl text-sm
-                                {{ $rankBadge($i + 1) }}">
+                            <div class="inline-flex items-center justify-center w-9 h-9 font-bold rounded-xl text-sm {{ $rankBadge($i + 1) }}">
                                 {{ $i + 1 }}
                             </div>
                         </td>
@@ -393,7 +362,6 @@
                         <td class="px-5 py-3 text-sm text-gray-700">
                             {{ $item['participant']->category?->name ?? '-' }}
                         </td>
-
                         @if($hasGunTime)
                             <td class="px-5 py-3 text-center">
                                 <div class="font-mono text-base font-bold text-pink-700">
@@ -412,7 +380,6 @@
                                 </div>
                             </td>
                         @endif
-
                         <td class="px-5 py-3 font-mono text-xs text-center text-gray-500">
                             {{ $item['validated_time']->checkpoint_time?->format('H:i:s') ?? '-' }}
                         </td>
@@ -495,120 +462,122 @@
 
 </div>
 
+{{-- ══════════════════════════════════════════════════════ --}}
+{{-- JAVASCRIPT                                            --}}
+{{-- ══════════════════════════════════════════════════════ --}}
 <script>
 (function () {
-    const CORRECT_PIN  = '17200024';
+    const CORRECT_PIN = '17200024';
+    const PIN_LEN     = 8;
 
-    let pendingBib  = null;
-    let pendingName = null;
-    let pinValue    = '';
+    let pendingBib    = null;
+    let pendingName   = null;
+    let pinValue      = '';
+    let backdropLock  = false;
 
-    // ── helpers ──────────────────────────────────────────
+    // ── helpers ──────────────────────────────────────────────────
     function showModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
     function hideModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
-    // ── PIN DIGIT BOXES ──────────────────────────────────
-    const PIN_LEN = 8;
+    function lockBackdrop() {
+        backdropLock = true;
+        setTimeout(() => { backdropLock = false; }, 600);
+    }
 
+    // ── PIN digit boxes ──────────────────────────────────────────
     function renderPinBoxes() {
-        const boxes = document.querySelectorAll('.pin-box');
-        boxes.forEach((box, i) => {
+        document.querySelectorAll('.pin-box').forEach((box, i) => {
+            // reset semua class dulu
+            box.classList.remove(
+                'border-gray-200', 'border-gray-400', 'border-red-800', 'border-red-300',
+                'bg-gray-50', 'bg-white',
+                'ring-2', 'ring-red-800/20'
+            );
+
             if (i < pinValue.length) {
+                // sudah terisi
                 box.textContent = '●';
-                box.classList.remove('border-gray-200', 'bg-gray-50', 'border-red-300');
                 box.classList.add('border-gray-400', 'bg-white');
-            } else if (i === pinValue.length) {
-                // kotak aktif / cursor
+            } else if (i === pinValue.length && pinValue.length < PIN_LEN) {
+                // posisi aktif / cursor
                 box.textContent = '';
-                box.classList.remove('border-gray-200', 'bg-gray-50', 'border-gray-400');
                 box.classList.add('border-red-800', 'bg-white', 'ring-2', 'ring-red-800/20');
             } else {
+                // belum terisi
                 box.textContent = '';
-                box.classList.remove('border-red-800', 'border-gray-400', 'bg-white',
-                                     'ring-2', 'ring-red-800/20', 'border-red-300');
                 box.classList.add('border-gray-200', 'bg-gray-50');
             }
         });
     }
 
     function setPinError(show) {
-        const err  = document.getElementById('pin-error');
-        const boxes = document.querySelectorAll('.pin-box');
+        const err = document.getElementById('pin-error');
         if (show) {
             err.classList.remove('hidden');
-            boxes.forEach(b => {
+            document.querySelectorAll('.pin-box').forEach(b => {
+                b.classList.remove('border-gray-400', 'border-red-800', 'border-gray-200');
                 b.classList.add('border-red-300');
-                b.classList.remove('border-gray-400', 'border-red-800');
             });
         } else {
             err.classList.add('hidden');
         }
     }
 
-    // Input tersembunyi yang menangkap ketikan
+    // ── Hidden input (menangkap ketikan tanpa trigger password manager) ──
     function createHiddenInput() {
         let inp = document.getElementById('pin-hidden-trigger');
         if (inp) return inp;
+
         inp = document.createElement('input');
         inp.id = 'pin-hidden-trigger';
         inp.type = 'text';
         inp.inputMode = 'numeric';
-        inp.autocomplete = 'off';
-        inp.setAttribute('data-lpignore', 'true');
-        inp.setAttribute('data-form-type', 'other');
+        inp.setAttribute('autocomplete', 'off');
         inp.setAttribute('autocorrect', 'off');
         inp.setAttribute('autocapitalize', 'off');
         inp.setAttribute('spellcheck', 'false');
-        inp.style.cssText = 'position:fixed;opacity:0;width:1px;height:1px;top:-9999px;left:-9999px;';
+        inp.setAttribute('data-lpignore', 'true');
+        inp.setAttribute('data-form-type', 'other');
+        // di luar viewport, tidak terlihat, tidak ikut layout
+        inp.style.cssText = 'position:fixed;opacity:0;width:1px;height:1px;top:-9999px;left:-9999px;border:none;outline:none;';
         document.body.appendChild(inp);
 
-        inp.addEventListener('input', (e) => {
-            // ambil hanya angka
+        inp.addEventListener('input', () => {
             const raw = inp.value.replace(/\D/g, '').slice(0, PIN_LEN);
-            inp.value = '';  // langsung clear supaya tidak menumpuk
-            if (raw.length === 0) return;
+            inp.value = ''; // langsung kosongkan agar tidak menumpuk
+            if (!raw) return;
 
-            // tambahkan ke pinValue
             pinValue = (pinValue + raw).slice(0, PIN_LEN);
             setPinError(false);
             renderPinBoxes();
 
             if (pinValue.length === PIN_LEN) {
-                // auto-submit setelah digit terakhir
-                setTimeout(window.submitPin, 120);
+                setTimeout(window.submitPin, 150);
             }
         });
 
         inp.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace') {
+                e.preventDefault();
                 pinValue = pinValue.slice(0, -1);
                 setPinError(false);
                 renderPinBoxes();
-                e.preventDefault();
             }
             if (e.key === 'Enter') {
-                window.submitPin();
                 e.preventDefault();
+                window.submitPin();
             }
         });
 
         return inp;
     }
 
-    function focusPinInput() {
+    window.focusPinInput = function () {
         const inp = createHiddenInput();
-        // Sedikit delay agar modal sudah terbuka
-        setTimeout(() => { try { inp.focus(); } catch(_) {} }, 80);
-    }
+        setTimeout(() => { try { inp.focus(); } catch (_) {} }, 80);
+    };
 
-    // Klik di area digit → fokus ulang ke hidden input
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('#pin-digits') || e.target.closest('#pin-tap-area')) {
-            focusPinInput();
-        }
-    });
-
-    // ── PIN MODAL ─────────────────────────────────────────
+    // ── PIN MODAL ────────────────────────────────────────────────
     window.openPinModal = function (bib, name) {
         pendingBib  = bib;
         pendingName = name;
@@ -617,7 +586,8 @@
         setPinError(false);
         renderPinBoxes();
         showModal('pin-modal');
-        focusPinInput();
+        lockBackdrop();
+        window.focusPinInput();
     };
 
     window.closePinModal = function () {
@@ -636,49 +606,75 @@
             setPinError(true);
             pinValue = '';
             renderPinBoxes();
-            focusPinInput();
+            window.focusPinInput();
         }
     };
 
-    // ── EDIT MODAL ────────────────────────────────────────
+    // ── EDIT MODAL ───────────────────────────────────────────────
     function openEditModal() {
         document.getElementById('edit-bib').value = pendingBib;
         document.getElementById('edit-modal-subtitle').textContent =
-            `BIB ${pendingBib} — ${pendingName}`;
+            'BIB ' + pendingBib + ' — ' + pendingName;
         document.getElementById('edit-elapsed').value = '';
         document.getElementById('edit-error').classList.add('hidden');
 
         showModal('edit-modal');
+        lockBackdrop();
         setTimeout(() => document.getElementById('edit-elapsed').focus(), 80);
     }
 
     window.closeEditModal = function () { hideModal('edit-modal'); };
 
-    // Auto-format HH:MM:SS saat mengetik
-    document.getElementById('edit-elapsed')?.addEventListener('input', function () {
-        let v = this.value.replace(/[^\d]/g, '').slice(0, 6);
-        if (v.length >= 5) v = v.slice(0,2) + ':' + v.slice(2,4) + ':' + v.slice(4);
-        else if (v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2);
-        this.value = v;
+    // Auto-format HH:MM:SS — blokir karakter non-digit di keydown,
+    // format di input event sehingga tidak ada konflik caret
+    const elapsedInput = document.getElementById('edit-elapsed');
+
+    elapsedInput?.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            window.submitEditTime();
+            return;
+        }
+        // Izinkan: angka, backspace, delete, arrow, tab, home, end
+        const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
+        if (!/^\d$/.test(e.key) && !allowed.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+        }
     });
 
-    document.getElementById('edit-elapsed')?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') window.submitEditTime();
+    elapsedInput?.addEventListener('input', function () {
+        const pos    = this.selectionStart ?? 0;
+        const digits = this.value.replace(/\D/g, '').slice(0, 6);
+
+        let formatted = digits;
+        if (digits.length > 4) {
+            formatted = digits.slice(0, 2) + ':' + digits.slice(2, 4) + ':' + digits.slice(4);
+        } else if (digits.length > 2) {
+            formatted = digits.slice(0, 2) + ':' + digits.slice(2);
+        }
+
+        this.value = formatted;
+
+        // Kembalikan posisi cursor — kompensasi ':' yang ditambahkan
+        let newPos = pos;
+        if (pos === 2 || pos === 5) newPos = pos + 1;
+        try { this.setSelectionRange(newPos, newPos); } catch (_) {}
     });
 
+    // ── Validasi & submit waktu ──────────────────────────────────
     function parseTime(str) {
         const match = str.trim().match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
         if (!match) return null;
         const [, h, m, s] = match.map(Number);
         if (m >= 60 || s >= 60) return null;
-        return { h, m, s, total: h * 3600 + m * 60 + s };
+        return { h, m, s };
     }
 
     window.submitEditTime = function () {
-        const bib    = document.getElementById('edit-bib').value;
+        const bib     = document.getElementById('edit-bib').value;
         const elapsed = document.getElementById('edit-elapsed').value;
-        const errEl  = document.getElementById('edit-error');
-        const btn    = document.getElementById('edit-submit-btn');
+        const errEl   = document.getElementById('edit-error');
+        const btn     = document.getElementById('edit-submit-btn');
 
         errEl.classList.add('hidden');
 
@@ -691,7 +687,7 @@
         btn.disabled    = true;
         btn.textContent = 'Menyimpan…';
 
-        fetch(`{{ url('/') }}/admin/finish-time`, {
+        fetch('{{ url('/') }}/admin/finish-time', {
             method:  'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -702,7 +698,7 @@
         })
         .then(async (res) => {
             const json = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(json.message ?? `HTTP ${res.status}`);
+            if (!res.ok) throw new Error(json.message ?? 'HTTP ' + res.status);
             return json;
         })
         .then(() => {
@@ -720,11 +716,16 @@
         });
     };
 
-    // ── Backdrop click — hanya tutup kalau klik di luar box ──
-    document.getElementById('pin-modal')?.addEventListener('mousedown', function (e) {
+    // ── Backdrop click — tutup hanya kalau klik tepat di overlay ─
+    // Pakai click (bukan mousedown) + backdropLock agar tidak
+    // menutup modal saat user baru selesai mengetik
+    document.getElementById('pin-modal')?.addEventListener('click', function (e) {
+        if (backdropLock) return;
         if (e.target === this) window.closePinModal();
     });
-    document.getElementById('edit-modal')?.addEventListener('mousedown', function (e) {
+
+    document.getElementById('edit-modal')?.addEventListener('click', function (e) {
+        if (backdropLock) return;
         if (e.target === this) window.closeEditModal();
     });
 
