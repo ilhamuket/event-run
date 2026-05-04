@@ -17,47 +17,16 @@
         : 'bg-gray-100 text-gray-700';
 @endphp
 
-{{-- ══════════════════════════════════════════════════════ --}}
-{{-- PIN MODAL                                             --}}
-{{-- ══════════════════════════════════════════════════════ --}}
-<div id="pin-modal"
-     class="fixed inset-0 z-50 items-center justify-center hidden bg-black/60 backdrop-blur-sm">
-    <div id="pin-modal-box" class="w-full max-w-sm mx-4 overflow-hidden bg-white shadow-2xl rounded-2xl">
-        <div class="px-6 pt-6 pb-4 border-b border-gray-100">
-            <h3 class="text-base font-bold text-gray-900">🔒 Masukkan PIN</h3>
-            <p class="mt-1 text-xs text-gray-500">PIN diperlukan untuk mengedit waktu peserta</p>
-        </div>
-        <div class="px-6 py-5 space-y-4">
-            <div id="pin-digits" class="flex justify-center gap-2 cursor-text" onclick="focusPinInput()">
-                @for($d = 0; $d < 8; $d++)
-                <div data-idx="{{ $d }}"
-                     class="flex items-center justify-center w-10 h-12 font-mono text-xl font-bold text-gray-800 transition-all duration-100 border-2 border-gray-200 select-none pin-box rounded-xl bg-gray-50">
-                </div>
-                @endfor
-            </div>
-            <p id="pin-error" class="hidden text-xs font-medium text-center text-red-600">
-                PIN salah, coba lagi.
-            </p>
-        </div>
-        <div class="flex gap-3 px-6 pb-6">
-            <button type="button" onclick="closePinModal()"
-                    class="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-                Batal
-            </button>
-            <button type="button" onclick="submitPin()"
-                    class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-800 rounded-xl hover:bg-red-700 transition">
-                Masuk
-            </button>
-        </div>
-    </div>
-</div>
+
 
 {{-- ══════════════════════════════════════════════════════ --}}
 {{-- EDIT TIME MODAL                                       --}}
 {{-- ══════════════════════════════════════════════════════ --}}
 <div id="edit-modal"
      class="fixed inset-0 z-50 items-center justify-center hidden bg-black/60 backdrop-blur-sm">
-    <div id="edit-modal-box" class="w-full max-w-md mx-4 overflow-hidden bg-white shadow-2xl rounded-2xl">
+    {{-- stopPropagation di box agar klik dalam box tidak bubble ke overlay --}}
+    <div id="edit-modal-box"
+         class="w-full max-w-md mx-4 overflow-hidden bg-white shadow-2xl rounded-2xl">
         <div class="px-6 pt-6 pb-4 border-b border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -80,7 +49,7 @@
                 <input
                     id="edit-elapsed"
                     type="text"
-                    inputmode="decimal"
+                    inputmode="numeric"
                     autocomplete="off"
                     autocorrect="off"
                     autocapitalize="off"
@@ -227,7 +196,7 @@
                         </td>
                         <td class="px-5 py-3 text-center">
                             <button
-                                onclick="openPinModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
+                                onclick="openEditModal('{{ $item['participant']->bib }}', '{{ $item['participant']->display_name }}')"
                                 class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition active:scale-95">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -467,166 +436,25 @@
 {{-- ══════════════════════════════════════════════════════ --}}
 <script>
 (function () {
-    const CORRECT_PIN = '17200024';
-    const PIN_LEN     = 8;
+    let pendingBib  = null;
+    let pendingName = null;
 
-    let pendingBib    = null;
-    let pendingName   = null;
-    let pinValue      = '';
-    let backdropLock  = false;
-
-    // ── helpers ──────────────────────────────────────────────────
     function showModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
     function hideModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
-    function lockBackdrop() {
-        backdropLock = true;
-        setTimeout(() => { backdropLock = false; }, 600);
-    }
-
-    // ── PIN digit boxes ──────────────────────────────────────────
-    function renderPinBoxes() {
-        document.querySelectorAll('.pin-box').forEach((box, i) => {
-            // reset semua class dulu
-            box.classList.remove(
-                'border-gray-200', 'border-gray-400', 'border-red-800', 'border-red-300',
-                'bg-gray-50', 'bg-white',
-                'ring-2', 'ring-red-800/20'
-            );
-
-            if (i < pinValue.length) {
-                // sudah terisi
-                box.textContent = '●';
-                box.classList.add('border-gray-400', 'bg-white');
-            } else if (i === pinValue.length && pinValue.length < PIN_LEN) {
-                // posisi aktif / cursor
-                box.textContent = '';
-                box.classList.add('border-red-800', 'bg-white', 'ring-2', 'ring-red-800/20');
-            } else {
-                // belum terisi
-                box.textContent = '';
-                box.classList.add('border-gray-200', 'bg-gray-50');
-            }
-        });
-    }
-
-    function setPinError(show) {
-        const err = document.getElementById('pin-error');
-        if (show) {
-            err.classList.remove('hidden');
-            document.querySelectorAll('.pin-box').forEach(b => {
-                b.classList.remove('border-gray-400', 'border-red-800', 'border-gray-200');
-                b.classList.add('border-red-300');
-            });
-        } else {
-            err.classList.add('hidden');
-        }
-    }
-
-    // ── Hidden input (menangkap ketikan tanpa trigger password manager) ──
-    function createHiddenInput() {
-        let inp = document.getElementById('pin-hidden-trigger');
-        if (inp) return inp;
-
-        inp = document.createElement('input');
-        inp.id = 'pin-hidden-trigger';
-        inp.type = 'text';
-        inp.inputMode = 'numeric';
-        inp.setAttribute('autocomplete', 'off');
-        inp.setAttribute('autocorrect', 'off');
-        inp.setAttribute('autocapitalize', 'off');
-        inp.setAttribute('spellcheck', 'false');
-        inp.setAttribute('data-lpignore', 'true');
-        inp.setAttribute('data-form-type', 'other');
-        // di luar viewport, tidak terlihat, tidak ikut layout
-        inp.style.cssText = 'position:fixed;opacity:0;width:1px;height:1px;top:-9999px;left:-9999px;border:none;outline:none;';
-        document.body.appendChild(inp);
-
-        inp.addEventListener('input', () => {
-            const raw = inp.value.replace(/\D/g, '').slice(0, PIN_LEN);
-            inp.value = ''; // langsung kosongkan agar tidak menumpuk
-            if (!raw) return;
-
-            pinValue = (pinValue + raw).slice(0, PIN_LEN);
-            setPinError(false);
-            renderPinBoxes();
-
-            if (pinValue.length === PIN_LEN) {
-                setTimeout(window.submitPin, 150);
-            }
-        });
-
-        inp.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace') {
-                e.preventDefault();
-                pinValue = pinValue.slice(0, -1);
-                setPinError(false);
-                renderPinBoxes();
-            }
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                window.submitPin();
-            }
-        });
-
-        return inp;
-    }
-
-    window.focusPinInput = function () {
-        const inp = createHiddenInput();
-        setTimeout(() => { try { inp.focus(); } catch (_) {} }, 80);
-    };
-
-    // ── PIN MODAL ────────────────────────────────────────────────
-    window.openPinModal = function (bib, name) {
+    window.openEditModal = function (bib, name) {
         pendingBib  = bib;
         pendingName = name;
-        pinValue    = '';
-
-        setPinError(false);
-        renderPinBoxes();
-        showModal('pin-modal');
-        lockBackdrop();
-        window.focusPinInput();
-    };
-
-    window.closePinModal = function () {
-        hideModal('pin-modal');
-        pendingBib  = null;
-        pendingName = null;
-        pinValue    = '';
-    };
-
-    window.submitPin = function () {
-        if (pinValue === CORRECT_PIN) {
-            hideModal('pin-modal');
-            pinValue = '';
-            openEditModal();
-        } else {
-            setPinError(true);
-            pinValue = '';
-            renderPinBoxes();
-            window.focusPinInput();
-        }
-    };
-
-    // ── EDIT MODAL ───────────────────────────────────────────────
-    function openEditModal() {
-        document.getElementById('edit-bib').value = pendingBib;
-        document.getElementById('edit-modal-subtitle').textContent =
-            'BIB ' + pendingBib + ' — ' + pendingName;
+        document.getElementById('edit-bib').value = bib;
+        document.getElementById('edit-modal-subtitle').textContent = 'BIB ' + bib + ' — ' + name;
         document.getElementById('edit-elapsed').value = '';
         document.getElementById('edit-error').classList.add('hidden');
-
         showModal('edit-modal');
-        lockBackdrop();
         setTimeout(() => document.getElementById('edit-elapsed').focus(), 80);
-    }
+    };
 
     window.closeEditModal = function () { hideModal('edit-modal'); };
 
-    // Auto-format HH:MM:SS — blokir karakter non-digit di keydown,
-    // format di input event sehingga tidak ada konflik caret
     const elapsedInput = document.getElementById('edit-elapsed');
 
     elapsedInput?.addEventListener('keydown', function (e) {
@@ -635,8 +463,7 @@
             window.submitEditTime();
             return;
         }
-        // Izinkan: angka, backspace, delete, arrow, tab, home, end
-        const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
+        const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
         if (!/^\d$/.test(e.key) && !allowed.includes(e.key) && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
         }
@@ -655,13 +482,11 @@
 
         this.value = formatted;
 
-        // Kembalikan posisi cursor — kompensasi ':' yang ditambahkan
         let newPos = pos;
         if (pos === 2 || pos === 5) newPos = pos + 1;
         try { this.setSelectionRange(newPos, newPos); } catch (_) {}
     });
 
-    // ── Validasi & submit waktu ──────────────────────────────────
     function parseTime(str) {
         const match = str.trim().match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
         if (!match) return null;
@@ -716,17 +541,14 @@
         });
     };
 
-    // ── Backdrop click — tutup hanya kalau klik tepat di overlay ─
-    // Pakai click (bukan mousedown) + backdropLock agar tidak
-    // menutup modal saat user baru selesai mengetik
-    document.getElementById('pin-modal')?.addEventListener('click', function (e) {
-        if (backdropLock) return;
-        if (e.target === this) window.closePinModal();
+    // Backdrop click — hanya tutup kalau klik tepat di overlay, bukan di dalam box
+    document.getElementById('edit-modal')?.addEventListener('click', function (e) {
+        if (e.target === this) window.closeEditModal();
     });
 
-    document.getElementById('edit-modal')?.addEventListener('click', function (e) {
-        if (backdropLock) return;
-        if (e.target === this) window.closeEditModal();
+    // Cegah klik dalam box bubble ke overlay
+    document.getElementById('edit-modal-box')?.addEventListener('click', function (e) {
+        e.stopPropagation();
     });
 
 })();
