@@ -12,7 +12,7 @@ class NormalizeParticipantPositions extends Command
                             {--category= : Hanya kategori tertentu (event_category_id), opsional}
                             {--dry-run : Tampilkan preview tanpa simpan ke DB}';
 
-    protected $description = 'Normalisasi general_position & category_position berdasarkan chip time (finish - start rfid). Aman dijalankan berkali-kali.';
+    protected $description = 'Normalisasi general_position & category_position berdasarkan chip time (finish - start rfid), dipisah per gender M/F. Aman dijalankan berkali-kali.';
 
     public function handle(): int
     {
@@ -52,10 +52,12 @@ class NormalizeParticipantPositions extends Command
 
         $totalUpdated = 0;
 
+        // ══════════════════════════════════════════════════════
+        // CATEGORY POSITION — per kategori, dipisah per gender
+        // ══════════════════════════════════════════════════════
         foreach ($categories as $cat) {
             $this->line("── Kategori: [{$cat->id}] {$cat->name}");
 
-            // ── Ambil checkpoint FINISH & START aktif untuk kategori ini ─
             $cpFinish = DB::selectOne(
                 'SELECT id FROM rfid_checkpoints
                  WHERE event_category_id = ? AND checkpoint_type = "finish" AND is_active = 1
@@ -76,17 +78,13 @@ class NormalizeParticipantPositions extends Command
                 continue;
             }
 
-            // ── Ambil semua peserta yang punya validated finish time ─────
-            // Chip time = finish_checkpoint_time - start_checkpoint_time
-            // Kalau tidak ada start checkpoint / tidak ada scan start,
-            // fallback ke elapsed_time yang tersimpan di participants.
             $rows = DB::select("
                 SELECT
                     p.id                         AS participant_id,
                     p.bib,
+                    p.gender,
                     COALESCE(NULLIF(TRIM(p.bib_name),''), NULLIF(TRIM(p.name),''), 'PESERTA')
-                                                AS display_name,
-                    p.general_position           AS old_general,
+                                                 AS display_name,
                     p.category_position          AS old_category,
                     vt_finish.checkpoint_time    AS finish_time,
                     vt_start.checkpoint_time     AS start_time,
@@ -97,18 +95,19 @@ class NormalizeParticipantPositions extends Command
                     END                          AS chip_seconds
                 FROM participants p
                 INNER JOIN rfid_validated_times vt_finish
-                    ON vt_finish.participant_id    = p.id
-                AND vt_finish.rfid_checkpoint_id = ?
+                    ON vt_finish.participant_id     = p.id
+                   AND vt_finish.rfid_checkpoint_id = ?
                 LEFT JOIN rfid_validated_times vt_start
-                    ON vt_start.participant_id    = p.id
-                AND vt_start.rfid_checkpoint_id = ?
+                    ON vt_start.participant_id     = p.id
+                   AND vt_start.rfid_checkpoint_id = ?
                 WHERE p.event_category_id = ?
-                AND p.event_id          = ?
-                AND EXISTS (
-                    SELECT 1 FROM transactions t
-                    WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
-                )
-                ORDER BY chip_seconds ASC, vt_finish.checkpoint_time ASC
+                  AND p.event_id          = ?
+                  AND p.gender IN ('M', 'F')
+                  AND EXISTS (
+                      SELECT 1 FROM transactions t
+                      WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
+                  )
+                ORDER BY p.gender ASC, chip_seconds ASC, vt_finish.checkpoint_time ASC
             ", [
                 $cpFinish->id,
                 $cpStart ? $cpStart->id : 0,
@@ -122,36 +121,51 @@ class NormalizeParticipantPositions extends Command
                 continue;
             }
 
-            $this->info("   Peserta finish: " . count($rows));
-
-            // ── Assign category_position berdasarkan urutan chip time ────
-            $headers = ['Cat.Pos', 'BIB', 'Nama', 'Chip Time (s)', 'Finish Time', 'Old Cat.Pos'];
-            $tableRows = [];
-
-            $updates = [];
-            foreach ($rows as $rank => $row) {
-                $newCatPos = $rank + 1;
-                $updates[] = [
-                    'participant_id' => $row->participant_id,
-                    'new_category'   => $newCatPos,
-                    'old_category'   => $row->old_category,
-                ];
-
-                $tableRows[] = [
-                    $newCatPos,
-                    $row->bib,
-                    mb_substr($row->display_name, 0, 28),
-                    $row->chip_seconds,
-                    $row->finish_time,
-                    $row->old_category ?? '(null)',
-                ];
+            // Pisah per gender lalu rank masing-masing
+            $byGender = ['M' => [], 'F' => []];
+            foreach ($rows as $row) {
+                $g = in_array($row->gender, ['M', 'F']) ? $row->gender : 'M';
+                $byGender[$g][] = $row;
             }
 
-            $this->table($headers, $tableRows);
+            $updates   = [];
+            $tableRows = [];
+
+            foreach (['M', 'F'] as $gender) {
+                $gLabel = $gender === 'M' ? 'Pria' : 'Wanita';
+
+                if (empty($byGender[$gender])) {
+                    $this->line("   (tidak ada peserta {$gLabel} finish di kategori ini)");
+                    continue;
+                }
+
+                $this->info("   [{$gLabel}] " . count($byGender[$gender]) . " peserta finish");
+
+                foreach ($byGender[$gender] as $rank => $row) {
+                    $newCatPos = $rank + 1;
+
+                    $updates[] = [
+                        'participant_id' => $row->participant_id,
+                        'new_category'   => $newCatPos,
+                        'old_category'   => $row->old_category,
+                    ];
+
+                    $tableRows[] = [
+                        $gLabel,
+                        $newCatPos,
+                        $row->bib,
+                        mb_substr($row->display_name, 0, 24),
+                        $row->chip_seconds ?? '(null)',
+                        $row->finish_time,
+                        $row->old_category ?? '(null)',
+                    ];
+                }
+            }
+
+            $this->table(['Gender', 'Cat.Pos', 'BIB', 'Nama', 'Chip (s)', 'Finish Time', 'Old Cat.Pos'], $tableRows);
 
             if (!$dryRun) {
-                // Wrap seluruh kategori dalam satu transaksi
-                DB::transaction(function () use ($updates, $cat) {
+                DB::transaction(function () use ($updates) {
                     foreach ($updates as $u) {
                         DB::update(
                             'UPDATE participants SET category_position = ?, updated_at = NOW() WHERE id = ?',
@@ -159,7 +173,6 @@ class NormalizeParticipantPositions extends Command
                         );
                     }
                 });
-
                 $this->info("   ✓ category_position diperbarui: " . count($updates) . " peserta.");
             } else {
                 $this->line("   [DRY RUN] category_position tidak disimpan.");
@@ -170,12 +183,10 @@ class NormalizeParticipantPositions extends Command
         }
 
         // ══════════════════════════════════════════════════════
-        // GENERAL POSITION — lintas semua kategori dalam event
-        // Urutkan semua peserta finish berdasarkan chip time
+        // GENERAL POSITION — lintas semua kategori, dipisah gender
         // ══════════════════════════════════════════════════════
-        $this->line("── General Position (semua kategori)");
+        $this->line("── General Position (semua kategori, dipisah gender)");
 
-        // Kumpulkan semua checkpoint finish aktif dalam event
         $allFinishCps = DB::select(
             'SELECT rc.id, rc.event_category_id
              FROM rfid_checkpoints rc
@@ -184,7 +195,6 @@ class NormalizeParticipantPositions extends Command
             [$eventId]
         );
 
-        // Buat map: event_category_id → finish_cp_id dan start_cp_id
         $finishCpMap = [];
         $startCpMap  = [];
         foreach ($allFinishCps as $cp) {
@@ -203,37 +213,24 @@ class NormalizeParticipantPositions extends Command
         }
 
         if (empty($finishCpMap)) {
-            $this->warn("   ⚠ Tidak ada checkpoint FINISH aktif di event ini. General position dilewati.");
+            $this->warn("   ⚠ Tidak ada checkpoint FINISH aktif. General position dilewati.");
             $this->line('');
         } else {
-            // Satu query besar — semua peserta finish di event, diurutkan chip time
             $finishIds = array_values($finishCpMap);
             $startIds  = array_values($startCpMap);
 
             $fPlaceholders = implode(',', array_fill(0, count($finishIds), '?'));
             $sPlaceholders = count($startIds)
                 ? implode(',', array_fill(0, count($startIds), '?'))
-                : '0';   // dummy agar LEFT JOIN tidak error
+                : '0';
 
-            $bindings = array_merge(
-                $finishIds,
-                $startIds,
-                [$eventId]
-            );
-
-            // Filter event_category_id kalau ada --category
-            $catFilter = '';
-            if ($categoryId) {
-                // Dalam mode --category kita tetap hitung semua untuk konsistensi,
-                // tapi hanya update peserta di kategori tersebut.
-                // General position harus konsisten lintas kategori, jadi tetap
-                // ambil semua peserta, filter update saja.
-            }
+            $bindings = array_merge($finishIds, $startIds, [$eventId]);
 
             $allFinishers = DB::select("
                 SELECT
                     p.id                      AS participant_id,
                     p.bib,
+                    p.gender,
                     p.event_category_id,
                     p.general_position        AS old_general,
                     vt_finish.checkpoint_time AS finish_time,
@@ -246,47 +243,65 @@ class NormalizeParticipantPositions extends Command
                 FROM participants p
                 INNER JOIN rfid_validated_times vt_finish
                     ON vt_finish.participant_id     = p.id
-                AND vt_finish.rfid_checkpoint_id IN ({$fPlaceholders})
+                   AND vt_finish.rfid_checkpoint_id IN ({$fPlaceholders})
                 LEFT JOIN rfid_validated_times vt_start
                     ON vt_start.participant_id     = p.id
-                AND vt_start.rfid_checkpoint_id IN ({$sPlaceholders})
+                   AND vt_start.rfid_checkpoint_id IN ({$sPlaceholders})
                 WHERE p.event_id = ?
-                AND EXISTS (
-                    SELECT 1 FROM transactions t
-                    WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
-                )
-                ORDER BY chip_seconds ASC, vt_finish.checkpoint_time ASC
+                  AND p.gender IN ('M', 'F')
+                  AND EXISTS (
+                      SELECT 1 FROM transactions t
+                      WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
+                  )
+                ORDER BY p.gender ASC, chip_seconds ASC, vt_finish.checkpoint_time ASC
             ", $bindings);
 
             $this->info("   Total peserta finish (semua kategori): " . count($allFinishers));
 
-            $generalHeaders = ['Overall', 'BIB', 'Chip (s)', 'Finish Time', 'Old Overall'];
-            $generalRows    = [];
-            $generalUpdates = [];
-
-            foreach ($allFinishers as $rank => $row) {
-                $newGeneral = $rank + 1;
-
-                // Kalau mode --category, skip update peserta kategori lain
-                $shouldUpdate = !$categoryId || $row->event_category_id === $categoryId;
-
-                $generalUpdates[] = [
-                    'participant_id' => $row->participant_id,
-                    'new_general'    => $newGeneral,
-                    'old_general'    => $row->old_general,
-                    'should_update'  => $shouldUpdate,
-                ];
-
-                $generalRows[] = [
-                    $newGeneral,
-                    $row->bib,
-                    $row->chip_seconds,
-                    $row->finish_time,
-                    $row->old_general ?? '(null)',
-                ];
+            // Pisah per gender lalu rank masing-masing
+            $byGender = ['M' => [], 'F' => []];
+            foreach ($allFinishers as $row) {
+                $g = in_array($row->gender, ['M', 'F']) ? $row->gender : 'M';
+                $byGender[$g][] = $row;
             }
 
-            $this->table($generalHeaders, $generalRows);
+            $generalUpdates = [];
+            $generalRows    = [];
+
+            foreach (['M', 'F'] as $gender) {
+                $gLabel = $gender === 'M' ? 'Pria' : 'Wanita';
+
+                if (empty($byGender[$gender])) {
+                    $this->line("   (tidak ada finisher {$gLabel})");
+                    continue;
+                }
+
+                $this->info("   [{$gLabel}] " . count($byGender[$gender]) . " finisher");
+
+                foreach ($byGender[$gender] as $rank => $row) {
+                    $newGeneral   = $rank + 1;
+                    $shouldUpdate = !$categoryId || $row->event_category_id === $categoryId;
+
+                    $generalUpdates[] = [
+                        'participant_id' => $row->participant_id,
+                        'new_general'    => $newGeneral,
+                        'old_general'    => $row->old_general,
+                        'should_update'  => $shouldUpdate,
+                    ];
+
+                    $generalRows[] = [
+                        $gLabel,
+                        $newGeneral,
+                        $row->bib,
+                        $row->chip_seconds ?? '(null)',
+                        $row->finish_time,
+                        $row->old_general ?? '(null)',
+                        $shouldUpdate ? 'YA' : 'skip',
+                    ];
+                }
+            }
+
+            $this->table(['Gender', 'Overall', 'BIB', 'Chip (s)', 'Finish Time', 'Old Overall', 'Update?'], $generalRows);
 
             if (!$dryRun) {
                 DB::transaction(function () use ($generalUpdates) {
