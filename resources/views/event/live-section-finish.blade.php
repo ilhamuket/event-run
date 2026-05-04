@@ -527,8 +527,10 @@
         fetch('{{ url('/') }}/admin/finish-time', {
             method:  'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                'Content-Type': 'application/json',// SESUDAH
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                    ?? document.querySelector('input[name="_token"]')?.value
+                    ?? '{{ csrf_token() }}',
                 'Accept':       'application/json',
             },
             body: JSON.stringify({ bib, elapsed_time: elapsed }),
