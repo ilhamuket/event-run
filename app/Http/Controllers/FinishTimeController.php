@@ -149,7 +149,7 @@ class FinishTimeController extends Controller
                     UPDATE rfid_validated_times
                     SET checkpoint_time   = ?,
                         elapsed_time      = ?,
-                        validation_status = 'manual_override',
+                        validation_status = 'corrected',
                         updated_at        = ?
                     WHERE id = ?
                 ", [
@@ -171,7 +171,7 @@ class FinishTimeController extends Controller
                         (participant_id, rfid_checkpoint_id, rfid_raw_log_id,
                          checkpoint_time, elapsed_time, split_time,
                          position_at_checkpoint, validation_status, created_at, updated_at)
-                    VALUES (?, ?, NULL, ?, ?, NULL, ?, 'manual_override', ?, ?)
+                    VALUES (?, ?, NULL, ?, ?, NULL, ?, 'corrected', ?, ?)
                 ", [
                     $participant->participant_id,
                     $finishCheckpoint->id,

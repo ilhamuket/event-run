@@ -288,7 +288,7 @@ class BackfillMissingFinishScans extends Command
                         'elapsed_time'           => $elapsedTime,
                         'split_time'             => null,
                         'position_at_checkpoint' => $position,
-                        'validation_status'      => 'auto',
+                        'validation_status'      => 'corrected',
                         'created_at'             => $now,
                         'updated_at'             => $now,
                     ]);
