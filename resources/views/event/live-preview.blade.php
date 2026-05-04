@@ -2,6 +2,79 @@
 
 @section('content')
 
+{{-- PIN Protection Overlay --}}
+<div id="pinOverlay"
+     style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:2rem 2.5rem;width:320px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.12);">
+        <div style="font-size:28px;margin-bottom:8px;">🔒</div>
+        <h2 style="font-size:18px;font-weight:600;margin:0 0 6px;color:#111827;">Halaman Terkunci</h2>
+        <p style="font-size:13px;color:#6b7280;margin:0 0 16px;">Masukkan PIN untuk melanjutkan</p>
+
+        <div id="pinDots" style="display:flex;justify-content:center;gap:10px;margin-bottom:16px;">
+            <div class="pdot" id="d0"></div>
+            <div class="pdot" id="d1"></div>
+            <div class="pdot" id="d2"></div>
+            <div class="pdot" id="d3"></div>
+        </div>
+
+        <input id="pinInput" type="password" maxlength="4" placeholder="••••" autocomplete="off"
+               style="width:100%;padding:10px;font-size:20px;letter-spacing:6px;text-align:center;
+                      border:1px solid #d1d5db;border-radius:8px;outline:none;margin-bottom:10px;
+                      box-sizing:border-box;">
+        <button id="pinSubmit"
+                style="width:100%;padding:10px;font-size:14px;font-weight:600;color:#fff;
+                       background:#991b1b;border:none;border-radius:8px;cursor:pointer;">
+            Buka Halaman
+        </button>
+        <div id="pinErr" style="font-size:13px;color:#dc2626;margin-top:8px;min-height:18px;"></div>
+    </div>
+</div>
+
+<style>
+    .pdot { width:12px;height:12px;border-radius:50%;background:#e5e7eb;transition:background .2s; }
+    .pdot.filled { background:#991b1b; }
+    .pdot.shake  { background:#dc2626; }
+</style>
+
+<script>
+(function () {
+    const PIN    = 'uket';
+    const input  = document.getElementById('pinInput');
+    const btn    = document.getElementById('pinSubmit');
+    const errEl  = document.getElementById('pinErr');
+    const overlay= document.getElementById('pinOverlay');
+    const dots   = [0,1,2,3].map(i => document.getElementById('d'+i));
+
+    function updateDots(val, error) {
+        dots.forEach((d, i) => {
+            d.className = 'pdot';
+            if (error)          d.classList.add('shake');
+            else if (i<val.length) d.classList.add('filled');
+        });
+    }
+
+    input.addEventListener('input', () => { errEl.textContent=''; updateDots(input.value,false); });
+    input.addEventListener('keydown', e => { if(e.key==='Enter') check(); });
+    btn.addEventListener('click', check);
+
+    function check() {
+        if (input.value.trim().toLowerCase() === PIN) {
+            overlay.style.transition = 'opacity .3s';
+            overlay.style.opacity    = '0';
+            setTimeout(() => overlay.remove(), 300);
+        } else {
+            errEl.textContent = 'PIN salah. Coba lagi.';
+            updateDots(input.value, true);
+            input.value = '';
+            setTimeout(() => updateDots('', false), 800);
+            input.focus();
+        }
+    }
+
+    input.focus();
+})();
+</script>
+
 <div class="min-h-screen py-14 bg-gray-50">
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
 
