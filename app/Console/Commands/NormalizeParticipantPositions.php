@@ -158,13 +158,10 @@ class NormalizeParticipantPositions extends Command
         }
 
         // ══════════════════════════════════════════════════════
-        // GENERAL POSITION
-        // Sama: elapsed_time ASC dari validated_times finish,
-        // tapi lintas semua kategori dalam event, dipisah gender.
+        // GENERAL POSITION — lintas semua kategori, TANPA pisah gender
         // ══════════════════════════════════════════════════════
-        $this->line("── General Position (semua kategori, dipisah gender)");
+        $this->line("── General Position (semua kategori, semua gender)");
 
-        // Kumpulkan semua checkpoint finish aktif dalam event ini
         $allFinishCps = DB::select(
             'SELECT rc.id
              FROM rfid_checkpoints rc
@@ -184,8 +181,6 @@ class NormalizeParticipantPositions extends Command
 
             $bindings = array_merge($finishCpIds, [$eventId]);
 
-            // Kalau --category dipakai, tetap ambil semua finisher lintas kategori
-            // supaya nomor urut general konsisten, tapi nanti filter update-nya saja.
             $allFinishers = DB::select("
                 SELECT
                     p.id                AS participant_id,
@@ -200,59 +195,41 @@ class NormalizeParticipantPositions extends Command
                     ON vt.participant_id     = p.id
                    AND vt.rfid_checkpoint_id IN ({$fPlaceholders})
                 WHERE p.event_id = ?
-                  AND p.gender IN ('M', 'F')
                   AND EXISTS (
                       SELECT 1 FROM transactions t
                       WHERE t.participant_id = p.id AND t.status = 'PAID' LIMIT 1
                   )
                 ORDER BY
-                    p.gender ASC,
                     COALESCE(vt.elapsed_time, '99:99:99') ASC,
                     vt.checkpoint_time ASC
             ", $bindings);
 
             $this->info("   Total finisher (semua kategori): " . count($allFinishers));
 
-            $byGender = ['M' => [], 'F' => []];
-            foreach ($allFinishers as $row) {
-                $byGender[$row->gender][] = $row;
-            }
-
             $generalUpdates = [];
             $generalRows    = [];
 
-            foreach (['M', 'F'] as $gender) {
-                $gLabel = $gender === 'M' ? 'Pria' : 'Wanita';
+            foreach ($allFinishers as $rank => $row) {
+                $newGeneral   = $rank + 1;
+                $shouldUpdate = !$categoryId || (int) $row->event_category_id === $categoryId;
 
-                if (empty($byGender[$gender])) {
-                    $this->line("   (tidak ada finisher {$gLabel})");
-                    continue;
-                }
+                $generalUpdates[] = [
+                    'participant_id' => $row->participant_id,
+                    'new_general'    => $newGeneral,
+                    'should_update'  => $shouldUpdate,
+                ];
 
-                $this->info("   [{$gLabel}] " . count($byGender[$gender]) . " finisher");
-
-                foreach ($byGender[$gender] as $rank => $row) {
-                    $newGeneral   = $rank + 1;
-                    $shouldUpdate = !$categoryId || (int) $row->event_category_id === $categoryId;
-
-                    $generalUpdates[] = [
-                        'participant_id' => $row->participant_id,
-                        'new_general'    => $newGeneral,
-                        'should_update'  => $shouldUpdate,
-                    ];
-
-                    $generalRows[] = [
-                        $gLabel,
-                        $newGeneral,
-                        $row->bib,
-                        $row->elapsed_time ?? '(null)',
-                        $row->old_general ?? '(null)',
-                        $shouldUpdate ? 'YA' : 'skip',
-                    ];
-                }
+                $generalRows[] = [
+                    $newGeneral,
+                    $row->bib,
+                    $row->gender,
+                    $row->elapsed_time ?? '(null)',
+                    $row->old_general  ?? '(null)',
+                    $shouldUpdate ? 'YA' : 'skip',
+                ];
             }
 
-            $this->table(['Gender', 'Overall', 'BIB', 'Elapsed Time', 'Old Overall', 'Update?'], $generalRows);
+            $this->table(['Overall', 'BIB', 'Gender', 'Elapsed Time', 'Old Overall', 'Update?'], $generalRows);
 
             if (!$dryRun) {
                 DB::transaction(function () use ($generalUpdates) {
