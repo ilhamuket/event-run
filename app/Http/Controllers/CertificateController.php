@@ -59,7 +59,6 @@ class CertificateController extends Controller
             // Hitung total finisher overall
             $totalOverall = Cache::remember('certificate:total_overall', 300, function () {
                 return DB::table('participants')
-                    ->whereNotNull('general_position')
                     ->whereExists(function ($q) {
                         $q->from('transactions')
                           ->whereColumn('transactions.participant_id', 'participants.id')
@@ -75,7 +74,6 @@ class CertificateController extends Controller
                 function () use ($participant) {
                     return DB::table('participants')
                         ->where('event_category_id', $participant->event_category_id)
-                        ->whereNotNull('category_position')
                         ->whereExists(function ($q) {
                             $q->from('transactions')
                               ->whereColumn('transactions.participant_id', 'participants.id')
