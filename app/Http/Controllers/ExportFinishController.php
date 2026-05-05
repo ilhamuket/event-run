@@ -22,8 +22,8 @@ class ExportFinishController extends Controller
         $selectedCategory = $request->category;
 
         // ── 1. Resolve category filter ───────────────────────────────────────
-        $categoryFilter = '';
-        $bindings       = [$event->id];
+        $catBindings    = [$event->id];
+        $catWhereExtra  = '';
 
         if ($selectedCategory) {
             $cat = DB::selectOne(
@@ -31,14 +31,34 @@ class ExportFinishController extends Controller
                 [$event->id, $selectedCategory]
             );
             if ($cat) {
-                $categoryFilter = 'AND p.event_category_id = ?';
-                $bindings[]     = $cat->id;
+                $catWhereExtra  = 'AND ec.id = ?';
+                $catBindings[]  = $cat->id;
             }
         }
 
-        // ── 2. Ambil semua finisher dengan data lengkap ──────────────────────
-        $rows = DB::select("
+        // ── 2. Ambil kategori yang relevan (urut by id) ──────────────────────
+        $categories = DB::select("
+            SELECT ec.id, ec.name
+            FROM event_categories ec
+            WHERE ec.event_id = ?
+              AND ec.is_active = 1
+              {$catWhereExtra}
+            ORDER BY ec.id ASC
+        ", $catBindings);
+
+        // ── 3. Ambil semua finisher, siap dikelompokkan ──────────────────────
+        $dataBindings   = [$event->id];
+        $dataWhereExtra = '';
+
+        if ($selectedCategory && isset($cat)) {
+            $dataWhereExtra = 'AND p.event_category_id = ?';
+            $dataBindings[] = $cat->id;
+        }
+
+        $allRows = DB::select("
             SELECT
+                p.id                AS participant_id,
+                p.event_category_id,
                 p.general_position,
                 p.category_position,
                 p.bib,
@@ -50,11 +70,10 @@ class ExportFinishController extends Controller
                 p.age,
                 p.city,
                 p.community,
-                ec.name            AS category_name,
-                p.elapsed_time     AS chip_time,
-                p.gun_elapsed_time AS gun_time,
+                ec.name             AS category_name,
+                p.elapsed_time      AS chip_time,
+                p.gun_elapsed_time  AS gun_time,
 
-                -- Start RFID time
                 (
                     SELECT vt_s.checkpoint_time
                     FROM rfid_validated_times vt_s
@@ -65,7 +84,6 @@ class ExportFinishController extends Controller
                     LIMIT 1
                 ) AS start_time,
 
-                -- Finish RFID time
                 (
                     SELECT vt_f.checkpoint_time
                     FROM rfid_validated_times vt_f
@@ -80,30 +98,41 @@ class ExportFinishController extends Controller
             LEFT JOIN event_categories ec ON ec.id = p.event_category_id
             WHERE p.event_id = ?
               AND p.gun_elapsed_time IS NOT NULL
-              {$categoryFilter}
-            ORDER BY p.gun_elapsed_time ASC
-        ", $bindings);
+              {$dataWhereExtra}
+            ORDER BY
+                p.event_category_id ASC,
+                p.gender ASC,
+                p.gun_elapsed_time ASC
+        ", $dataBindings);
 
-        // ── 3. Build spreadsheet ─────────────────────────────────────────────
+        // Index rows by [category_id][gender]
+        $grouped = [];
+        foreach ($allRows as $r) {
+            $grouped[$r->event_category_id][$r->gender][] = $r;
+        }
+
+        // ── 4. Build spreadsheet ─────────────────────────────────────────────
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Hasil Finish');
-
-        // Font default
         $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
 
-        // ── Header event info ────────────────────────────────────────────────
+        // ── Judul event ──────────────────────────────────────────────────────
         $sheet->setCellValue('A1', $event->name);
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
-        $sheet->setCellValue('A2', 'Hasil Finish — Diekspor: ' . now()->format('d M Y H:i'));
-        $sheet->getStyle('A2')->getFont()->setItalic(true)->setColor(
-            (new \PhpOffice\PhpSpreadsheet\Style\Color('FF6B7280'))
-        );
-        $sheet->mergeCells('A1:N1');
-        $sheet->mergeCells('A2:N2');
+        $sheet->mergeCells('A1:P1');
 
-        // ── Header kolom (row 4) ─────────────────────────────────────────────
-        $headers = [
+        $sheet->setCellValue('A2', 'Hasil Finish — Diekspor: ' . now()->format('d M Y H:i'));
+        $sheet->getStyle('A2')->getFont()->setItalic(true)
+            ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6B7280'));
+        $sheet->mergeCells('A2:P2');
+
+        // Warna header kolom berdasarkan gender
+        $colorMale   = 'FF1E3A5F'; // biru gelap
+        $colorFemale = 'FF7B1E3A'; // merah gelap / maroon
+        $colorCat    = 'FF374151'; // abu-abu gelap untuk header kategori
+
+        $colHeaders = [
             'A' => 'Rank Overall',
             'B' => 'Rank Kategori',
             'C' => 'BIB',
@@ -122,93 +151,132 @@ class ExportFinishController extends Controller
             'P' => 'Finish Time (RFID)',
         ];
 
-        foreach ($headers as $col => $label) {
-            $sheet->setCellValue("{$col}4", $label);
-        }
+        $currentRow = 4; // mulai dari row 4 (row 3 kosong sebagai spacer)
 
-        // Style header row
-        $headerRange = 'A4:P4';
-        $sheet->getStyle($headerRange)->applyFromArray([
-            'font' => [
-                'bold'  => true,
-                'color' => ['argb' => 'FFFFFFFF'],
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF991B1B'], // merah gelap
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
-                'wrapText'   => true,
-            ],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color'       => ['argb' => 'FFFFFFFF'],
-                ],
-            ],
-        ]);
-        $sheet->getRowDimension(4)->setRowHeight(30);
+        // ── 5. Loop per kategori → per gender ────────────────────────────────
+        foreach ($categories as $cat) {
+            $catRows = $grouped[$cat->id] ?? [];
 
-        // ── Data rows ────────────────────────────────────────────────────────
-        $row = 5;
-        foreach ($rows as $i => $r) {
-            $isTop3  = ($i + 1) <= 3;
-            $bgColor = $isTop3 ? 'FFFFF7ED' : 'FFFFFFFF'; // orange muda untuk top 3
+            // Cek apakah ada data sama sekali di kategori ini
+            $hasAny = !empty($catRows['M']) || !empty($catRows['F']);
+            if (!$hasAny) continue;
 
-            $sheet->setCellValue("A{$row}", $r->general_position ?? ($i + 1));
-            $sheet->setCellValue("B{$row}", $r->category_position ?? '-');
-            $sheet->setCellValue("C{$row}", $r->bib);
-            $sheet->setCellValue("D{$row}", $r->name);
-            $sheet->setCellValue("E{$row}", $r->bib_name ?: $r->name);
-            $sheet->setCellValue("F{$row}", $r->email);
-            $sheet->setCellValue("G{$row}", $r->phone);
-            $sheet->setCellValue("H{$row}", $r->gender === 'M' ? 'Pria' : 'Wanita');
-            $sheet->setCellValue("I{$row}", $r->age);
-            $sheet->setCellValue("J{$row}", $r->city);
-            $sheet->setCellValue("K{$row}", $r->community);
-            $sheet->setCellValue("L{$row}", $r->category_name);
-            $sheet->setCellValue("M{$row}", $r->gun_time   ?? '-');
-            $sheet->setCellValue("N{$row}", $r->chip_time  ?? '-');
-            $sheet->setCellValue("O{$row}", $r->start_time  ? date('H:i:s', strtotime($r->start_time))  : '-');
-            $sheet->setCellValue("P{$row}", $r->finish_time ? date('H:i:s', strtotime($r->finish_time)) : '-');
-
-            // Row styling
-            $sheet->getStyle("A{$row}:P{$row}")->applyFromArray([
-                'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
-                    'startColor' => ['argb' => ltrim($bgColor, '#')],
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['argb' => 'FFE5E7EB'],
-                    ],
-                ],
-                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+            // ── Section header: nama kategori ────────────────────────────────
+            $sheet->setCellValue("A{$currentRow}", strtoupper($cat->name));
+            $sheet->mergeCells("A{$currentRow}:P{$currentRow}");
+            $sheet->getStyle("A{$currentRow}")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . ltrim($colorCat, '#FF')]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
             ]);
+            $sheet->getStyle("A{$currentRow}")->applyFromArray([
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF374151']],
+            ]);
+            $sheet->getRowDimension($currentRow)->setRowHeight(22);
+            $currentRow++;
 
-            // Center kolom angka & waktu
-            $sheet->getStyle("A{$row}:C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("H{$row}:I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("M{$row}:P{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            // ── Loop per gender dalam kategori ini ───────────────────────────
+            foreach (['M', 'F'] as $gender) {
+                $gRows = $catRows[$gender] ?? [];
+                if (empty($gRows)) continue;
 
-            // Bold gun time
-            $sheet->getStyle("M{$row}")->getFont()->setBold(true);
+                $gLabel    = $gender === 'M' ? 'PRIA' : 'WANITA';
+                $gColor    = $gender === 'M' ? $colorMale : $colorFemale;
+                $gColorBg  = $gender === 'M' ? 'FFE8F0F8' : 'FFF8E8F0'; // stripe ringan untuk data rows
 
-            $row++;
+                // ── Sub-header: gender ────────────────────────────────────────
+                $sheet->setCellValue("A{$currentRow}", "{$cat->name} — {$gLabel}");
+                $sheet->mergeCells("A{$currentRow}:P{$currentRow}");
+                $sheet->getStyle("A{$currentRow}")->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $gColor]],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+                $sheet->getRowDimension($currentRow)->setRowHeight(20);
+                $currentRow++;
+
+                // ── Header kolom ──────────────────────────────────────────────
+                foreach ($colHeaders as $col => $label) {
+                    $sheet->setCellValue("{$col}{$currentRow}", $label);
+                }
+                $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $gColor]],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical'   => Alignment::VERTICAL_CENTER,
+                        'wrapText'   => true,
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFFFFFFF']],
+                    ],
+                ]);
+                $sheet->getRowDimension($currentRow)->setRowHeight(28);
+                $currentRow++;
+
+                // ── Data rows ─────────────────────────────────────────────────
+                foreach ($gRows as $i => $r) {
+                    $isTop3  = ($i + 1) <= 3;
+                    $bgColor = $isTop3 ? 'FFFFF7ED' : ($i % 2 === 0 ? 'FFFFFFFF' : ltrim($gColorBg, 'FF'));
+
+                    $sheet->setCellValue("A{$currentRow}", $r->general_position  ?? '-');
+                    $sheet->setCellValue("B{$currentRow}", $r->category_position ?? '-');
+                    $sheet->setCellValue("C{$currentRow}", $r->bib);
+                    $sheet->setCellValue("D{$currentRow}", $r->name);
+                    $sheet->setCellValue("E{$currentRow}", $r->bib_name ?: $r->name);
+                    $sheet->setCellValue("F{$currentRow}", $r->email);
+                    $sheet->setCellValue("G{$currentRow}", $r->phone);
+                    $sheet->setCellValue("H{$currentRow}", $r->gender === 'M' ? 'Pria' : 'Wanita');
+                    $sheet->setCellValue("I{$currentRow}", $r->age);
+                    $sheet->setCellValue("J{$currentRow}", $r->city);
+                    $sheet->setCellValue("K{$currentRow}", $r->community);
+                    $sheet->setCellValue("L{$currentRow}", $r->category_name);
+                    $sheet->setCellValue("M{$currentRow}", $r->gun_time  ?? '-');
+                    $sheet->setCellValue("N{$currentRow}", $r->chip_time ?? '-');
+                    $sheet->setCellValue("O{$currentRow}", $r->start_time  ? date('H:i:s', strtotime($r->start_time))  : '-');
+                    $sheet->setCellValue("P{$currentRow}", $r->finish_time ? date('H:i:s', strtotime($r->finish_time)) : '-');
+
+                    $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bgColor]],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE5E7EB']],
+                        ],
+                        'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+
+                    // Center: rank, bib, gender, usia, waktu
+                    $sheet->getStyle("A{$currentRow}:C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("H{$currentRow}:I{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("M{$currentRow}:P{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                    // Bold gun time
+                    $sheet->getStyle("M{$currentRow}")->getFont()->setBold(true);
+
+                    $currentRow++;
+                }
+
+                // ── Summary subtotal per gender ───────────────────────────────
+                $sheet->setCellValue("A{$currentRow}", "Total {$gLabel}");
+                $sheet->setCellValue("B{$currentRow}", count($gRows));
+                $sheet->mergeCells("C{$currentRow}:P{$currentRow}");
+                $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
+                    'font' => ['bold' => true],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFF3F4F6']],
+                    'borders' => [
+                        'bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FFD1D5DB']],
+                    ],
+                ]);
+                $currentRow++;
+
+                // Spacer antar gender
+                $currentRow++;
+            }
+
+            // Spacer antar kategori
+            $currentRow++;
         }
 
-        // ── Summary row ──────────────────────────────────────────────────────
-        $sheet->setCellValue("A{$row}", 'Total Finisher');
-        $sheet->setCellValue("B{$row}", count($rows));
-        $sheet->getStyle("A{$row}:B{$row}")->getFont()->setBold(true);
-        $sheet->getStyle("A{$row}:P{$row}")->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setARGB('FFF3F4F6');
-
-        // ── Column widths ────────────────────────────────────────────────────
+        // ── 6. Column widths ─────────────────────────────────────────────────
         $widths = [
             'A' => 12, 'B' => 14, 'C' => 8,  'D' => 25, 'E' => 25,
             'F' => 28, 'G' => 16, 'H' => 8,  'I' => 6,  'J' => 15,
@@ -218,13 +286,12 @@ class ExportFinishController extends Controller
             $sheet->getColumnDimension($col)->setWidth($width);
         }
 
-        // Freeze header
-        $sheet->freezePane('A5');
+        // Freeze baris judul
+        $sheet->freezePane('A4');
 
-        // ── Stream ke browser ────────────────────────────────────────────────
+        // ── 7. Stream ke browser ─────────────────────────────────────────────
         $filename = 'hasil-finish-' . $event->slug . '-' . now()->format('Ymd-His') . '.xlsx';
-
-        $writer = new Xlsx($spreadsheet);
+        $writer   = new Xlsx($spreadsheet);
 
         return response()->streamDownload(
             function () use ($writer) { $writer->save('php://output'); },
