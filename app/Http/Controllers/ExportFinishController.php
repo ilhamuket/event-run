@@ -230,8 +230,8 @@ class ExportFinishController extends Controller
                     $sheet->setCellValue("K{$currentRow}", $r->community);
                     $sheet->setCellValue("L{$currentRow}", $r->category_name);
                     $sheet->setCellValue("M{$currentRow}", $r->chip_time ?? '-');
-                    $sheet->setCellValue("N{$currentRow}", $r->start_time  ? date('H:i:s', strtotime($r->start_time))  : '-');
-                    $sheet->setCellValue("O{$currentRow}", $r->finish_time ? date('H:i:s', strtotime($r->finish_time)) : '-');
+                    $sheet->setCellValue("N{$currentRow}", $r->start_time  ? substr($r->start_time,  11, 8) : '-');
+                    $sheet->setCellValue("O{$currentRow}", $r->finish_time ? substr($r->finish_time, 11, 8) : '-');
 
                     $sheet->getStyle("A{$currentRow}:O{$currentRow}")->applyFromArray([
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bgColor]],
