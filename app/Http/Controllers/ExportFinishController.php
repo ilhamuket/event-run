@@ -71,7 +71,16 @@ class ExportFinishController extends Controller
                 p.city,
                 p.community,
                 ec.name             AS category_name,
-                p.elapsed_time      AS chip_time,
+                -- Chip time dari rfid_validated_times finish (bukan p.elapsed_time yang kena timezone bug)
+                (
+                    SELECT vt_c.elapsed_time
+                    FROM rfid_validated_times vt_c
+                    JOIN rfid_checkpoints cp_c ON cp_c.id = vt_c.rfid_checkpoint_id
+                    WHERE vt_c.participant_id = p.id
+                      AND cp_c.checkpoint_type = 'finish'
+                      AND cp_c.is_active = 1
+                    LIMIT 1
+                ) AS chip_time,
 
                 (
                     SELECT vt_s.checkpoint_time
@@ -96,12 +105,28 @@ class ExportFinishController extends Controller
             FROM participants p
             LEFT JOIN event_categories ec ON ec.id = p.event_category_id
             WHERE p.event_id = ?
-              AND p.elapsed_time IS NOT NULL
               {$dataWhereExtra}
+              AND EXISTS (
+                  SELECT 1
+                  FROM rfid_validated_times vt_ex
+                  JOIN rfid_checkpoints cp_ex ON cp_ex.id = vt_ex.rfid_checkpoint_id
+                  WHERE vt_ex.participant_id = p.id
+                    AND cp_ex.checkpoint_type = 'finish'
+                    AND cp_ex.is_active = 1
+                    AND vt_ex.elapsed_time IS NOT NULL
+              )
             ORDER BY
                 p.event_category_id ASC,
                 p.gender ASC,
-                p.elapsed_time ASC
+                (
+                    SELECT vt_o.elapsed_time
+                    FROM rfid_validated_times vt_o
+                    JOIN rfid_checkpoints cp_o ON cp_o.id = vt_o.rfid_checkpoint_id
+                    WHERE vt_o.participant_id = p.id
+                      AND cp_o.checkpoint_type = 'finish'
+                      AND cp_o.is_active = 1
+                    LIMIT 1
+                ) ASC
         ", $dataBindings);
 
         // Index rows by [category_id][gender]
