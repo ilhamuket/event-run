@@ -72,7 +72,6 @@ class ExportFinishController extends Controller
                 p.community,
                 ec.name             AS category_name,
                 p.elapsed_time      AS chip_time,
-                p.gun_elapsed_time  AS gun_time,
 
                 (
                     SELECT vt_s.checkpoint_time
@@ -97,12 +96,12 @@ class ExportFinishController extends Controller
             FROM participants p
             LEFT JOIN event_categories ec ON ec.id = p.event_category_id
             WHERE p.event_id = ?
-              AND p.gun_elapsed_time IS NOT NULL
+              AND p.elapsed_time IS NOT NULL
               {$dataWhereExtra}
             ORDER BY
                 p.event_category_id ASC,
                 p.gender ASC,
-                p.gun_elapsed_time ASC
+                p.elapsed_time ASC
         ", $dataBindings);
 
         // Index rows by [category_id][gender]
@@ -120,12 +119,12 @@ class ExportFinishController extends Controller
         // ── Judul event ──────────────────────────────────────────────────────
         $sheet->setCellValue('A1', $event->name);
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
-        $sheet->mergeCells('A1:P1');
+        $sheet->mergeCells('A1:O1');
 
         $sheet->setCellValue('A2', 'Hasil Finish — Diekspor: ' . now()->format('d M Y H:i'));
         $sheet->getStyle('A2')->getFont()->setItalic(true)
             ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6B7280'));
-        $sheet->mergeCells('A2:P2');
+        $sheet->mergeCells('A2:O2');
 
         // Warna header kolom berdasarkan gender
         $colorMale   = 'FF1E3A5F'; // biru gelap
@@ -145,10 +144,9 @@ class ExportFinishController extends Controller
             'J' => 'Kota',
             'K' => 'Komunitas',
             'L' => 'Kategori',
-            'M' => 'Gun Time',
-            'N' => 'Chip Time',
-            'O' => 'Start Time (RFID)',
-            'P' => 'Finish Time (RFID)',
+            'M' => 'Chip Time',
+            'N' => 'Start Time (RFID)',
+            'O' => 'Finish Time (RFID)',
         ];
 
         $currentRow = 4; // mulai dari row 4 (row 3 kosong sebagai spacer)
@@ -163,7 +161,7 @@ class ExportFinishController extends Controller
 
             // ── Section header: nama kategori ────────────────────────────────
             $sheet->setCellValue("A{$currentRow}", strtoupper($cat->name));
-            $sheet->mergeCells("A{$currentRow}:P{$currentRow}");
+            $sheet->mergeCells("A{$currentRow}:O{$currentRow}");
             $sheet->getStyle("A{$currentRow}")->applyFromArray([
                 'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . ltrim($colorCat, '#FF')]],
@@ -186,7 +184,7 @@ class ExportFinishController extends Controller
 
                 // ── Sub-header: gender ────────────────────────────────────────
                 $sheet->setCellValue("A{$currentRow}", "{$cat->name} — {$gLabel}");
-                $sheet->mergeCells("A{$currentRow}:P{$currentRow}");
+                $sheet->mergeCells("A{$currentRow}:O{$currentRow}");
                 $sheet->getStyle("A{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $gColor]],
@@ -199,7 +197,7 @@ class ExportFinishController extends Controller
                 foreach ($colHeaders as $col => $label) {
                     $sheet->setCellValue("{$col}{$currentRow}", $label);
                 }
-                $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
+                $sheet->getStyle("A{$currentRow}:O{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $gColor]],
                     'alignment' => [
@@ -231,12 +229,11 @@ class ExportFinishController extends Controller
                     $sheet->setCellValue("J{$currentRow}", $r->city);
                     $sheet->setCellValue("K{$currentRow}", $r->community);
                     $sheet->setCellValue("L{$currentRow}", $r->category_name);
-                    $sheet->setCellValue("M{$currentRow}", $r->gun_time  ?? '-');
-                    $sheet->setCellValue("N{$currentRow}", $r->chip_time ?? '-');
-                    $sheet->setCellValue("O{$currentRow}", $r->start_time  ? date('H:i:s', strtotime($r->start_time))  : '-');
-                    $sheet->setCellValue("P{$currentRow}", $r->finish_time ? date('H:i:s', strtotime($r->finish_time)) : '-');
+                    $sheet->setCellValue("M{$currentRow}", $r->chip_time ?? '-');
+                    $sheet->setCellValue("N{$currentRow}", $r->start_time  ? date('H:i:s', strtotime($r->start_time))  : '-');
+                    $sheet->setCellValue("O{$currentRow}", $r->finish_time ? date('H:i:s', strtotime($r->finish_time)) : '-');
 
-                    $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
+                    $sheet->getStyle("A{$currentRow}:O{$currentRow}")->applyFromArray([
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bgColor]],
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE5E7EB']],
@@ -247,9 +244,9 @@ class ExportFinishController extends Controller
                     // Center: rank, bib, gender, usia, waktu
                     $sheet->getStyle("A{$currentRow}:C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("H{$currentRow}:I{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("M{$currentRow}:P{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("M{$currentRow}:O{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                    // Bold gun time
+                    // Bold chip time
                     $sheet->getStyle("M{$currentRow}")->getFont()->setBold(true);
 
                     $currentRow++;
@@ -258,8 +255,8 @@ class ExportFinishController extends Controller
                 // ── Summary subtotal per gender ───────────────────────────────
                 $sheet->setCellValue("A{$currentRow}", "Total {$gLabel}");
                 $sheet->setCellValue("B{$currentRow}", count($gRows));
-                $sheet->mergeCells("C{$currentRow}:P{$currentRow}");
-                $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
+                $sheet->mergeCells("C{$currentRow}:O{$currentRow}");
+                $sheet->getStyle("A{$currentRow}:O{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFF3F4F6']],
                     'borders' => [
@@ -280,7 +277,7 @@ class ExportFinishController extends Controller
         $widths = [
             'A' => 12, 'B' => 14, 'C' => 8,  'D' => 25, 'E' => 25,
             'F' => 28, 'G' => 16, 'H' => 8,  'I' => 6,  'J' => 15,
-            'K' => 18, 'L' => 20, 'M' => 12, 'N' => 12, 'O' => 18, 'P' => 18,
+            'K' => 18, 'L' => 20, 'M' => 12, 'N' => 18, 'O' => 18,
         ];
         foreach ($widths as $col => $width) {
             $sheet->getColumnDimension($col)->setWidth($width);
